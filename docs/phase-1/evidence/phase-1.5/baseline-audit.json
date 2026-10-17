@@ -1,0 +1,267 @@
+{
+  "checkedAt": "2026-10-17T13:43:17.078Z",
+  "documents": [
+    {
+      "file": "01-research-report.md",
+      "bytes": 11511,
+      "sha256": "a3acfa4445d3b826314cda1c677f90f6afbe490b67a3f2d66857ece4923b0867"
+    },
+    {
+      "file": "02-prd.md",
+      "bytes": 7655,
+      "sha256": "04f6c0788f2005976097ff715ad3354cd6b0a833a0b4aeb4b7b78794c7ed0652"
+    },
+    {
+      "file": "03-feature-prioritization.md",
+      "bytes": 5240,
+      "sha256": "c306c4a201198b2bd457977aa7a79a2fc73c73fb2b5279a3cf378df64683aa02"
+    },
+    {
+      "file": "04-architecture.md",
+      "bytes": 12625,
+      "sha256": "09cd889ee39d1275ef3818615c76c9623cc761881d9ac5d7459ca93190e11852"
+    },
+    {
+      "file": "05-source-feasibility.md",
+      "bytes": 11864,
+      "sha256": "2adcb258f0dfc3d586dd37252f23e184588d36c65c97d44a9ac08e28409d2588"
+    },
+    {
+      "file": "06-lyrics-system.md",
+      "bytes": 16065,
+      "sha256": "b029828eb9f725346e07ade9e759c256a2fc92e4c47a3b3c8721e9b6be4e3937"
+    },
+    {
+      "file": "07-ui-ux.md",
+      "bytes": 9808,
+      "sha256": "8f0b853072dd18bbe8d9b9be6c11e60976d9c0560f8f5637f93be34ebb9addcc"
+    },
+    {
+      "file": "08-licensing-risks.md",
+      "bytes": 11087,
+      "sha256": "89991c6b2f2e4d5f9fb43c5830de3b28ee235700bea74338d154c42a93637896"
+    },
+    {
+      "file": "09-roadmap.md",
+      "bytes": 7418,
+      "sha256": "3df3187902cfe363c981f43f67c972627e095d7f096a7a700f2106239c5ce67d"
+    },
+    {
+      "file": "10-decisions.md",
+      "bytes": 6445,
+      "sha256": "e10ce06f16a2c994e3b71d5614f92e6b6655f4f5381b72b0edf876541410aeeb"
+    },
+    {
+      "file": "11-installed-nuclear-investigation.md",
+      "bytes": 13848,
+      "sha256": "08719861ab31c5a1fc4f5f28bf00c9e6dc7a31a50ae8fca9ccfe8a422d0ec241"
+    },
+    {
+      "file": "README.md",
+      "bytes": 3806,
+      "sha256": "af5e59636ddeefe7c3b5575b6cd4129a6c93134a5f28ced3c9c8efcbaa47ca36"
+    }
+  ],
+  "evidence": [
+    {
+      "file": "evidence/rea-evidence-final.json",
+      "bytes": 2740635,
+      "sha256": "b176d344d8cc75bef038aea042b40915911336720968ebae0825713b07b94841",
+      "records": 8,
+      "operations": [
+        {
+          "id": "ev_04819dc593c6a1faa8b77f23efab438b2dcf8276cb8b01313bbbf76ffae3769b",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_2ea05a692b2c45708058df2ea031259727bea98c097441dc0dda7a48fae1cdad",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_4601b0246b092f0d5af4133bfb8484f5eea3d1b0e9cac53075dcf712bb2300fa",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_550e95d2a1b3bc47151b3a0633daa53dce6058ebd53158911dc80a7a36d84942",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_77ecad853946b40b5d0eea44609d93a67928d5f459111026d43d48ae6e33cdc6",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_9483c26413cc13a477f2c9e5b5ba4dae4d7da2c6141a7beb159860e4fb88a913",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_9b6982a3270b170c6bda5ff979338f0dee08cfe9db0e92bb1311a5a33775866e",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 9
+        },
+        {
+          "id": "ev_a58fe367ebc38ce650c14c803c8b044e31b20b6cbdaf6e378a4254dfd4f8d84d",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 9
+        }
+      ]
+    },
+    {
+      "file": "evidence/native-nuclear/rea-installed-artifact-bundle.json",
+      "bytes": 9398533,
+      "sha256": "10fab550f6f3a9284c47e55f461990e85a0b5e7261a4e1f86286875c862108c4",
+      "records": 14,
+      "operations": [
+        {
+          "id": "ev_023a3405135e123787a797222dcd3a2d052a503b89d87ed71a8de56878f7a953",
+          "operation": "inspect_rust_binary",
+          "authority": "shipped-artifact",
+          "limitations": 5
+        },
+        {
+          "id": "ev_04819dc593c6a1faa8b77f23efab438b2dcf8276cb8b01313bbbf76ffae3769b",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_07e9745c142e760cb2ce93f24f80846fd8d2a116f6a9d97f9a46e092113861b6",
+          "operation": "inspect_analysis_view",
+          "authority": "shipped-artifact",
+          "limitations": 18
+        },
+        {
+          "id": "ev_2ea05a692b2c45708058df2ea031259727bea98c097441dc0dda7a48fae1cdad",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_4601b0246b092f0d5af4133bfb8484f5eea3d1b0e9cac53075dcf712bb2300fa",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_5437fb1c48717656954d96406b5d555c32c8861c56a1f7ad1fd637c83c1a4772",
+          "operation": "inspect_pe_resources",
+          "authority": "shipped-artifact",
+          "limitations": 3
+        },
+        {
+          "id": "ev_550e95d2a1b3bc47151b3a0633daa53dce6058ebd53158911dc80a7a36d84942",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_6f3bffa78fa7b3bc9127f4b123c5f5d011706a3285ffa403942c1fec8431d81f",
+          "operation": "inspect_analysis_view",
+          "authority": "shipped-artifact",
+          "limitations": 18
+        },
+        {
+          "id": "ev_75823d2ea236bd95f9c2e820541357ff98e82caf29700ebe73f13e1d090342ef",
+          "operation": "analyze_javascript_application",
+          "authority": "shipped-artifact",
+          "limitations": 7
+        },
+        {
+          "id": "ev_77ecad853946b40b5d0eea44609d93a67928d5f459111026d43d48ae6e33cdc6",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_9483c26413cc13a477f2c9e5b5ba4dae4d7da2c6141a7beb159860e4fb88a913",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 8
+        },
+        {
+          "id": "ev_9b6982a3270b170c6bda5ff979338f0dee08cfe9db0e92bb1311a5a33775866e",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 9
+        },
+        {
+          "id": "ev_a58fe367ebc38ce650c14c803c8b044e31b20b6cbdaf6e378a4254dfd4f8d84d",
+          "operation": "capture_browser_scenario",
+          "authority": "controlled-replay",
+          "limitations": 9
+        },
+        {
+          "id": "ev_ab769e946df60893c818f9e9926949f54c04c1a29bec63e12f6143dac497e210",
+          "operation": "analyze_javascript_application",
+          "authority": "shipped-artifact",
+          "limitations": 7
+        }
+      ]
+    }
+  ],
+  "nativeManifest": [
+    {
+      "file": "identity.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "file": "lyrics-settings-state.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "file": "lyrics-settings.png",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "file": "lyrics-state.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "file": "lyrics.png",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "file": "preferences-state.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "file": "preferences.png",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "file": "rea-installed-artifact-bundle.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "file": "sources-state.json",
+      "hashMatches": true,
+      "bytesMatch": true
+    },
+    {
+      "file": "sources.png",
+      "hashMatches": true,
+      "bytesMatch": true
+    }
+  ]
+}

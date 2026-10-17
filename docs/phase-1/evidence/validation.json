@@ -1,0 +1,34 @@
+{
+  "markdownDocuments": 12,
+  "checkedLocalLinks": 106,
+  "brokenLinks": [],
+  "screenshots": [
+    {
+      "file": "nuclear-desktop-interaction.png",
+      "hashMatches": true
+    },
+    {
+      "file": "bitchord-mobile.png",
+      "hashMatches": true
+    },
+    {
+      "file": "bitchord-web-home.png",
+      "hashMatches": true
+    },
+    {
+      "file": "nuclear-mobile.png",
+      "hashMatches": true
+    },
+    {
+      "file": "bitchord-web-settings.png",
+      "hashMatches": true
+    },
+    {
+      "file": "nuclear-client-settled.png",
+      "hashMatches": true
+    }
+  ],
+  "reaRecords": 8,
+  "reaComplete": 6,
+  "reaIncomplete": 2
+}

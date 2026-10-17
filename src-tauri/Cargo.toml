@@ -1,0 +1,36 @@
+[package]
+name = "lumaire"
+version = "0.1.0"
+description = "A local-first music and lyric player"
+edition = "2021"
+rust-version = "1.90"
+
+[lib]
+name = "lumaire_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "=2.7.3", features = [] }
+tauri-codegen = "=2.7.3"
+
+[dependencies]
+tauri = { version = "=2.12.4", default-features = false, features = ["wry", "protocol-asset", "common-controls-v6"] }
+# Keep the upstream 2.12 release family coherent, including code-generation types.
+tauri-runtime = { version = "=2.12.2", default-features = false }
+tauri-runtime-wry = { version = "=2.12.2", default-features = false }
+tauri-macros = "=2.7.3"
+tauri-utils = "=2.10.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.37", features = ["bundled"] }
+lofty = "0.22"
+rfd = { version = "0.15", default-features = false }
+uuid = { version = "1", features = ["v4"] }
+walkdir = "2"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+tokio = { version = "1", features = ["rt"] }
+log = "0.4"
+
+[profile.dev]
+debug = 0
+incremental = true

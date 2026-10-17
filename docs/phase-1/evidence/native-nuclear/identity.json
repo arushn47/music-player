@@ -1,0 +1,69 @@
+{
+  "capturedAt": "2026-10-17T13:33:43.223Z",
+  "executable": {
+    "path": "C:/Users/ARUSH/AppData/Local/Nuclear/nuclear-music-player.exe",
+    "bytes": 53136384,
+    "sha256": "79a8171a6ec65e32c23271cdf9505c0f542820a14b32a533c649a694b9d0ad2f",
+    "version": "1.51.2",
+    "preferencesBuild": "4ac3be77d"
+  },
+  "activeProviders": {
+    "dashboard": "deezer-dashboard",
+    "discovery": "lastfm-discovery",
+    "lyrics": "lrclib",
+    "metadata": "spotify",
+    "playlists": "youtube-playlists",
+    "streaming": "youtube"
+  },
+  "plugins": [
+    {
+      "id": "nuclear-plugin-youtube",
+      "version": "0.1.2",
+      "enabled": true,
+      "license": "AGPL-3.0-only",
+      "manifestSha256": "37f73a60e1b143a4017cdf6f989a193d51c61118f3bd0a0e00188e3c21c17d4c"
+    },
+    {
+      "id": "nuclear-plugin-lastfm",
+      "version": "0.2.2",
+      "enabled": true,
+      "license": "AGPL-3.0-only",
+      "manifestSha256": "b8affdf9f0e17725d89932104df3c51706eabc05631f982641ddd94f90de238a"
+    },
+    {
+      "id": "nuclear-plugin-lrclib",
+      "version": "0.1.0",
+      "enabled": true,
+      "license": "AGPL-3.0-only",
+      "manifestSha256": "6fc8be0da44b2340b989d3149b19d0d6210fd9612316e79576d7fd40324d3636"
+    },
+    {
+      "id": "nuclear-plugin-deezer-dashboard",
+      "version": "0.2.0",
+      "enabled": true,
+      "license": "AGPL-3.0-only",
+      "manifestSha256": "7a21a6e78073ca8df7575ff8f65a1c3d544386dc76f7f295058886d06eaad377"
+    },
+    {
+      "id": "nuclear-plugin-something",
+      "version": "0.3.0",
+      "enabled": true,
+      "license": "AGPL-3.0-only",
+      "manifestSha256": "ca5009781a6879ce12faf15e8ab9feaa05eefe0f4a958018722fc3a902b3a491"
+    },
+    {
+      "id": "nuclear-plugin-youtube-playlists",
+      "version": "0.1.0",
+      "enabled": true,
+      "license": "AGPL-3.0-only",
+      "manifestSha256": "7482f642123d58e3ae4c3aeb6b1fc51cc0e1fc3b8bb728482fe899b7c0c9684c"
+    },
+    {
+      "id": "nuclear-mini-player",
+      "version": "1.8.0",
+      "enabled": true,
+      "license": null,
+      "manifestSha256": "0e69617a1fdf32290af26c0ea0a75324f97a3b7550c8a0f025d2e3bb2b402278"
+    }
+  ]
+}

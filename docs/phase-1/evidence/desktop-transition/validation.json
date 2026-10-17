@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-10-17T14:51:25.795Z",
+  "markdownFilesChecked": 16,
+  "localLinksChecked": 214,
+  "brokenLinks": [],
+  "preExistingFiles": 50,
+  "changedExistingFiles": [
+    "docs/phase-1/01-research-report.md",
+    "docs/phase-1/02-prd.md",
+    "docs/phase-1/03-feature-prioritization.md",
+    "docs/phase-1/04-architecture.md",
+    "docs/phase-1/05-source-feasibility.md",
+    "docs/phase-1/07-ui-ux.md",
+    "docs/phase-1/08-licensing-risks.md",
+    "docs/phase-1/09-roadmap.md",
+    "docs/phase-1/10-decisions.md",
+    "docs/phase-1/12-phase-1.5-validation.md",
+    "docs/phase-1/13-lumaire-web-provider-architecture.md",
+    "docs/phase-1/evidence/README.md",
+    "docs/phase-1/README.md"
+  ],
+  "unchangedExistingCount": 37,
+  "changedOriginalEvidenceFiles": [],
+  "rootEntries": [
+    "docs"
+  ],
+  "applicationImplementationPresent": false,
+  "installationsPerformed": false,
+  "nativeBuildOrPlaybackTestsPerformed": false
+}

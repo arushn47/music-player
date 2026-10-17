@@ -1,0 +1,9 @@
+{
+  "query": "https://api.github.com/repos/nukeop/nuclear/releases/latest",
+  "captured_utc": "2026-10-17T11:40:04.0636354Z",
+  "sha": null,
+  "tag": "player@1.51.2",
+  "published_at": "2026-10-16T00:52:44Z",
+  "html_url": "https://github.com/nukeop/nuclear/releases/tag/player%401.51.2",
+  "body": "## What's New in v1.51.2\n\n- **Fix**: Fixed silent YouTube playback on Linux. The AppImage now bundles the GStreamer libav plugin, and the AUR, .deb, and .rpm packages require it. `Linux` - @nukeop\n- **Fix**: Listening history no longer records a track twice when the previous track ends on its own `History` - @nukeop\n\n> **macOS:** If the app won't open, run `sudo xattr -r -d com.apple.quarantine /Applications/Nuclear.app` in Terminal.\n"
+}

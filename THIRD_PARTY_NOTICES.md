@@ -1,0 +1,179 @@
+# Lumaire third-party software inventory
+
+Generated from the resolved lockfiles. This inventory does not grant rights to audio, artwork or lyrics. No Nuclear, TuneScript or external media code/assets are included. The original application licensing decision remains with the project owner.
+
+## JavaScript dependencies
+
+| Package | Version | Licence | Build/test only |
+|---|---|---|---|
+| @babel/code-frame | 7.29.7 | MIT | Yes |
+| @babel/compat-data | 7.29.7 | MIT | Yes |
+| @babel/core | 7.29.7 | MIT | Yes |
+| @babel/generator | 7.29.8 | MIT | Yes |
+| @babel/helper-compilation-targets | 7.29.7 | MIT | Yes |
+| @babel/helper-globals | 7.29.7 | MIT | Yes |
+| @babel/helper-module-imports | 7.29.7 | MIT | Yes |
+| @babel/helper-module-transforms | 7.29.7 | MIT | Yes |
+| @babel/helper-plugin-utils | 7.29.7 | MIT | Yes |
+| @babel/helper-string-parser | 7.29.7 | MIT | Yes |
+| @babel/helper-validator-identifier | 7.29.7 | MIT | Yes |
+| @babel/helper-validator-option | 7.29.7 | MIT | Yes |
+| @babel/helpers | 7.29.10 | MIT | Yes |
+| @babel/parser | 7.29.9 | MIT | Yes |
+| @babel/plugin-transform-react-jsx-self | 7.29.7 | MIT | Yes |
+| @babel/plugin-transform-react-jsx-source | 7.29.7 | MIT | Yes |
+| @babel/template | 7.29.7 | MIT | Yes |
+| @babel/traverse | 7.29.10 | MIT | Yes |
+| @babel/types | 7.29.8 | MIT | Yes |
+| @esbuild/aix-ppc64 | 0.28.2 | MIT | Yes |
+| @esbuild/android-arm | 0.28.2 | MIT | Yes |
+| @esbuild/android-arm64 | 0.28.2 | MIT | Yes |
+| @esbuild/android-x64 | 0.28.2 | MIT | Yes |
+| @esbuild/darwin-arm64 | 0.28.2 | MIT | Yes |
+| @esbuild/darwin-x64 | 0.28.2 | MIT | Yes |
+| @esbuild/freebsd-arm64 | 0.28.2 | MIT | Yes |
+| @esbuild/freebsd-x64 | 0.28.2 | MIT | Yes |
+| @esbuild/linux-arm | 0.28.2 | MIT | Yes |
+| @esbuild/linux-arm64 | 0.28.2 | MIT | Yes |
+| @esbuild/linux-ia32 | 0.28.2 | MIT | Yes |
+| @esbuild/linux-loong64 | 0.28.2 | MIT | Yes |
+| @esbuild/linux-mips64el | 0.28.2 | MIT | Yes |
+| @esbuild/linux-ppc64 | 0.28.2 | MIT | Yes |
+| @esbuild/linux-riscv64 | 0.28.2 | MIT | Yes |
+| @esbuild/linux-s390x | 0.28.2 | MIT | Yes |
+| @esbuild/linux-x64 | 0.28.2 | MIT | Yes |
+| @esbuild/netbsd-arm64 | 0.28.2 | MIT | Yes |
+| @esbuild/netbsd-x64 | 0.28.2 | MIT | Yes |
+| @esbuild/openbsd-arm64 | 0.28.2 | MIT | Yes |
+| @esbuild/openbsd-x64 | 0.28.2 | MIT | Yes |
+| @esbuild/openharmony-arm64 | 0.28.2 | MIT | Yes |
+| @esbuild/sunos-x64 | 0.28.2 | MIT | Yes |
+| @esbuild/win32-arm64 | 0.28.2 | MIT | Yes |
+| @esbuild/win32-ia32 | 0.28.2 | MIT | Yes |
+| @esbuild/win32-x64 | 0.28.2 | MIT | Yes |
+| @jridgewell/gen-mapping | 0.3.13 | MIT | Yes |
+| @jridgewell/remapping | 2.3.5 | MIT | Yes |
+| @jridgewell/resolve-uri | 3.1.2 | MIT | Yes |
+| @jridgewell/sourcemap-codec | 1.6.0 | MIT | Yes |
+| @jridgewell/trace-mapping | 0.3.31 | MIT | Yes |
+| @napi-rs/lzma-linux-x64-gnu | 1.5.1 | MIT | Yes |
+| @rolldown/pluginutils | 1.0.0-rc.3 | MIT | Yes |
+| @rollup/rollup-android-arm-eabi | 4.64.8 | MIT | Yes |
+| @rollup/rollup-android-arm64 | 4.64.8 | MIT | Yes |
+| @rollup/rollup-darwin-arm64 | 4.64.8 | MIT | Yes |
+| @rollup/rollup-darwin-x64 | 4.64.8 | MIT | Yes |
+| @rollup/rollup-freebsd-arm64 | 4.64.8 | MIT | Yes |
+| @rollup/rollup-freebsd-x64 | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-arm-gnueabihf | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-arm-musleabihf | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-arm64-gnu | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-arm64-musl | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-loong64-gnu | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-loong64-musl | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-ppc64-gnu | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-ppc64-musl | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-riscv64-gnu | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-riscv64-musl | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-s390x-gnu | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-x64-gnu | 4.64.8 | MIT | Yes |
+| @rollup/rollup-linux-x64-musl | 4.64.8 | MIT | Yes |
+| @rollup/rollup-openbsd-x64 | 4.64.8 | MIT | Yes |
+| @rollup/rollup-openharmony-arm64 | 4.64.8 | MIT | Yes |
+| @rollup/rollup-win32-arm64-msvc | 4.64.8 | MIT | Yes |
+| @rollup/rollup-win32-ia32-msvc | 4.64.8 | MIT | Yes |
+| @rollup/rollup-win32-x64-gnu | 4.64.8 | MIT | Yes |
+| @rollup/rollup-win32-x64-msvc | 4.64.8 | MIT | Yes |
+| @tauri-apps/api | 2.12.4 | Apache-2.0 OR MIT | No |
+| @tauri-apps/cli | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-darwin-arm64 | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-darwin-x64 | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-linux-arm-gnueabihf | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-linux-arm64-gnu | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-linux-arm64-musl | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-linux-riscv64-gnu | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-linux-x64-gnu | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-linux-x64-musl | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-win32-arm64-msvc | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-win32-ia32-msvc | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @tauri-apps/cli-win32-x64-msvc | 2.12.3 | Apache-2.0 OR MIT | Yes |
+| @types/babel__core | 7.20.5 | MIT | Yes |
+| @types/babel__generator | 7.27.0 | MIT | Yes |
+| @types/babel__template | 7.4.4 | MIT | Yes |
+| @types/babel__traverse | 7.28.0 | MIT | Yes |
+| @types/chai | 5.2.3 | MIT | Yes |
+| @types/deep-eql | 4.0.2 | MIT | Yes |
+| @types/estree | 1.0.9 | MIT | Yes |
+| @types/node | 24.19.2 | MIT | Yes |
+| @types/react | 19.3.0 | MIT | Yes |
+| @types/react-dom | 19.3.0 | MIT | Yes |
+| @vitejs/plugin-react | 5.2.0 | MIT | Yes |
+| @vitest/expect | 3.2.7 | MIT | Yes |
+| @vitest/mocker | 3.2.7 | MIT | Yes |
+| @vitest/pretty-format | 3.2.7 | MIT | Yes |
+| @vitest/runner | 3.2.7 | MIT | Yes |
+| @vitest/snapshot | 3.2.7 | MIT | Yes |
+| @vitest/spy | 3.2.7 | MIT | Yes |
+| @vitest/utils | 3.2.7 | MIT | Yes |
+| assertion-error | 2.0.1 | MIT | Yes |
+| baseline-browser-mapping | 2.11.29 | Apache-2.0 | Yes |
+| browserslist | 4.29.3 | MIT | Yes |
+| cac | 6.7.14 | MIT | Yes |
+| caniuse-lite | 1.0.30001816 | CC-BY-4.0 | Yes |
+| chai | 5.3.3 | MIT | Yes |
+| check-error | 2.1.3 | MIT | Yes |
+| convert-source-map | 2.0.0 | MIT | Yes |
+| csstype | 3.2.3 | MIT | Yes |
+| debug | 4.4.3 | MIT | Yes |
+| deep-eql | 5.0.2 | MIT | Yes |
+| electron-to-chromium | 1.5.459 | ISC | Yes |
+| es-module-lexer | 1.7.0 | MIT | Yes |
+| esbuild | 0.28.2 | MIT | Yes |
+| escalade | 3.2.0 | MIT | Yes |
+| estree-walker | 3.0.3 | MIT | Yes |
+| expect-type | 1.4.0 | Apache-2.0 | Yes |
+| fdir | 6.5.0 | MIT | Yes |
+| fsevents | 2.3.3 | MIT | Yes |
+| gensync | 1.0.0-beta.2 | MIT | Yes |
+| js-tokens | 4.0.0 | MIT | Yes |
+| jsesc | 3.1.0 | MIT | Yes |
+| json5 | 2.2.3 | MIT | Yes |
+| loupe | 3.2.1 | MIT | Yes |
+| lru-cache | 5.1.1 | ISC | Yes |
+| lucide-react | 0.468.0 | ISC | No |
+| magic-string | 0.30.21 | MIT | Yes |
+| ms | 2.1.3 | MIT | Yes |
+| nanoid | 3.3.20 | MIT | Yes |
+| node-releases | 2.0.59 | MIT | Yes |
+| pathe | 2.0.3 | MIT | Yes |
+| pathval | 2.0.1 | MIT | Yes |
+| picocolors | 1.1.1 | ISC | Yes |
+| picomatch | 4.0.7 | MIT | Yes |
+| playwright-core | 1.64.1 | Apache-2.0 | Yes |
+| postcss | 8.5.30 | MIT | Yes |
+| prettier | 3.9.10 | MIT | Yes |
+| react | 19.3.1 | MIT | No |
+| react-dom | 19.3.1 | MIT | No |
+| react-refresh | 0.18.0 | MIT | Yes |
+| rollup | 4.64.8 | MIT | Yes |
+| scheduler | 0.28.0 | MIT | No |
+| semver | 6.3.1 | ISC | Yes |
+| siginfo | 2.0.0 | ISC | Yes |
+| source-map-js | 1.2.2 | BSD-3-Clause | Yes |
+| stackback | 0.0.2 | MIT | Yes |
+| std-env | 3.10.0 | MIT | Yes |
+| strip-literal | 3.1.0 | MIT | Yes |
+| js-tokens | 9.0.1 | MIT | Yes |
+| tinybench | 2.9.0 | MIT | Yes |
+| tinyexec | 0.3.2 | MIT | Yes |
+| tinyglobby | 0.2.17 | MIT | Yes |
+| tinypool | 1.1.1 | MIT | Yes |
+| tinyrainbow | 2.0.0 | MIT | Yes |
+| tinyspy | 4.0.6 | MIT | Yes |
+| typescript | 5.9.3 | Apache-2.0 | Yes |
+| undici-types | 7.24.6 | MIT | Yes |
+| update-browserslist-db | 1.3.4 | MIT | Yes |
+| vite | 7.3.7 | MIT | Yes |
+| vite-node | 3.2.4 | MIT | Yes |
+| vitest | 3.2.7 | MIT | Yes |
+| why-is-node-running | 2.3.0 | MIT | Yes |
+| yallist | 3.1.1 | ISC | Yes |

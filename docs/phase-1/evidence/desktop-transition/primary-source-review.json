@@ -1,0 +1,52 @@
+{
+  "checkedOn": "2026-10-17",
+  "evidenceType": "Analyst summaries of primary-source retrieval, not raw source archive or runtime certification",
+  "sources": [
+    {
+      "url": "https://v2.tauri.app/start/prerequisites/",
+      "finding": "Windows requires C++ Build Tools and WebView2; Rust required; MSI-specific prerequisites separate"
+    },
+    {
+      "url": "https://docs.nuclearplayer.com/nuclear/plugins/streaming",
+      "finding": "Explicit discovery then just-in-time resolution; V2 full-record methods; candidate/stream cache expiry"
+    },
+    {
+      "url": "https://github.com/nukeop/nuclear/blob/master/packages/player/src-tauri/src/ytdlp.rs",
+      "finding": "Native executable host source re-opened; earlier detailed inspection retained in doc13; mutable/cached source not a pinned reconstruction"
+    },
+    {
+      "url": "https://github.com/nukeop/nuclear/blob/master/packages/player/src/services/streamResolution/audioSource.ts",
+      "finding": "Non-HLS proxy source and MSE path for some MP4 audio; native stream_server_port"
+    },
+    {
+      "url": "https://github.com/yt-dlp/yt-dlp#licensing",
+      "finding": "Unlicense source; PyInstaller combined executables GPLv3+; release packaging differs"
+    },
+    {
+      "url": "https://github.com/yt-dlp/yt-dlp#dependencies",
+      "finding": "EJS/runtime full YouTube support; FFmpeg/ffprobe merging/postprocessing rather than unconditional resolver necessity"
+    },
+    {
+      "url": "https://github.com/yt-dlp/yt-dlp/wiki/EJS",
+      "finding": "Deno recommended, Node explicitly enabled; runtime permission and remote-component choices require review"
+    },
+    {
+      "url": "https://www.youtube.com/static?template=terms",
+      "finding": "Service restrictions on automated access and content use; embeddable player permitted within terms; extraction permission not established"
+    },
+    {
+      "url": "https://v2.tauri.app/develop/sidecar/",
+      "finding": "Bundling external binaries documented; not a determination of binary licence compliance"
+    },
+    {
+      "url": "https://v2.tauri.app/distribute/sign/windows/",
+      "finding": "Windows signing/reputation trade-offs relevant to public distribution; no paid signing assumed"
+    }
+  ],
+  "limits": [
+    "No yt-dlp execution or source playback this audit",
+    "Prior source links use mutable branches and retrieval caches vary",
+    "No whole-dependency or legal clearance",
+    "No runtime, installer or codec certification"
+  ]
+}

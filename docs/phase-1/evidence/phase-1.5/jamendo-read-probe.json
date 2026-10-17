@@ -1,0 +1,10 @@
+{
+  "checkedAt": "2026-10-17T13:42:52.945Z",
+  "request": "GET https://api.jamendo.com/v3.0/tracks/?client_id=709fa152&format=json&limit=1&audioformat=mp32",
+  "authority": "Official documentation test client ID, read API only",
+  "audioRequested": false,
+  "error": {
+    "name": "TypeError",
+    "message": "fetch failed"
+  }
+}

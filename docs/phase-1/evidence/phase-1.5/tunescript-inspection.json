@@ -1,0 +1,103 @@
+{
+  "checkedAt": "2026-10-17T13:42:52.943Z",
+  "root": "D:/CODING/Extensions/tunescript",
+  "manifestVersion": "1.3.2",
+  "gitIdentity": "git -C denied by filesystem access; no commit identity asserted",
+  "licenseCandidates": [],
+  "packageManifests": [],
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 8374,
+      "sha256": "18484b5c1d210fd9384a773007758ad8b932fa8d9234a827ff85b9bca86bad74"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 1823,
+      "sha256": "8b6f7283f3e7e3f45e0e16841810ab698071d703cf1c5ea76c552c37208aef12"
+    },
+    {
+      "path": "shared/constants.js",
+      "bytes": 9487,
+      "sha256": "d64eabb482cb08b067efc9e2e11c076754be63a516660334be4a00bda476695f"
+    },
+    {
+      "path": "shared/request.js",
+      "bytes": 2086,
+      "sha256": "a7f0864c152333b9bc71b02f96c61f98cbf2d823fc24de1aaec007919f8dd80f"
+    },
+    {
+      "path": "shared/gemini.js",
+      "bytes": 8595,
+      "sha256": "ab1a77b5a3caf327f081e0ea5a64f230acf5b152f1ea9c52a293e1a570e3ed88"
+    },
+    {
+      "path": "shared/script-comparison.js",
+      "bytes": 10338,
+      "sha256": "2b8ac93784706139cd773136caecfaa120b3661a2d496bb274c7edafad4cdb20"
+    },
+    {
+      "path": "shared/cache.js",
+      "bytes": 3119,
+      "sha256": "13723011eaf379f5762aacdafd5d067c2c07ece53378ddd49f0e13a75ac5bc6b"
+    },
+    {
+      "path": "shared/lyrics.js",
+      "bytes": 3387,
+      "sha256": "2ba2ceebb4e06fc57edfea333f45d88461d17096ffca342a87bf85bf392c8cb1"
+    },
+    {
+      "path": "shared/providers.js",
+      "bytes": 14014,
+      "sha256": "aa5aa4ad82700e0918917c57cc1d1f17758e8773cb199e00b04e35e705fc5601"
+    },
+    {
+      "path": "shared/matching.js",
+      "bytes": 6724,
+      "sha256": "94c18ba48de08a9261910c61596069c9bec20664e9094501ec4af0ac1ab9bf19"
+    },
+    {
+      "path": "shared/lrclib.js",
+      "bytes": 7242,
+      "sha256": "43a675371ae02458043ba5e4cd02eaef32856f53814db982e3e25f629c3da383"
+    },
+    {
+      "path": "background/request-service.js",
+      "bytes": 15009,
+      "sha256": "ce0a8500a57e16828f0c9612ad098422f22bafbbf5c24b8769a900c6400338db"
+    },
+    {
+      "path": "content/main.js",
+      "bytes": 33145,
+      "sha256": "74d537a0da555a2c47ea35b74d0d811ee5bab1f95b47ac98a9b66c8d786a8185"
+    },
+    {
+      "path": "docs/LANGUAGES.md",
+      "bytes": 2140,
+      "sha256": "d23cad7e32fd238b2b0f6928156f476e513464526444e845eeb281d10db29611"
+    },
+    {
+      "path": "docs/PRIVACY.md",
+      "bytes": 3167,
+      "sha256": "53c589c34108befe39bfd20964aba5748d5f32c70a0932c4b4d8373fdcd7add9"
+    },
+    {
+      "path": "docs/VALIDATION.md",
+      "bytes": 6591,
+      "sha256": "c0461e9aa5c297232e4d8a49b997fff25d403929564b032409def3e7052fbec2"
+    },
+    {
+      "path": "docs/PROVIDERS.md",
+      "bytes": 10820,
+      "sha256": "6f8374f5930957f924e31a401c40c439562e68e6ec48b612fd83c7d012810cbc"
+    }
+  ],
+  "excluded": [
+    ".git",
+    "build",
+    "work",
+    "node_modules",
+    ".env"
+  ],
+  "execution": "No source, tests, browser extension or Gemini calls executed"
+}

@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-10-17T20:15:32.1125742+05:30",
+  "method": "Read-only Get-Command, existing node/pnpm version queries, vswhere component query and filesystem inventory; no compiler or resolver execution",
+  "node": {
+    "version": "v24.15.0",
+    "path": "C:\\Program Files\\nodejs\\node.exe"
+  },
+  "packageManager": {
+    "pnpmVersion": "12.11.2",
+    "pnpmPath": "C:\\Users\\ARUSH\\AppData\\Roaming\\npm\\pnpm.ps1",
+    "npmCommandPresent": true
+  },
+  "rust": {
+    "pathCommandsFound": [],
+    "standardUserRustcPresent": false,
+    "standardUserCargoPresent": false,
+    "alternateLocationsNotExhaustivelySearched": true
+  },
+  "msvc": {
+    "displayName": "Visual Studio Build Tools 2022",
+    "installationVersion": "17.14.36301.6",
+    "isComplete": true,
+    "vcX86X64ComponentReported": true,
+    "compilerPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\cl.exe",
+    "compilerFileVersion": "19.44.35211.0",
+    "compilerOnOrdinaryPath": false,
+    "compilerInvoked": false
+  },
+  "windowsSdk": {
+    "include": [
+      "10.0.22621.0"
+    ],
+    "lib": [
+      "10.0.22621.0"
+    ],
+    "rcExe": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x64\\rc.exe",
+    "linkTestPerformed": false
+  },
+  "webView2": {
+    "directoryEntries": [
+      "155.0.4283.62",
+      "SetupMetrics"
+    ],
+    "runtimeInitializationTested": false
+  },
+  "installationPerformed": false,
+  "nativeBuildAttempted": false,
+  "playbackTested": false
+}

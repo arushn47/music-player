@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-10-17T13:50:54.567Z",
+  "localLinksChecked": 160,
+  "brokenLinks": [],
+  "tunescriptSourceUnchanged": true,
+  "originalEvidenceUnchanged": true,
+  "changedPlanningDocuments": [
+    "01-research-report.md",
+    "02-prd.md",
+    "03-feature-prioritization.md",
+    "04-architecture.md",
+    "05-source-feasibility.md",
+    "06-lyrics-system.md",
+    "07-ui-ux.md",
+    "08-licensing-risks.md",
+    "09-roadmap.md",
+    "10-decisions.md",
+    "11-installed-nuclear-investigation.md",
+    "README.md"
+  ],
+  "newFiles": [
+    "baseline-audit.json",
+    "jamendo-read-probe.json",
+    "link-validation.json",
+    "primary-source-review.json",
+    "toolchain-observation.json",
+    "tunescript-inspection.json"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "identifier": "main",
+  "description": "Local Lumaire window; no shell, network, SQL or general filesystem plugin access.",
+  "windows": ["main"],
+  "permissions": ["core:default", "core:window:allow-destroy"]
+}
