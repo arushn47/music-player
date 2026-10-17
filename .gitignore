@@ -6,3 +6,18 @@ src-tauri/target/
 test-results/
 *.log
 *.tsbuildinfo
+
+# Tooling & metadata
+.freebuff/
+
+# Environment files
+.env
+.env*.local
+
+# IDE & Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
