@@ -1,7 +1,13 @@
-import { useState } from "react";
-import { library } from "../adapters/native";
-import type { Track } from "../domain/types";
-import { Artwork } from "./Artwork";
+import { library } from "../../adapters/native";
+import type { Track } from "../../domain/types";
+import { Artwork } from "../common/Artwork";
+
+export interface CommonsDiscoveryState {
+  query: string;
+  results: Track[];
+  loading: boolean;
+  error: string;
+}
 
 export function CommonsDiscovery({
   save,
@@ -9,17 +15,20 @@ export function CommonsDiscovery({
   queue,
   playlist,
   pending,
+  state,
+  onStateChange,
 }: {
   save: (track: Track, play: boolean) => void;
   download: (track: Track) => void;
   queue: (track: Track, next: boolean) => void;
   playlist: (track: Track) => void;
   pending: Record<string, string>;
+  state: CommonsDiscoveryState;
+  onStateChange: (
+    update: (current: CommonsDiscoveryState) => CommonsDiscoveryState,
+  ) => void;
 }) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { query, results, loading, error } = state;
   return (
     <section className="settings-card commons-discovery">
       <h2>Open music · Wikimedia Commons</h2>
@@ -31,20 +40,43 @@ export function CommonsDiscovery({
         className="button-row"
         onSubmit={(event) => {
           event.preventDefault();
-          setLoading(true);
-          setError("");
+          onStateChange((current) => ({
+            ...current,
+            loading: true,
+            error: "",
+          }));
           void library
             .searchCommons(query)
-            .then(setResults)
-            .catch((error) => setError(String(error)))
-            .finally(() => setLoading(false));
+            .then((nextResults) =>
+              onStateChange((current) => ({
+                ...current,
+                results: nextResults,
+              })),
+            )
+            .catch((nextError) =>
+              onStateChange((current) => ({
+                ...current,
+                error: String(nextError),
+              })),
+            )
+            .finally(() =>
+              onStateChange((current) => ({
+                ...current,
+                loading: false,
+              })),
+            );
         }}
       >
         <label className="search">
           <input
             aria-label="Search open music"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) =>
+              onStateChange((current) => ({
+                ...current,
+                query: event.target.value,
+              }))
+            }
             placeholder="Search licensed audio"
             minLength={2}
             required

@@ -11,6 +11,7 @@ export class AndroidPlaybackController {
   private timer: ReturnType<typeof setInterval> | null = null;
   private polling = false;
   private preciseClock = false;
+  private failedLoad = false;
 
   constructor() {
     document.addEventListener("visibilitychange", () => {
@@ -33,7 +34,7 @@ export class AndroidPlaybackController {
         : null;
   }
   private async poll() {
-    if (this.polling || this.state.status === "loading") return;
+    if (this.polling || this.state.status === "loading" || this.failedLoad) return;
     this.polling = true;
     const generation = this.generation;
     try {
@@ -56,8 +57,10 @@ export class AndroidPlaybackController {
       });
       if (generation === this.generation) this.update(state);
     } catch (error) {
-      if (generation === this.generation)
+      if (generation === this.generation) {
+        if (action === "load") this.failedLoad = true;
         this.update({ ...this.state, status: "error", error: String(error) });
+      }
     }
   }
   subscribe(fn: (state: Playback) => void) {
@@ -75,6 +78,7 @@ export class AndroidPlaybackController {
   }
   async load(id: string, autoplay = false, position = 0) {
     const generation = ++this.generation;
+    this.failedLoad = false;
     this.ended = false;
     this.update({
       status: "loading",
@@ -118,6 +122,7 @@ export class AndroidPlaybackController {
   }
   stop() {
     ++this.generation;
+    this.failedLoad = false;
     void this.command("stop");
   }
 }

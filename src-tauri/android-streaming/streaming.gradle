@@ -1,0 +1,42 @@
+// Applied only by Android builds. `-PlumaireStreaming=false` removes the runtime.
+def flag = project.findProperty('lumaireStreaming')
+def enabled = flag == null ? true : flag.toString().toBoolean()
+def runtimeRoot = project.ext.lumaireStreamingRoot as File
+android.defaultConfig.buildConfigField 'boolean', 'HAS_ANDROID_STREAMING', enabled.toString()
+android.defaultConfig.manifestPlaceholders['lumaireStreamingEnabled'] = enabled.toString()
+if (enabled) {
+    apply plugin: 'com.chaquo.python'
+    def repo = runtimeRoot.parentFile.parentFile
+    def cache = new File(repo, '.tools/android-streaming')
+    def prepareRuntime = tasks.register('prepareStreamingRuntime', Sync) {
+        from(cache) { include 'yt_dlp-2026.8.19-py3-none-any.whl', 'yt_dlp_ejs-0.8.0-py3-none-any.whl'; into 'assets/python-wheels' }
+        from(new File(cache, 'qjs-build/qjs')) { into 'jniLibs/arm64-v8a'; rename { 'libqjs.so' } }
+        from(new File(repo, 'THIRD_PARTY_LICENSES.txt')) { into 'assets/licenses' }
+        from(new File(repo, 'THIRD_PARTY_NOTICES.md')) { into 'assets/licenses' }
+        into layout.buildDirectory.dir('generated/streaming')
+        doFirst {
+            ['yt_dlp-2026.8.19-py3-none-any.whl', 'yt_dlp_ejs-0.8.0-py3-none-any.whl', 'qjs-build/qjs'].each {
+                if (!new File(cache, it).exists()) throw new GradleException('Run node scripts/android-runtime-prepare.mjs first. Missing ' + it)
+            }
+        }
+    }
+    tasks.named('preBuild').configure { dependsOn prepareRuntime }
+    android {
+        defaultConfig { ndk { abiFilters 'arm64-v8a' } }
+        packaging { jniLibs { useLegacyPackaging = true } }
+        sourceSets.main {
+            java.srcDir new File(runtimeRoot, 'src/main/java')
+            assets.srcDir new File(runtimeRoot, 'src/main/assets')
+            assets.srcDir layout.buildDirectory.dir('generated/streaming/assets').get().asFile
+            jniLibs.srcDir layout.buildDirectory.dir('generated/streaming/jniLibs').get().asFile
+        }
+    }
+    chaquopy {
+        defaultConfig {
+            version = '3.11'
+            def python = project.findProperty('buildPython') ?: System.getenv('LUMAIRE_BUILD_PYTHON')
+            if (python) { buildPython python.toString() } else { buildPython 'py', '-3.11' }
+        }
+        sourceSets.main.srcDir new File(runtimeRoot, 'src/main/python')
+    }
+}

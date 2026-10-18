@@ -383,16 +383,23 @@ try {
         })
         .click();
       await page.getByText("காலை ஒளி", { exact: true }).waitFor();
+      await page
+        .getByRole("button", { name: "Lyrics settings", exact: true })
+        .click();
       pick("lyrics", "Morning light.latin.txt");
       await page
-        .getByRole("button", { name: "Attach supplied Latin", exact: true })
+        .getByRole("button", {
+          name: /^(Attach|Replace) supplied Latin$/,
+        })
         .click();
       await page
         .getByRole("button", { name: "Confirm matching lines" })
         .click();
       pick("lyrics", "Morning light.english.txt");
       await page
-        .getByRole("button", { name: "Attach supplied English", exact: true })
+        .getByRole("button", {
+          name: /^(Attach|Replace) supplied English$/,
+        })
         .click();
       await page
         .getByRole("button", { name: "Confirm matching lines" })

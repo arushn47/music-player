@@ -18,6 +18,7 @@ fn allowed(url: &reqwest::Url) -> bool {
                     | "i.scdn.co"
                     | "upload.wikimedia.org"
                     | "coverartarchive.org"
+                    | "lastfm-img.freetls.fastly.net"
                     | "archive.org"
             ) || host.ends_with(".archive.org")
         })

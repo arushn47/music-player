@@ -1,0 +1,35 @@
+// Run with Gradle --init-script; this does not modify app dependency resolution.
+gradle.projectsEvaluated {
+    rootProject.tasks.register('auditAndroidRuntime') {
+        doLast {
+            def app = rootProject.project(':app')
+            def repo = rootProject.file('../../..')
+            def cache = new File(gradle.gradleUserHomeDir, 'caches/modules-2/files-2.1')
+            def components = app.configurations.getByName('arm64DebugRuntimeClasspath').incoming.resolutionResult.allComponents
+            def entries = components.findAll { it.moduleVersion != null }.collect { component ->
+                def id = component.moduleVersion
+                def directory = new File(cache, "${id.group}/${id.name}/${id.version}")
+                def pom = directory.exists() ? app.fileTree(directory).matching { include '**/*.pom' }.files.find() : null
+                def licenses = []
+                if (pom) {
+                    def xml = new groovy.xml.XmlSlurper().parse(pom)
+                    licenses = xml.licenses.license.collect { [name: it.name.text(), url: it.url.text()] }
+                    for (int depth = 0; licenses.isEmpty() && xml.parent.size() && depth < 5; depth++) {
+                        def parent = xml.parent
+                        def parentDir = new File(cache, "${parent.groupId.text()}/${parent.artifactId.text()}/${parent.version.text()}")
+                        def parentPom = parentDir.exists() ? app.fileTree(parentDir).matching { include '**/*.pom' }.files.find() : null
+                        if (!parentPom) break
+                        xml = new groovy.xml.XmlSlurper().parse(parentPom)
+                        licenses = xml.licenses.license.collect { [name: it.name.text(), url: it.url.text(), inherited: true] }
+                    }
+                }
+                [component: id.toString(),
+                 pomSha256: pom ? java.security.MessageDigest.getInstance('SHA-256').digest(pom.bytes).encodeHex().toString() : null,
+                 licenses: licenses, projectDependency: !directory.exists()]
+            }.sort { it.component }
+            def output = new File(repo, 'test-results/android-runtime-dependencies.json')
+            output.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(entries))
+            println "Audited ${entries.size()} runtime artifacts: ${output}"
+        }
+    }
+}

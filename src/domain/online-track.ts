@@ -18,6 +18,7 @@ export function cleanVideoTitle(value: string): string {
       "",
     )
     .split(/\s*[|｜]\s*/)[0]
+    .replace(/\s+(?:[-–—]\s*)?lyrical(?:\s*[([](?:Tamil|Telugu|Hindi|Malayalam|Kannada|Bengali|Punjabi)[)\]])?\s*$/i, "")
     .replace(
       /\s+(?:[-–—]\s*)?(?:official\s+(?:music\s+)?(?:video|audio)|(?:official\s+)?lyric(?:s)?(?:\s+video)?|visuali[sz]er)(?:\s*[-–—])?\s*$/i,
       "",

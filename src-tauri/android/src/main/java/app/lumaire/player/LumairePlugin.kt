@@ -26,6 +26,7 @@ import java.util.concurrent.Executors
 @TauriPlugin
 class LumairePlugin(private val activity: Activity) : Plugin(activity) {
     private var controller: MediaController? = null
+    private val resolver = ResolverClient(activity.applicationContext)
     private val io = Executors.newSingleThreadExecutor()
     private var connecting = false
     private val waiting = mutableListOf<Pair<Invoke, (MediaController) -> Unit>>()
@@ -66,8 +67,11 @@ class LumairePlugin(private val activity: Activity) : Plugin(activity) {
         })
         put("time", player.currentPosition.coerceAtLeast(0).toDouble() / 1000)
         put("duration", if (player.duration == C.TIME_UNSET) 0.0 else player.duration.coerceAtLeast(0).toDouble()/1000)
-        put("error", if (failure != null) "Android could not play this audio. Check the source or try another file." else org.json.JSONObject.NULL)
+        val http = failure?.let { generateSequence(it.cause) { cause -> cause.cause }
+            .filterIsInstance<androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException>().firstOrNull() }
+        put("error", if (failure != null) "Android could not play this audio (${http?.let { "HTTP ${it.responseCode}" } ?: failure.errorCodeName}). Try the source again." else org.json.JSONObject.NULL)
         put("id", player.currentMediaItem?.mediaId ?: "")
+        put("seekable", player.isCurrentMediaItemSeekable)
     }
 
     @Command
@@ -79,6 +83,7 @@ class LumairePlugin(private val activity: Activity) : Plugin(activity) {
                     val uri = Uri.parse(args.getString("uri"))
                     // The only caller is the Rust adapter, which resolves stored IDs.
                     require(uri.scheme == "file" || uri.scheme == "https")
+                    ScopedHttpHeaders.register(uri, args.optJSONObject("headers"))
                     val media = MediaItem.Builder().setMediaId(args.getString("id") ?: "")
                         .setUri(uri).setMediaMetadata(MediaMetadata.Builder()
                             .setTitle(args.getString("title")).setArtist(args.getString("artist")).build()).build()
@@ -95,6 +100,46 @@ class LumairePlugin(private val activity: Activity) : Plugin(activity) {
                 else -> { invoke.reject("Unknown audio command."); return@withPlayer }
             }
             invoke.resolve(state(player))
+        }
+    }
+
+    @Command
+    fun resolveSource(invoke: Invoke) {
+        val args = invoke.getArgs()
+        if (args.optString("operation") == "probe") {
+            // Availability must not start/cancel the single active resolver.
+            // A restored local track can load concurrently during app startup.
+            val wheels = activity.assets.list("python-wheels").orEmpty().toSet()
+            val available = BuildConfig.HAS_ANDROID_STREAMING &&
+                File(activity.applicationInfo.nativeLibraryDir, "libqjs.so").isFile &&
+                wheels.contains("yt_dlp-2026.8.19-py3-none-any.whl") &&
+                wheels.contains("yt_dlp_ejs-0.8.0-py3-none-any.whl")
+            invoke.resolve(JSObject().apply { put("available", available) })
+            return
+        }
+        activity.runOnUiThread {
+            resolver.request(args) { result, error ->
+                if (error != null) invoke.reject(error) else invoke.resolve(JSObject(result.toString()))
+            }
+        }
+    }
+
+    @Command
+    fun cancelResolution(invoke: Invoke) {
+        activity.runOnUiThread { resolver.cancel(); invoke.resolve() }
+    }
+
+    @Command
+    fun resolverDiagnostics(invoke: Invoke) {
+        activity.runOnUiThread {
+            if (!BuildConfig.DEBUG) invoke.reject("Resolver diagnostics require a debug build.")
+            else {
+                val stats = activity.getSystemService(android.app.usage.StorageStatsManager::class.java)
+                    .queryStatsForPackage(android.os.storage.StorageManager.UUID_DEFAULT, activity.packageName, android.os.Process.myUserHandle())
+                invoke.resolve(JSObject(resolver.lastDiagnostic.toString()).apply {
+                    put("installedAppBytes", stats.appBytes); put("dataBytes", stats.dataBytes); put("cacheBytes", stats.cacheBytes)
+                })
+            }
         }
     }
 
@@ -191,7 +236,7 @@ class LumairePlugin(private val activity: Activity) : Plugin(activity) {
 
     override fun onDestroy() {
         // Release this Activity's controller, not the service's active player.
-        activity.runOnUiThread { controller?.release(); controller = null }
+        activity.runOnUiThread { resolver.cancel(); controller?.release(); controller = null }
         io.shutdown()
     }
 }

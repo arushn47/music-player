@@ -4,6 +4,20 @@ Generated from the resolved lockfiles. This inventory does not grant rights to a
 
 ## JavaScript dependencies
 
+Android streaming integration: Chaquopy 17.1.0 embeds Python 3.11.17-0;
+yt-dlp 2026.8.19, EJS 0.8.0 and QuickJS-NG 0.17.0 are bundled at build time.
+Canonical implementation and notice texts live in `src-tauri/android-streaming`.
+Chaquopy/QuickJS use MIT; CPython uses PSF and incorporated notices; the yt-dlp
+wheel uses Unlicense and EJS includes Unlicense/MIT/ISC notices. Python's native
+dependencies include OpenSSL (Apache-2.0), libffi (MIT), bzip2, public-domain
+liblzma/SQLite, and certificate data with MPL-2.0 notices/source requirements.
+Their notices, this inventory and THIRD_PARTY_LICENSES.txt are packaged in Android
+assets. No FFmpeg, Termux, GPL Android wrapper or PyInstaller executable is added.
+The exact resolved Android Java dependency inventory and ELF audit are generated
+under `test-results/android-runtime-dependencies.json` and
+`test-results/android-integrated-alignment.json`. Runtime code updates require a
+new APK; no external runtime/script component download is enabled.
+
 Android prototype: Jetpack Media3 ExoPlayer and MediaSession 1.8.0 are used
 under Apache-2.0. Their source and notices are maintained in
 [AndroidX Media](https://github.com/androidx/media). AndroidX, Tauri Android,

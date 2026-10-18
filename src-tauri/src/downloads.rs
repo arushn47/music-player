@@ -251,10 +251,15 @@ pub async fn download_track(app: tauri::AppHandle, id: String) -> Result<Track> 
     let youtube = source.provider_id == "youtube";
     let (url, extension) = if youtube {
         let audio = crate::ytdlp::download_audio(source.source_id.clone()).await?;
-        if audio.container.as_deref() != Some("m4a") {
-            return Err("This video has no supported M4A audio download.".into());
-        }
-        (audio.stream_url, "m4a")
+        let extension = match audio.container.as_deref() {
+            Some("m4a") => "m4a",
+            // YouTube's public Android client may only expose a progressive
+            // MP4 when the normal web client is bot-challenged. It remains
+            // directly playable offline and is safe to store as MP4.
+            Some("mp4") => "mp4",
+            _ => return Err("This video has no supported offline audio stream.".into()),
+        };
+        (audio.stream_url, extension)
     } else if source.provider_id == "wikimedia-commons" {
         let media = resolve_commons_audio(source.source_id.clone()).await?;
         if let Some(source) = track.source.as_mut() {

@@ -24,6 +24,19 @@ afterEach(() => {
 });
 
 describe("Android native playback ownership", () => {
+  it("keeps a failed online lookup visible while the old native track is still playing", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce(new Error("Source unavailable"));
+    const player = new AndroidPlaybackController();
+    const unsubscribe = player.subscribe(() => {});
+    await player.load("youtube:___________", true);
+    vi.mocked(invoke).mockResolvedValue(playing);
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(player.state.status).toBe("error");
+    expect(player.state.error).toContain("Source unavailable");
+    await player.load("local-one", true);
+    expect(player.state.status).toBe("playing");
+    unsubscribe();
+  });
   it("restores an already playing service without pausing or reloading its audio", async () => {
     vi.mocked(invoke).mockResolvedValue({
       ...playing,

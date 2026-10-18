@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     env, fs,
     path::{Path, PathBuf},
-    sync::{Mutex, OnceLock},
+    sync::Mutex,
     time::Duration,
 };
 use tauri::{AppHandle, Manager, State};
@@ -18,17 +18,14 @@ mod android;
 mod artwork_cache;
 mod downloads;
 mod itunes_metadata;
+mod lastfm_metadata;
+mod listening;
 mod lyric_identity;
 mod lyrics_provider;
 mod private_settings;
 mod provider_http;
-mod spotify;
 mod translation;
 mod ytdlp;
-
-use spotify::SpotifyClient;
-
-static SPOTIFY_CLIENT: OnceLock<SpotifyClient> = OnceLock::new();
 
 struct Store(Mutex<Connection>);
 
@@ -166,7 +163,7 @@ fn initialize(db: &mut Connection) -> Result<()> {
     let version: i64 = db
         .query_row("PRAGMA user_version", [], |r| r.get(0))
         .map_err(err)?;
-    if version > 1 {
+    if version > 2 {
         return Err(
             "This library was created by a newer Lumaire version. Your data has been preserved."
                 .into(),
@@ -175,7 +172,9 @@ fn initialize(db: &mut Connection) -> Result<()> {
     let tx = db.transaction().map_err(err)?;
     tx.execute_batch("CREATE TABLE IF NOT EXISTS tracks (id TEXT PRIMARY KEY, path TEXT UNIQUE, metadata TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS app_state (id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL);
-      PRAGMA user_version=1;").map_err(err)?;
+      ").map_err(err)?;
+    listening::initialize(&tx)?;
+    tx.execute_batch("PRAGMA user_version=2;").map_err(err)?;
     tx.commit().map_err(err)
 }
 
@@ -664,6 +663,7 @@ fn save_remote(db: &Connection, mut track: Track) -> Result<Track> {
                             | "i.scdn.co"
                             | "upload.wikimedia.org"
                             | "coverartarchive.org"
+                            | "lastfm-img.freetls.fastly.net"
                     )
                 )
         })
@@ -1056,26 +1056,6 @@ fn canonical_metadata(
 }
 
 #[tauri::command]
-async fn spotify_search_track(
-    title: String,
-    artist: String,
-    duration: f64,
-) -> Result<Option<spotify::SpotifyMetadata>> {
-    if !duration.is_finite() || title.len() > 2000 || artist.len() > 2000 {
-        return Err("Invalid metadata lookup information.".into());
-    }
-    let (artist, title) = clean_artist_for_lyrics(&artist, &title);
-    let client = SPOTIFY_CLIENT.get().ok_or_else(|| {
-        "Spotify client not initialized. Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET environment variables.".to_string()
-    })?;
-
-    client
-        .search_track(&title, &artist, duration)
-        .await
-        .map_err(|e| e.to_string())
-}
-
-#[tauri::command]
 async fn lookup_metadata(
     title: String,
     artist: String,
@@ -1089,12 +1069,22 @@ async fn lookup_metadata(
     if clean_title.is_empty() {
         return Ok(None);
     }
+    let partial = match lastfm_metadata::lookup(&clean_title, &clean_artist, duration).await {
+        Ok(Some(metadata)) if !metadata.album.is_empty() => return Ok(Some(metadata)),
+        Ok(metadata) => metadata,
+        Err(error) => { eprintln!("[Metadata] {error} Trying MusicBrainz."); None },
+    };
     match itunes_metadata::lookup(&clean_title, &clean_artist, duration).await {
         Ok(Some(metadata)) => return Ok(Some(metadata)),
         Ok(None) => (),
         Err(error) => eprintln!("[Metadata] {error} Trying MusicBrainz."),
     }
-    lookup_musicbrainz(clean_title, clean_artist, duration).await
+    match lookup_musicbrainz(clean_title, clean_artist, duration).await {
+        Ok(Some(metadata)) => Ok(Some(metadata)),
+        Ok(None) => Ok(partial),
+        Err(_) if partial.is_some() => Ok(partial),
+        Err(error) => Err(error),
+    }
 }
 
 async fn lookup_musicbrainz(
@@ -1357,20 +1347,6 @@ async fn import_library(app: AppHandle) -> Result<Option<Snapshot>> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Initialize Spotify client from environment variables
-    if let (Ok(client_id), Ok(client_secret)) = (
-        std::env::var("SPOTIFY_CLIENT_ID"),
-        std::env::var("SPOTIFY_CLIENT_SECRET"),
-    ) {
-        let client = SpotifyClient::new(client_id, client_secret);
-        if SPOTIFY_CLIENT.set(client).is_ok() {
-            eprintln!("[Spotify] Client initialized from environment variables");
-        }
-    } else {
-        eprintln!("[Spotify] Client ID/Secret not found in environment. Spotify metadata will not be available.");
-        eprintln!("[Spotify] Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to enable.");
-    }
-
     #[allow(unused_mut)]
     let mut context = tauri::generate_context!();
     #[cfg(debug_assertions)]
@@ -1413,6 +1389,9 @@ pub fn run() {
             media_path,
             relink_audio,
             save_session,
+            listening::get_listening_history,
+            listening::checkpoint_listening,
+            listening::clear_listening_history,
             remove_track,
             artwork_cache::cached_artwork,
             downloads::download_track,
@@ -1425,7 +1404,6 @@ pub fn run() {
             pick_lyrics,
             fetch_lyrics,
             lookup_metadata,
-            spotify_search_track,
             export_library,
             import_library,
             search_commons_audio,
@@ -1434,6 +1412,7 @@ pub fn run() {
             ytdlp::ytdlp_search,
             ytdlp::ytdlp_get_stream,
             android::android_playback,
+            android::android_source,
             android::android_demo_track
         ])
         .run(context)

@@ -1,6 +1,6 @@
 import { FolderOpen, ListMusic } from "lucide-react";
-import type { Collection } from "../domain/collections";
-import { Artwork } from "./Artwork";
+import type { Collection } from "../../domain/collections";
+import { Artwork } from "../common/Artwork";
 
 export function Collections({
   collections,

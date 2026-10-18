@@ -110,6 +110,31 @@ fn run_ytdlp(args: &[&str]) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }
 
+fn run_ytdlp_with_client(args: &[&str], client: &str) -> Result<String, String> {
+    let mut owned = args
+        .iter()
+        .map(|arg| (*arg).to_string())
+        .collect::<Vec<_>>();
+    owned.push("--extractor-args".to_string());
+    owned.push(format!("youtube:player_client={client}"));
+    let refs = owned.iter().map(String::as_str).collect::<Vec<_>>();
+    run_ytdlp(&refs)
+}
+
+fn is_youtube_verification_error(error: &str) -> bool {
+    let lower = error.to_ascii_lowercase();
+    lower.contains("sign in to confirm")
+        || lower.contains("not a bot")
+        || lower.contains("confirm you're not a bot")
+}
+
+fn friendly_stream_error(error: String) -> String {
+    if is_youtube_verification_error(&error) {
+        return "YouTube asked for verification and did not provide a playable stream. Try another upload or retry later.".into();
+    }
+    error
+}
+
 fn parse_ndjson_entries(stdout: &str) -> Vec<YtdlpJson> {
     stdout
         .lines()
@@ -186,6 +211,7 @@ fn is_likely_music(result: &YtdlpSearchResult) -> bool {
     .iter()
     .any(|label| title.contains(label))
         || words.contains(&"lyrics")
+        || words.contains(&"lyrical")
         || channel.ends_with(" - topic")
         || channel.ends_with("vevo")
         || (title.contains(" - ")
@@ -207,14 +233,21 @@ fn search(query: String, max_results: Option<u32>) -> Result<Vec<YtdlpSearchResu
     debug!("[yt-dlp] Searching: {} (limit: {})", query, limit);
 
     let search_url = format!("ytsearch{}:{}", limit, query);
-    let stdout = run_ytdlp(&[
+    let args = [
         "--ignore-config",
         "--skip-download",
         "--dump-json",
         "--flat-playlist",
         "--no-warnings",
         &search_url,
-    ])?;
+    ];
+    let stdout = match run_ytdlp(&args) {
+        Ok(stdout) => stdout,
+        Err(error) if is_youtube_verification_error(&error) => {
+            run_ytdlp_with_client(&args, "android").map_err(friendly_stream_error)?
+        }
+        Err(error) => return Err(friendly_stream_error(error)),
+    };
 
     let all_results: Vec<YtdlpSearchResult> = parse_ndjson_entries(&stdout)
         .into_iter()
@@ -301,7 +334,7 @@ fn resolve_audio(video_id: String, format: &str) -> Result<YtdlpStreamInfo, Stri
 
     debug!("[yt-dlp] Getting stream for: {}", url);
 
-    let stdout = run_ytdlp(&[
+    let args = [
         "--ignore-config",
         "--skip-download",
         "-f",
@@ -316,7 +349,34 @@ fn resolve_audio(video_id: String, format: &str) -> Result<YtdlpStreamInfo, Stri
         "--no-playlist",
         "--no-warnings",
         &url,
-    ])?;
+    ];
+
+    let stdout = match run_ytdlp(&args) {
+        Ok(stdout) => stdout,
+        Err(error) if is_youtube_verification_error(&error) => {
+            // YouTube may challenge the default web client. The public Android
+            // client often still exposes a progressive audio-bearing format;
+            // use it only for this source and only after the normal path fails.
+            let fallback_args = [
+                "--ignore-config",
+                "--skip-download",
+                "-f",
+                "best[acodec!=none]/bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
+                "--socket-timeout",
+                "10",
+                "--retries",
+                "2",
+                "--extractor-retries",
+                "2",
+                "--dump-json",
+                "--no-playlist",
+                "--no-warnings",
+                &url,
+            ];
+            run_ytdlp_with_client(&fallback_args, "android").map_err(friendly_stream_error)?
+        }
+        Err(error) => return Err(friendly_stream_error(error)),
+    };
 
     let info: YtdlpJson = serde_json::from_str(&stdout).map_err(|error| {
         error!("[yt-dlp] Failed to parse output: {}", error);
@@ -386,11 +446,32 @@ mod tests {
     }
     #[test]
     fn recognizes_topic_vevo_and_explicit_music_labels() {
+        assert!(is_likely_music(&entry(
+            "Alaakaa Loova Lyrical (Tamil) | OM | Dhanush",
+            "Divo Music and 3 more"
+        )));
         assert!(is_likely_music(&entry("Snowman", "Sia - Topic")));
         assert!(is_likely_music(&entry("Sia - Snowman", "SiaVEVO")));
         assert!(is_likely_music(&entry(
             "Sia - Snowman (Official Audio)",
             "Sia"
         )));
+    }
+
+    #[test]
+    fn recognizes_youtube_verification_errors_without_requiring_cookies() {
+        assert!(is_youtube_verification_error(
+            "Sign in to confirm you're not a bot"
+        ));
+        assert!(is_youtube_verification_error(
+            "Please verify you are not a bot"
+        ));
+        assert!(!is_youtube_verification_error(
+            "Requested format is not available"
+        ));
+        assert_eq!(
+            friendly_stream_error("Sign in to confirm you're not a bot".into()),
+            "YouTube asked for verification and did not provide a playable stream. Try another upload or retry later."
+        );
     }
 }

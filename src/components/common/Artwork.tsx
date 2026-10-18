@@ -1,7 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { convertFileSrc, invoke, isTauri } from "@tauri-apps/api/core";
 import { Music2 } from "lucide-react";
+
 const pending = new Map<string, Promise<string | null>>();
+
+function displayArtworkUrl(url?: string | null) {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== "i.ytimg.com") return url;
+    const match = parsed.pathname.match(/^\/vi(?:_webp)?\/([\w-]{11})\//);
+    return match ? `https://i.ytimg.com/vi/${match[1]}/mqdefault.jpg` : url;
+  } catch {
+    return url;
+  }
+}
+
 function cached(url: string) {
   let request = pending.get(url);
   if (!request) {
@@ -14,13 +28,16 @@ function cached(url: string) {
   return request;
 }
 
+export interface ArtworkProps {
+  url?: string | null;
+  className?: string;
+}
+
 export function Artwork({
   url,
   className = "",
-}: {
-  url?: string | null;
-  className?: string;
-}) {
+}: ArtworkProps) {
+  const displayUrl = displayArtworkUrl(url);
   const [failed, setFailed] = useState<string | null>(null);
   const [local, setLocal] = useState<{ url: string; path: string } | null>(
     null,
@@ -28,6 +45,7 @@ export function Artwork({
   const [visible, setVisible] = useState(false);
   const [fallback, setFallback] = useState<string | null>(null);
   const ref = useRef<HTMLSpanElement>(null);
+
   useEffect(() => {
     if (!ref.current) return;
     const observer = new IntersectionObserver(
@@ -42,32 +60,34 @@ export function Artwork({
     observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
+
   useEffect(() => {
     let cancelled = false;
-    if (url && visible && isTauri())
-      void cached(url).then((path) => {
+    if (displayUrl && visible && isTauri())
+      void cached(displayUrl).then((path) => {
         if (!cancelled) {
-          if (path) setLocal({ url, path });
-          else if (url.startsWith("local:")) setFailed(url);
-          else setFallback(url);
+          if (path) setLocal({ url: displayUrl, path });
+          else if (displayUrl.startsWith("local:")) setFailed(displayUrl);
+          else setFallback(displayUrl);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [url, visible]);
+  }, [displayUrl, visible]);
+
   return (
     <span className={`cover ${className}`} ref={ref}>
-      {url &&
-      failed !== url &&
-      (!isTauri() || local?.url === url || fallback === url) ? (
+      {displayUrl &&
+      failed !== displayUrl &&
+      (!isTauri() || local?.url === displayUrl || fallback === displayUrl) ? (
         <img
-          src={local?.url === url ? local.path : url}
+          src={local?.url === displayUrl ? local.path : displayUrl}
           alt=""
           loading="lazy"
           decoding="async"
           referrerPolicy="no-referrer"
-          onError={() => setFailed(url)}
+          onError={() => setFailed(displayUrl)}
         />
       ) : (
         <Music2 size={20} />

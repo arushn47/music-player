@@ -1,6 +1,15 @@
 // Reapply small, tracked native additions after `tauri android init`.
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, cpSync } from "node:fs";
+const rootGradlePath = "src-tauri/gen/android/build.gradle.kts";
+let rootGradle = readFileSync(rootGradlePath, "utf8");
+if (!rootGradle.includes('com.chaquo.python:gradle:17.1.0')) {
+  rootGradle = rootGradle.replace('classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10")',
+    'classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10")\n        classpath("com.chaquo.python:gradle:17.1.0")');
+  writeFileSync(rootGradlePath, rootGradle);
+}
 const app = "src-tauri/gen/android/app";
+// Keep generated Android launchers in sync with the canonical Lumaire assets.
+cpSync("src-tauri/icons/android", `${app}/src/main/res`, { recursive: true });
 const gradlePath = `${app}/build.gradle.kts`;
 let gradle = readFileSync(gradlePath, "utf8");
 // The existing toolchain and test phone support API 36. Do not request preview 37.
@@ -10,6 +19,12 @@ gradle = gradle
 const marker = "// Lumaire native audio and document adapters";
 if (!gradle.includes(marker)) {
   gradle += `\n${marker}\nandroid {\n    sourceSets["main"].java.srcDir("../../../android/src/main/java")\n}\ndependencies {\n    implementation("androidx.media3:media3-exoplayer:1.8.0")\n    implementation("androidx.media3:media3-session:1.8.0")\n}\n`;
+}
+if (!gradle.includes("// Lumaire bundled Android streaming")) {
+  gradle += `\n// Lumaire bundled Android streaming\nextra["lumaireStreamingRoot"] = file("../../../android-streaming")\napply(from = file("../../../android-streaming/streaming.gradle"))\n`;
+}
+if (!gradle.includes('sourceSets["test"].java.srcDir("../../../android/src/test/java")')) {
+  gradle += '\nandroid { sourceSets["test"].java.srcDir("../../../android/src/test/java") }\n';
 }
 writeFileSync(gradlePath, gradle);
 const manifestPath = `${app}/src/main/AndroidManifest.xml`;
@@ -41,6 +56,10 @@ if (!manifest.includes("app.lumaire.player.PlaybackService")) {
   );
 }
 writeFileSync(manifestPath, manifest);
+if (!manifest.includes("app.lumaire.player.ResolverService")) {
+  manifest = manifest.replace("</application>", '    <service android:name="app.lumaire.player.ResolverService" android:exported="false" android:process=":resolver" android:enabled="${lumaireStreamingEnabled}" />\n    </application>');
+  writeFileSync(manifestPath, manifest);
+}
 const wrapperPath =
   "src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties";
 const wrapper = readFileSync(wrapperPath, "utf8");

@@ -90,3 +90,9 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.8.0")
     implementation("androidx.media3:media3-session:1.8.0")
 }
+
+// Lumaire bundled Android streaming
+extra["lumaireStreamingRoot"] = file("../../../android-streaming")
+apply(from = file("../../../android-streaming/streaming.gradle"))
+
+android { sourceSets["test"].java.srcDir("../../../android/src/test/java") }

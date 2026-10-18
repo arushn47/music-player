@@ -45,6 +45,10 @@ describe("online source metadata", () => {
     ).toBe("Sai Abhyankkar");
   });
   it("cleans unbracketed presentation labels and pipe-separated movie/cast credits", () => {
+    expect(youtubeTrack({ ...result,
+      title: "Alaakaa Loova Lyrical (Tamil) | OM | Dhanush",
+      channel: "Divo Music",
+    }).title).toBe("Alaakaa Loova");
     const track = youtubeTrack({
       ...result,
       title: "God Mode Lyric Video | Karuppu | Suriya | Sai Abhyankkar",

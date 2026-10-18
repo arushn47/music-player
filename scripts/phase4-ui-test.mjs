@@ -86,6 +86,19 @@ await page.addInitScript(
       invoke: async (cmd, args = {}) => {
         window.__calls.push({ cmd, args });
         switch (cmd) {
+          case "get_listening_history":
+            return { generation: Number(sessionStorage.historyGeneration || 0), records: Object.values(JSON.parse(sessionStorage.listening || "{}")).filter(r => r.listenedMs >= 10000) };
+          case "checkpoint_listening": {
+            if (args.generation !== Number(sessionStorage.historyGeneration || 0)) return false;
+            const records = JSON.parse(sessionStorage.listening || "{}");
+            if (!records[args.record.id] || records[args.record.id].listenedMs <= args.record.listenedMs) records[args.record.id] = args.record;
+            sessionStorage.listening = JSON.stringify(records);
+            return true;
+          }
+          case "clear_listening_history":
+            sessionStorage.listening = "{}";
+            sessionStorage.historyGeneration = String(Number(sessionStorage.historyGeneration || 0) + 1);
+            return Number(sessionStorage.historyGeneration);
           case "load_library":
             return {
               tracks: JSON.parse(sessionStorage.tracks),
@@ -211,8 +224,6 @@ await page.addInitScript(
                 album: "Source album",
               };
             return { streamUrl: audio };
-          case "spotify_search_track":
-            return null;
           case "lookup_metadata":
             if (args.title === "Radhimaa" && args.artist === "Sai Abhyankkar")
               return {
@@ -236,6 +247,7 @@ await page.addInitScript(
             }
             return null;
           case "ytdlp_search":
+            await new Promise(resolve => setTimeout(resolve, 300));
             if (args.query.startsWith("Temporary"))
               return [
                 {
@@ -380,12 +392,38 @@ try {
         .fill("Saved song");
       await page.getByRole("button", { name: "Search", exact: true }).click();
       const result = page
-        .locator(".track-row")
+        .locator(".discover-page .track-row")
         .filter({ hasText: "Saved song" });
       const before = await page.evaluate(
         () => JSON.parse(sessionStorage.session).queue,
       );
       await result.locator(".cover svg").waitFor();
+      await page.getByRole("button", { name: "Search", exact: true }).click();
+      await page.getByRole("heading", { name: "Searching...", exact: true }).waitFor();
+      assert.equal(await page.locator(".discover-page .track-row").count(), 0);
+      await result.locator(".cover svg").waitFor();
+      await page.locator("main").evaluate((main) => {
+        main.scrollTop = 300;
+      });
+      const discoverScroll = await page.locator("main").evaluate(
+        (main) => main.scrollTop,
+      );
+      await page
+        .getByRole("navigation", { name: "Main navigation" })
+        .getByRole("button", { name: /^Library/ })
+        .click();
+      await page.getByRole("button", { name: "Discover", exact: true }).click();
+      assert.equal(
+        await page
+          .getByRole("textbox", { name: "Search YouTube", exact: true })
+          .inputValue(),
+        "Saved song",
+      );
+      await result.waitFor();
+      assert.equal(
+        await page.locator("main").evaluate((main) => main.scrollTop),
+        discoverScroll,
+      );
       await result.locator("summary").click();
       await result
         .getByRole("button", { name: "Save to library", exact: true })
@@ -484,14 +522,6 @@ try {
       assert.equal(saved.duration, 258);
       assert.equal(saved.album, "Karuppu");
       assert.equal(saved.source.sourceId, "tamiltest01");
-      assert.equal(
-        (await page.evaluate(() => window.__calls)).filter(
-          (call) =>
-            call.cmd === "spotify_search_track" &&
-            call.args.title === "Karuppa Kooda Va",
-        ).length,
-        0,
-      );
       await page.waitForTimeout(400);
       await page.reload();
       await page
@@ -1029,11 +1059,14 @@ try {
         await page.evaluate(() => JSON.parse(sessionStorage.session).queue),
         before,
       );
-      await result.locator(".track-play").click();
+      // The large song-title/artwork target must play just like the play icon.
+      const discoveryUrl = page.url();
+      await result.locator(".track-meta").click();
       await page
         .locator(".now-playing strong")
         .filter({ hasText: "Temporary song" })
         .waitFor();
+      assert.equal(page.url(), discoveryUrl);
       result = await search("Temporary other");
       await result.locator("summary").click();
       await result
@@ -1102,6 +1135,7 @@ try {
           (call) => call.cmd === "download_track",
         ).length,
       }));
+      await controls.locator("summary").click();
       await controls.getByRole("button", { name: "Save", exact: true }).click();
       await controls
         .getByRole("button", { name: "Favorite current track", exact: true })
@@ -1168,7 +1202,7 @@ try {
         .click();
       await page
         .getByRole("dialog")
-        .getByRole("button", { name: "Cancel", exact: true })
+        .getByRole("button", { name: "Close dialog", exact: true })
         .click();
       assert(
         !(await page.evaluate(() => JSON.parse(sessionStorage.tracks))).some(
@@ -1178,12 +1212,16 @@ try {
       await menu
         .getByRole("button", { name: "Save to playlist", exact: true })
         .click();
+      await page.getByRole("dialog").getByRole("button", { name: "New playlist", exact: true }).click();
       await page
-        .getByRole("textbox", { name: "New playlist name", exact: true })
+        .getByRole("textbox", { name: "Playlist title", exact: true })
         .fill("Road trip");
       await page
         .getByRole("button", { name: "Create and save", exact: true })
         .click();
+      // The extracted modal remains open to allow saving into more playlists.
+      await page.getByRole("dialog").getByRole("button", { name: /Road trip/ }).waitFor();
+      await page.getByRole("dialog").getByRole("button", { name: "Close dialog", exact: true }).click();
       await page.getByRole("dialog").waitFor({ state: "hidden" });
       await page.waitForTimeout(400);
       const saved = await page.evaluate(() => ({
@@ -1207,6 +1245,7 @@ try {
   await check(
     "explicit YouTube Download persists offline audio routing across restart and copy deletion retains the playlist",
     async () => {
+      await page.locator(".current-track-menu summary").click();
       await page
         .getByRole("button", {
           name: "Download current track for offline",

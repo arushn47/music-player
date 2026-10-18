@@ -51,16 +51,6 @@ export interface CanonicalMetadata {
   artworkUrl?: string | null;
 }
 
-export interface SpotifyMetadata {
-  title: string;
-  artist: string;
-  album: string;
-  durationMs: number;
-  artworkUrl: string | null;
-  spotifyUrl: string;
-  spotifyId: string;
-}
-
 export interface ResolvedMedia {
   url: string;
   mimeType: string;
@@ -92,11 +82,7 @@ export interface LibraryPort {
     artist: string,
     duration: number,
   ): Promise<CanonicalMetadata | null>;
-  spotifySearchTrack(
-    title: string,
-    artist: string,
-    duration: number,
-  ): Promise<SpotifyMetadata | null>;
+
 }
 export const desktop = isTauri();
 export const mobile = desktop && /Android/i.test(navigator.userAgent);
@@ -126,14 +112,18 @@ export const library: LibraryPort = desktop
       searchCommons: (query) => invoke("search_commons_audio", { query }),
       resolveCommons: (sourceId) =>
         invoke("resolve_commons_audio", { sourceId }),
-      ytdlpCheckAvailable: () => invoke("ytdlp_check_available"),
+      ytdlpCheckAvailable: () => mobile
+        ? invoke<{ available: boolean }>("android_source", { operation: "probe" }).then((r) => r.available)
+        : invoke("ytdlp_check_available"),
       ytdlpSearch: (query, maxResults) =>
-        invoke("ytdlp_search", { query, maxResults }),
-      ytdlpGetStream: (videoId) => invoke("ytdlp_get_stream", { videoId }),
+        mobile
+          ? invoke<{ results: YtdlpSearchResult[] }>("android_source", { operation: "search", query, maxResults }).then((r) => r.results)
+          : invoke("ytdlp_search", { query, maxResults }),
+      ytdlpGetStream: (videoId) => mobile
+        ? invoke<YtdlpStreamInfo & { url: string }>("android_source", { operation: "resolve", videoId }).then((r) => ({ ...r, streamUrl: r.url }))
+        : invoke("ytdlp_get_stream", { videoId }),
       lookupMetadata: (title, artist, duration) =>
         invoke("lookup_metadata", { title, artist, duration }),
-      spotifySearchTrack: (title, artist, duration) =>
-        invoke("spotify_search_track", { title, artist, duration }),
     }
   : {
       load: async () => ({ tracks: [], session: null }),
@@ -155,5 +145,4 @@ export const library: LibraryPort = desktop
       ytdlpSearch: async () => [],
       ytdlpGetStream: needDesktop,
       lookupMetadata: async () => null,
-      spotifySearchTrack: async () => null,
     };

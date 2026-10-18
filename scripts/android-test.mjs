@@ -1,6 +1,7 @@
 // Own-app device smoke checks. No contacts, accounts, user media, or API keys.
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { chromium } from "playwright-core";
@@ -74,6 +75,7 @@ try {
       "src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk",
   );
   assert(existsSync(apk), `Build the APK first: ${apk}`);
+  report.apk = { bytes: statSync(apk).size, sha256: createHash("sha256").update(readFileSync(apk)).digest("hex") };
   assert(
     /\tdevice\b/.test(device("devices")),
     "Connect and authorize an unlocked Android phone.",
@@ -168,7 +170,18 @@ try {
         .click();
       await page.getByText("காலை ஒளி", { exact: true }).waitFor();
       await page.locator(".lyric-roman").first().waitFor();
-      const state = await invoke("android_playback", { action: "state" });
+      // The renderer can show restored lyrics before Media3 finishes preparing
+      // the restored file. Assert the settled native state, not its transient
+      // buffering snapshot.
+      const restoredState = await page.waitForFunction(async () => {
+        const state = await window.__TAURI_INTERNALS__.invoke(
+          "android_playback", { action: "state" },
+        );
+        return state.status === "paused" && state.duration >= 39 && Math.abs(state.time - 12) < 1
+          ? state : false;
+      }, null, { timeout: 15000 });
+      const state = await restoredState.jsonValue();
+      await restoredState.dispose();
       assert.equal(state.status, "paused");
       assert(Math.abs(state.time - 12) < 1);
       await page.screenshot({ path: path.join(results, "android-lyrics.png") });

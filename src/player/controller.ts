@@ -1,4 +1,8 @@
 export type Playback = {
+  /** Stable media identity for observers; never a resolved stream URL. */
+  trackId?: string | null;
+  playbackId?: string | null;
+  seekVersion?: number;
   status:
     "idle" | "loading" | "playing" | "paused" | "buffering" | "ended" | "error";
   time: number;
@@ -43,7 +47,7 @@ export class PlaybackController {
         this.state.status !== "loading" &&
         this.state.status !== "error"
       )
-        this.update({ status: "paused" });
+        this.update({ status: "paused", time: this.audio.currentTime });
     });
     this.audio.addEventListener("ended", () => {
       this.stopClock();
@@ -60,6 +64,9 @@ export class PlaybackController {
             ? "This audio format or file could not be played. Try MP3 or PCM WAV, or relink the file."
             : "Playback failed. The queue is saved; retry or choose another track.",
       }),
+    );
+    this.audio.addEventListener("seeking", () =>
+      this.update({ seekVersion: (this.state.seekVersion ?? 0) + 1, time: this.audio.currentTime }),
     );
   }
   // A visible lyric reader samples the actual media clock at <=50 ms intervals.
@@ -113,6 +120,9 @@ export class PlaybackController {
     this.endedHandled = false;
     this.update({
       status: "loading",
+      trackId: id,
+      playbackId: crypto.randomUUID(),
+      seekVersion: 0,
       time: position,
       duration: 0,
       error: null,
@@ -139,6 +149,8 @@ export class PlaybackController {
   async play() {
     const generation = this.generation;
     if (!this.audio.src) return;
+    if (this.state.status === "ended")
+      this.update({ playbackId: crypto.randomUUID(), time: this.audio.currentTime });
     this.endedHandled = false;
     try {
       await this.audio.play();
@@ -159,6 +171,7 @@ export class PlaybackController {
   }
   seek(time: number) {
     if (Number.isFinite(this.audio.duration)) {
+      this.update({ seekVersion: (this.state.seekVersion ?? 0) + 1 });
       this.endedHandled = false;
       this.audio.currentTime = Math.min(this.audio.duration, Math.max(0, time));
       this.update({ time: this.audio.currentTime });
@@ -172,6 +185,6 @@ export class PlaybackController {
     this.audio.pause();
     this.audio.removeAttribute("src");
     this.audio.load();
-    this.update({ status: "idle", time: 0, duration: 0, error: null });
+    this.update({ status: "idle", trackId: null, playbackId: null, time: 0, duration: 0, error: null });
   }
 }

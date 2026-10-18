@@ -1,8 +1,68 @@
 :root {
   color-scheme: dark;
-  --bg: #151812;
-  --text: #e4e9dd;
-  --muted: #aab49f;
+
+  /* Lumaire Core Identity Palette */
+  --bg: #131711;
+  --bg-sidebar: #0f130d;
+  --bg-topbar: rgba(19, 23, 17, 0.82);
+  --bg-transport: rgba(21, 26, 19, 0.86);
+  --bg-queue: rgba(16, 20, 14, 0.9);
+  --bg-panel: rgba(26, 33, 22, 0.65);
+  --bg-panel-hover: rgba(34, 43, 29, 0.78);
+  --bg-popover: rgba(24, 31, 21, 0.94);
+  --bg-dialog: rgba(22, 28, 19, 0.96);
+  --bg-active-row: rgba(196, 220, 163, 0.09);
+
+  /* Typography Colors */
+  --text: #edf2e8;
+  --text-secondary: #b6c4ad;
+  --muted: #8d9c84;
+  --text-dim: #6d7b65;
+
+  /* Accent & Interactive Colors */
   --accent: #c4dca3;
-  --line: #2b3225;
+  --accent-hover: #d7ebb8;
+  --accent-active: #afd088;
+  --accent-subtle: rgba(196, 220, 163, 0.16);
+  --accent-glow: rgba(196, 220, 163, 0.28);
+  --accent-text: #141f0c;
+
+  /* Borders & Glass Highlights */
+  --line: rgba(255, 255, 255, 0.07);
+  --line-subtle: rgba(255, 255, 255, 0.04);
+  --line-strong: rgba(255, 255, 255, 0.13);
+  --line-accent: rgba(196, 220, 163, 0.35);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --glass-highlight-subtle: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* Apple-inspired Elevation & Ambient Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 6px 18px -2px rgba(0, 0, 0, 0.38), 0 2px 6px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 14px 34px -4px rgba(0, 0, 0, 0.52), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-popover: 0 22px 50px -8px rgba(0, 0, 0, 0.72), 0 8px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --shadow-accent: 0 4px 16px rgba(196, 220, 163, 0.28);
+
+  /* Corner Radii */
+  --radius-xs: 4px;
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 9999px;
+
+  /* Apple Physics Easings & Durations */
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --ease-spring-snappy: cubic-bezier(0.18, 0.89, 0.32, 1.15);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-instant: 100ms;
+  --duration-fast: 160ms;
+  --duration-normal: 240ms;
+  --duration-smooth: 360ms;
+
+  /* Font Stacks */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: Newsreader, "Iowan Old Style", "Charter", Georgia, "Times New Roman", serif;
 }
+
