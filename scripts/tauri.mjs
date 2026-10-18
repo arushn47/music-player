@@ -2,6 +2,11 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { config } from "dotenv";
+
+// Load .env file
+config();
+
 const env = { ...process.env };
 const localRust = path.resolve(".tools/rustup");
 if (existsSync(path.join(localRust, "toolchains"))) env.RUSTUP_HOME = localRust;

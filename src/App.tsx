@@ -36,10 +36,44 @@ import {
   PanelRightClose,
   Globe,
 } from "lucide-react";
-import { library, desktop, type RemoteTrack, type YtdlpSearchResult } from "./adapters/native";
+import {
+  library,
+  desktop,
+  mobile,
+  type YtdlpSearchResult,
+} from "./adapters/native";
 import { lookupLyrics, type LookupState } from "./adapters/lrclib";
-import { activeLine, alignVariant, parseLyrics } from "./domain/lyrics";
-import { advance, move } from "./domain/queue";
+import { Artwork } from "./components/Artwork";
+import { Collections } from "./components/Collections";
+import { CommonsDiscovery } from "./components/CommonsDiscovery";
+import { LyricsSettings } from "./components/LyricsSettings";
+import {
+  clearFetchedLyrics,
+  isFetchedLyrics,
+  lyricLayers,
+} from "./domain/lyric-display";
+import { romanizeDocument } from "./domain/romanization";
+import { libraryCollections, withoutTrack } from "./domain/collections";
+import {
+  needsMetadata,
+  metadataQueries,
+  repairYoutubeTrack,
+  youtubeTrack,
+} from "./domain/online-track";
+import {
+  activeLine,
+  alignVariant,
+  estimatedFollowLine,
+  normalizeCachedLyrics,
+  parseLyrics,
+  synchronizedLyrics,
+} from "./domain/lyrics";
+import {
+  advance,
+  enqueue,
+  reorderUpcoming,
+  playSelection,
+} from "./domain/queue";
 import { restoreSession } from "./domain/session";
 import {
   defaults,
@@ -49,29 +83,54 @@ import {
   type Track,
 } from "./domain/types";
 import { PlaybackController, type Playback } from "./player/controller";
+import { AndroidPlaybackController } from "./player/android";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-const player = new PlaybackController(async (id) => {
-  // Check if this is a YouTube track (format: youtube:videoId)
-  if (id.startsWith("youtube:")) {
-    const videoId = id.split(":")[1];
-    const stream = await library.ytdlpGetStream(videoId);
-    return stream.streamUrl;
-  }
-  // Check if this is a Commons track (format: wikimedia-commons:sourceId)
-  if (id.startsWith("wikimedia-commons:")) {
-    const sourceId = id.split(":")[1];
-    const resolved = await library.resolveCommons(sourceId);
-    return resolved.url;
-  }
-  // Default to local file resolution
-  return library.media(id);
-});
+// Structured music credits from the existing stream resolution request. Never
+// retain its expiring URL, and never turn an uploader name into a performer.
+const resolvedMusic = new Map<
+  string,
+  { title: string; artist: string; album: string }
+>();
+const musicResolved = new EventTarget();
+const offlineTracks = new Set<string>();
+const player = mobile
+  ? new AndroidPlaybackController()
+  : new PlaybackController(async (id) => {
+      if (offlineTracks.has(id)) return library.media(id);
+      // Check if this is a YouTube track (format: youtube:videoId)
+      if (id.startsWith("youtube:")) {
+        const videoId = id.slice(id.indexOf(":") + 1);
+        const stream = await library.ytdlpGetStream(videoId);
+        if (stream.track?.trim() && stream.artist?.trim()) {
+          if (resolvedMusic.size >= 128)
+            resolvedMusic.delete(resolvedMusic.keys().next().value!);
+          resolvedMusic.set(id, {
+            title: stream.track.trim(),
+            artist: stream.artist.trim(),
+            album: stream.album?.trim() || "",
+          });
+          musicResolved.dispatchEvent(
+            new CustomEvent("resolved", { detail: id }),
+          );
+        }
+        return stream.streamUrl;
+      }
+      // Check if this is a Commons track (format: wikimedia-commons:sourceId)
+      if (id.startsWith("wikimedia-commons:")) {
+        const sourceId = id.slice(id.indexOf(":") + 1);
+        const resolved = await library.resolveCommons(sourceId);
+        return resolved.url;
+      }
+      // Default to local file resolution
+      return library.media(id);
+    });
 const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 const formatError = (e: unknown) =>
   e instanceof Error ? e.message : String(e);
-type View = "library" | "favorites" | "lyrics" | "settings" | "discover" | string;
+type View =
+  "library" | "favorites" | "lyrics" | "settings" | "discover" | string;
 type Dialog = {
   title: string;
   label: string;
@@ -118,7 +177,9 @@ export function App() {
     [error, setError] = useState("");
   const [dialog, setDialog] = useState<Dialog>(null),
     [dialogValue, setDialogValue] = useState(""),
-    [follow, setFollow] = useState(true);
+    [follow, setFollow] = useState(true),
+    [lyricsMenuOpen, setLyricsMenuOpen] = useState(false);
+  const [playlistTarget, setPlaylistTarget] = useState<Track | null>(null);
   const [variant, setVariant] = useState<{
     doc: LyricDocument;
     kind: "romanisation" | "translation";
@@ -126,19 +187,33 @@ export function App() {
     original: LyricDocument;
   } | null>(null);
   const [undo, setUndo] = useState<Session["queue"] | null>(null);
-  const [lyricLookup, setLyricLookup] = useState<LookupState>({ status: "idle" });
-  // Track which track ID we last triggered a lookup for, to avoid double-firing.
-  const lastLookupId = useRef<string | null>(null);
+  const [lyricLookup, setLyricLookup] = useState<LookupState>({
+    status: "idle",
+  });
+  // Explicit retry reruns the guarded lookup effect.
+  const [lyricRetry, setLyricRetry] = useState(0);
   // Discovery state
   const [discoveryQuery, setDiscoveryQuery] = useState("");
-  const [discoveryResults, setDiscoveryResults] = useState<YtdlpSearchResult[]>([]);
+  const [discoveryResults, setDiscoveryResults] = useState<YtdlpSearchResult[]>(
+    [],
+  );
   const [discoverySearching, setDiscoverySearching] = useState(false);
   const [discoveryError, setDiscoveryError] = useState("");
+  const [downloads, setDownloads] = useState<Record<string, string>>({});
   const [ytdlpAvailable, setYtdlpAvailable] = useState(false);
+  const metadataInFlight = useRef(new Set<string>());
+  const autoOpenedLyrics = useRef<string | null>(null);
   const current = session.queue.find((i) => i.id === session.currentId),
-    track = tracks.find((t) => t.id === current?.trackId),
+    listeningTracks = [
+      ...tracks,
+      ...Object.values(session.queueTracks).filter(
+        (t) => !tracks.some((saved) => saved.id === t.id),
+      ),
+    ],
+    track = listeningTracks.find((t) => t.id === current?.trackId),
     doc = track ? session.lyrics[track.id] : undefined;
   const sessionRef = useRef(session),
+    tracksRef = useRef(tracks),
     readyRef = useRef(false),
     saveChain = useRef(Promise.resolve()),
     persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null),
@@ -147,6 +222,11 @@ export function App() {
     dialogRef = useRef<HTMLDialogElement>(null),
     previousFocus = useRef<HTMLElement | null>(null);
   sessionRef.current = session;
+  tracksRef.current = tracks;
+  offlineTracks.clear();
+  tracks
+    .filter((track) => track.offline)
+    .forEach((track) => offlineTracks.add(track.id));
   const update = (fn: (s: Session) => Session) => setSession((s) => fn(s));
   const setting = <K extends keyof Session["settings"]>(
     key: K,
@@ -158,7 +238,10 @@ export function App() {
   };
   function persist() {
     if (!readyRef.current || suspendPersistence.current) return;
-    const s = { ...sessionRef.current, position: player.state.time };
+    const s = restoreSession(
+      { ...sessionRef.current, position: player.state.time },
+      tracksRef.current,
+    );
     saveChain.current = saveChain.current
       .then(() => library.save(s))
       .catch((e) =>
@@ -166,7 +249,7 @@ export function App() {
       );
   }
   useEffect(() => {
-    if (!desktop) return;
+    if (!desktop || mobile) return;
     const unsubscribe = getCurrentWindow().onCloseRequested(async (event) => {
       event.preventDefault();
       if (!readyRef.current) {
@@ -174,7 +257,10 @@ export function App() {
         return;
       }
       player.pause();
-      const latest = { ...sessionRef.current, position: player.state.time };
+      const latest = restoreSession(
+        { ...sessionRef.current, position: player.state.time },
+        tracksRef.current,
+      );
       try {
         await saveChain.current;
         await library.save(latest);
@@ -190,12 +276,58 @@ export function App() {
     };
   }, []);
   useEffect(() => {
+    if (!mobile) return;
+    const persist = () => {
+      if (!readyRef.current) return;
+      void library.save(
+        restoreSession(
+          { ...sessionRef.current, position: player.state.time },
+          tracksRef.current,
+        ),
+      );
+    };
+    const hidden = () => {
+      if (document.hidden) persist();
+    };
+    document.addEventListener("visibilitychange", hidden);
+    return () => document.removeEventListener("visibilitychange", hidden);
+  }, []);
+  useEffect(() => {
     const unsubscribe = player.subscribe(setPlayback);
+    const onMusicResolved = (event: Event) => {
+      const selected = [
+        ...tracksRef.current,
+        ...Object.values(sessionRef.current.queueTracks),
+      ].find((track) => track.id === (event as CustomEvent<string>).detail);
+      const credits = selected && resolvedMusic.get(selected.id);
+      if (
+        selected &&
+        credits &&
+        (selected.title !== credits.title ||
+          selected.artist !== credits.artist ||
+          (credits.album && selected.album !== credits.album))
+      )
+        void enrichOnline(selected);
+    };
+    musicResolved.addEventListener("resolved", onMusicResolved);
     library
       .load()
-      .then((snapshot) => {
+      .then(async (snapshot) => {
+        snapshot.tracks = await Promise.all(
+          snapshot.tracks.map(async (original) => {
+            const repaired = repairYoutubeTrack(original);
+            if (repaired === original) return original;
+            return library.saveOnline(repaired, true).catch((error) => {
+              console.warn("Saved track metadata repair failed:", error);
+              return original;
+            });
+          }),
+        );
         const restored = restoreSession(snapshot.session, snapshot.tracks);
         setTracks(snapshot.tracks);
+        snapshot.tracks
+          .filter((track) => track.offline)
+          .forEach((track) => offlineTracks.add(track.id));
         setSession(restored);
         sessionRef.current = restored;
         readyRef.current = true;
@@ -209,10 +341,13 @@ export function App() {
       .catch((e) =>
         setError(`The library could not be opened. ${formatError(e)}`),
       );
-    
+
     // Check if yt-dlp is available
-    library.ytdlpCheckAvailable().then(setYtdlpAvailable).catch(() => setYtdlpAvailable(false));
-    
+    library
+      .ytdlpCheckAvailable()
+      .then(setYtdlpAvailable)
+      .catch(() => setYtdlpAvailable(false));
+
     const timer = setInterval(persist, 2000);
     const onHidden = () => {
       if (document.visibilityState === "hidden") persist();
@@ -220,6 +355,7 @@ export function App() {
     document.addEventListener("visibilitychange", onHidden);
     return () => {
       unsubscribe();
+      musicResolved.removeEventListener("resolved", onMusicResolved);
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onHidden);
     };
@@ -237,6 +373,49 @@ export function App() {
     player.precise(view === "lyrics");
     return () => player.precise(false);
   }, [view]);
+  useEffect(() => {
+    if (ready && track && needsMetadata(track)) void enrichOnline(track);
+  }, [ready, track?.id]);
+  const lyricDuration =
+    playback.duration > 0 ? playback.duration : track?.duration || 0;
+  useEffect(() => {
+    if (!doc || !track || !session.settings.romanisation) return;
+    let cancelled = false;
+    const id = track.id,
+      original = doc.id;
+    void romanizeDocument(doc)
+      .then((romanisation) => {
+        if (cancelled || !Object.keys(romanisation).length) return;
+        update((session) => {
+          const current = session.lyrics[id];
+          return current?.id === original
+            ? {
+                ...session,
+                lyrics: {
+                  ...session.lyrics,
+                  [id]: {
+                    ...current,
+                    romanisation: {
+                      ...current.romanisation,
+                      ...Object.fromEntries(
+                        Object.entries(romanisation).filter(
+                          ([lineId]) =>
+                            current.romanisation[lineId] ===
+                            doc.romanisation[lineId],
+                        ),
+                      ),
+                    },
+                  },
+                },
+              }
+            : session;
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [doc?.id, doc?.raw, track?.id, session.settings.romanisation]);
   // Auto-lookup effect: fires whenever the current track changes.
   useEffect(() => {
     if (!ready || !track) {
@@ -245,45 +424,51 @@ export function App() {
     }
     const id = track.id;
     // If we already have lyrics stored for this track, surface them directly.
-    const cached = sessionRef.current.lyrics[id];
+    const originalCached = sessionRef.current.lyrics[id];
+    const cached = originalCached
+      ? normalizeCachedLyrics(originalCached, lyricDuration)
+      : undefined;
     if (cached) {
+      if (cached !== originalCached)
+        update((s) => ({ ...s, lyrics: { ...s.lyrics, [id]: cached } }));
       setLyricLookup({ status: "found", doc: cached });
       return;
     }
-    // Avoid re-fetching the same track (e.g. seek/pause triggers re-render).
-    if (lastLookupId.current === id) return;
-    lastLookupId.current = id;
+    if (
+      track.source &&
+      playback.status === "loading" &&
+      playback.duration <= 0
+    ) {
+      setLyricLookup({ status: "loading" });
+      return;
+    }
+    let cancelled = false;
     setLyricLookup({ status: "loading" });
-    lookupLyrics(track).then((result) => {
-      // Ignore if the track changed while we were awaiting.
-      if (lastLookupId.current !== id) return;
-      setLyricLookup(result);
+    lookupLyrics({ ...track, duration: lyricDuration }).then((result) => {
+      if (cancelled) return;
+      const attached = sessionRef.current.lyrics[id];
+      setLyricLookup(attached ? { status: "found", doc: attached } : result);
       if (result.status === "found") {
-        // Persist auto-fetched lyrics into session so they survive restart.
-        update((s) => ({ ...s, lyrics: { ...s.lyrics, [id]: result.doc } }));
-      } else if (result.status === "instrumental") {
-        // Mark as instrumental in session so we don't query again on restart.
-        update((s) => ({
-          ...s,
-          lyrics: {
-            ...s.lyrics,
-            [id]: {
-              id: crypto.randomUUID(),
-              raw: "",
-              fileName: "Instrumental · LRCLIB",
-              lines: [],
-              fileOffset: 0,
-              userOffset: 0,
-              warnings: [],
-              romanisation: {},
-              translation: {},
-              instrumental: true,
-            },
-          },
-        }));
+        update((s) =>
+          s.lyrics[id]
+            ? s
+            : { ...s, lyrics: { ...s.lyrics, [id]: result.doc } },
+        );
       }
     });
-  }, [track?.id, ready]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    track?.id,
+    track?.title,
+    track?.artist,
+    track?.album,
+    ready,
+    lyricRetry,
+    lyricDuration,
+    playback.status,
+  ]);
 
   useEffect(() => {
     player.onEnded = () => {
@@ -328,23 +513,43 @@ export function App() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   });
-  const active = doc ? activeLine(doc, playback.time * 1000) : null;
+  const lyricSynced = doc ? synchronizedLyrics(doc, lyricDuration) : false;
+  const active =
+    doc && lyricSynced ? activeLine(doc, playback.time * 1000) : null;
+  const followTarget =
+    doc && (lyricSynced || session.settings.estimatedScroll)
+      ? lyricSynced
+        ? active
+        : estimatedFollowLine(doc, playback.time, lyricDuration)
+      : null;
   useEffect(() => {
     if (follow && view === "lyrics")
       activeRef.current?.scrollIntoView({
         block: "center",
-        behavior: "instant",
+        behavior: lyricSynced ? "instant" : "smooth",
       });
-  }, [active, follow, view]);
+  }, [followTarget, follow, view, lyricSynced]);
   useEffect(() => {
-    if (dialog || variant) {
+    if (
+      playback.status === "playing" &&
+      current &&
+      session.settings.autoOpenLyrics &&
+      autoOpenedLyrics.current !== current.id
+    ) {
+      autoOpenedLyrics.current = current.id;
+      setView("lyrics");
+      setFollow(true);
+    }
+  }, [playback.status, current?.id, session.settings.autoOpenLyrics]);
+  useEffect(() => {
+    if (dialog || variant || playlistTarget) {
       previousFocus.current = document.activeElement as HTMLElement;
       dialogRef.current?.showModal();
     } else {
       dialogRef.current?.close();
       previousFocus.current?.focus();
     }
-  }, [dialog, variant]);
+  }, [dialog, variant, playlistTarget]);
   function ask(
     title: string,
     label: string,
@@ -368,28 +573,36 @@ export function App() {
   function selectQueue(id: string, autoplay: boolean) {
     const selected = sessionRef.current.queue.find((i) => i.id === id);
     if (!selected) return;
-    update((s) => ({ ...s, currentId: id, position: 0 }));
+    update((s) => ({
+      ...s,
+      currentId: id,
+      position: 0,
+      queue: s.queue.map((entry) =>
+        entry.id === id ? { ...entry, requested: false } : entry,
+      ),
+    }));
     void player.load(selected.trackId, autoplay);
     setFollow(true);
   }
   function playTrack(t: Track) {
-    const queued = sessionRef.current.queue.find((i) => i.trackId === t.id);
-    if (queued) {
-      selectQueue(queued.id, true);
-      return;
-    }
-    const entry = item(t.id);
-    update((s) => ({
-      ...s,
-      queue: [...s.queue, entry],
-      currentId: entry.id,
-      position: 0,
-    }));
+    setUndo(null);
+    update((s) =>
+      playSelection(
+        s,
+        t,
+        tracksRef.current.some((saved) => saved.id === t.id),
+      ),
+    );
     void player.load(t.id, true);
     setFollow(true);
   }
   function togglePlay() {
     if (!track) {
+      const queued = sessionRef.current.queue[0];
+      if (queued) {
+        selectQueue(queued.id, true);
+        return;
+      }
       const first = tracks[0];
       if (first) playTrack(first);
       return;
@@ -418,32 +631,74 @@ export function App() {
         ...result.tracks,
       ]);
       const added = result.tracks.filter((t) => !before.has(t.id));
-      if (!sessionRef.current.queue.length) {
-        const queue = result.tracks.map((t) => item(t.id));
-        update((s) => ({ ...s, queue, currentId: queue[0].id, position: 0 }));
-        void player.load(queue[0].trackId, false);
-      }
+      setView("collection:local");
       notify(
         `${added.length} ${added.length === 1 ? "track" : "tracks"} added${result.tracks.length > added.length ? ` · ${result.tracks.length - added.length} already in your library` : ""}${result.warnings.length ? ` · ${result.warnings.join(" ")}` : ""}`,
       );
     });
   }
   const favorite = (id: string) =>
-    update((s) => ({
-      ...s,
-      favorites: s.favorites.includes(id)
-        ? s.favorites.filter((f) => f !== id)
-        : [...s.favorites, id],
-    }));
-  function queueTrack(id: string, next = false) {
-    const entry = item(id);
-    update((s) => {
-      const queue = [...s.queue];
-      const index = queue.findIndex((i) => i.id === s.currentId);
-      queue.splice(next ? index + 1 : queue.length, 0, entry);
-      return { ...s, queue };
+    void action(async () => {
+      if (!tracksRef.current.some((t) => t.id === id)) return;
+      update((s) => ({
+        ...s,
+        favorites: s.favorites.includes(id)
+          ? s.favorites.filter((f) => f !== id)
+          : [...s.favorites, id],
+      }));
     });
+  function queueTrack(id: string, next = false) {
+    update((s) => enqueue(s, id, next));
     notify(next ? "Added to play next" : "Added to queue");
+  }
+  function queueRemote(t: Track, next = false) {
+    const saved = tracksRef.current.some((track) => track.id === t.id);
+    update((s) =>
+      enqueue(
+        {
+          ...s,
+          queueTracks: saved ? s.queueTracks : { ...s.queueTracks, [t.id]: t },
+        },
+        t.id,
+        next,
+      ),
+    );
+    notify(next ? "Added to play next" : "Added to queue");
+  }
+  async function addOnlineToPlaylist(
+    t: Track,
+    playlistId: string,
+    newName?: string,
+  ) {
+    await action(async () => {
+      if (
+        !newName &&
+        !sessionRef.current.playlists.some((p) => p.id === playlistId)
+      )
+        return;
+      const saved =
+        tracksRef.current.find((saved) => saved.id === t.id) ||
+        (await saveOnline(sessionRef.current.queueTracks[t.id] || t));
+      update((s) => ({
+        ...s,
+        playlists: newName
+          ? [
+              ...s.playlists,
+              { id: playlistId, name: newName, items: [item(saved.id)] },
+            ]
+          : s.playlists.map((playlist) =>
+              playlist.id === playlistId
+                ? { ...playlist, items: [...playlist.items, item(saved.id)] }
+                : playlist,
+            ),
+      }));
+      setPlaylistTarget(null);
+      notify(`Added ${saved.title} to playlist`);
+    });
+  }
+  function choosePlaylist(t: Track) {
+    setDialogValue("");
+    setPlaylistTarget(t);
   }
   function removeQueue(id: string) {
     const s = sessionRef.current;
@@ -534,6 +789,104 @@ export function App() {
         },
       }));
   }
+  async function saveDiscovery(
+    result: YtdlpSearchResult,
+    mode: "play" | "save" | "next" | "queue",
+  ) {
+    await action(async () => {
+      const base = youtubeTrack(result);
+      const existing = tracksRef.current.find((t) => t.id === base.id);
+      const selected =
+        existing || sessionRef.current.queueTracks[base.id] || base;
+      if (mode === "save") await saveOnline(selected);
+      else if (mode === "play") playTrack(selected);
+      else {
+        update((s) =>
+          enqueue(
+            {
+              ...s,
+              queueTracks: existing
+                ? s.queueTracks
+                : { ...s.queueTracks, [selected.id]: selected },
+            },
+            selected.id,
+            mode === "next",
+          ),
+        );
+      }
+      notify(
+        `${mode === "play" ? "Playing" : mode === "save" ? "Saved" : mode === "next" ? "Playing next:" : "Queued"} ${selected.title} - online connection required`,
+      );
+      // Source metadata and playback work immediately. Optional enrichment must
+      // not block transport on an account restriction or an overloaded service.
+      if (mode === "save" && (!existing || !selected.album))
+        void enrichOnline(selected);
+    });
+  }
+  async function enrichOnline(base: Track, explicit = false) {
+    if (metadataInFlight.current.has(base.id)) return;
+    metadataInFlight.current.add(base.id);
+    try {
+      let metadata = null;
+      for (const query of metadataQueries(base)) {
+        if (resolvedMusic.has(base.id)) break;
+        try {
+          metadata = await library.lookupMetadata(
+            query.title,
+            query.artist,
+            base.duration,
+          );
+          if (metadata) break;
+        } catch (e) {
+          console.warn("Catalog metadata unavailable:", e);
+          break;
+        }
+      }
+      const spotify =
+        metadata || resolvedMusic.has(base.id)
+          ? null
+          : await library
+              .spotifySearchTrack(base.title, base.artist, base.duration)
+              .catch((e) => {
+                console.warn("Optional Spotify metadata unavailable:", e);
+                return null;
+              });
+      const source = resolvedMusic.get(base.id);
+      if (!source && !spotify && !metadata) {
+        if (explicit)
+          notify(
+            "No verified metadata is available right now. The saved source information is still available.",
+          );
+        return;
+      }
+      let enriched: Track = {
+        ...base,
+        title: source?.title || metadata?.title || spotify?.title || base.title,
+        artist:
+          source?.artist || metadata?.artist || spotify?.artist || base.artist,
+        album: source?.album || metadata?.album || spotify?.album || base.album,
+        artworkUrl:
+          spotify?.artworkUrl || base.artworkUrl || metadata?.artworkUrl,
+      };
+      if (tracksRef.current.some((t) => t.id === base.id)) {
+        enriched = await library.saveOnline(enriched, true);
+        setTracks((all) =>
+          all.map((t) => (t.id === enriched.id ? enriched : t)),
+        );
+      } else
+        update((s) =>
+          s.queue.some((entry) => entry.trackId === base.id)
+            ? { ...s, queueTracks: { ...s.queueTracks, [base.id]: enriched } }
+            : s,
+        );
+      if (explicit) notify(`Metadata updated for ${enriched.title}`);
+    } catch (e) {
+      if (explicit) throw e;
+      console.warn("Optional metadata enrichment failed:", e);
+    } finally {
+      metadataInFlight.current.delete(base.id);
+    }
+  }
   async function relink(t: Track) {
     await action(async () => {
       const replacement = await library.relink(t.id);
@@ -544,10 +897,112 @@ export function App() {
       }
     });
   }
+  async function removeTrack(t: Track) {
+    await action(async () => {
+      suspendPersistence.current = true;
+      if (persistTimer.current) clearTimeout(persistTimer.current);
+      try {
+        await saveChain.current;
+        const previous = sessionRef.current.currentId;
+        const snapshot = await library.remove(
+          t.id,
+          withoutTrack(
+            {
+              ...sessionRef.current,
+              position: player.state.time,
+            },
+            t.id,
+          ),
+        );
+        const restored = restoreSession(snapshot.session, snapshot.tracks);
+        sessionRef.current = restored;
+        tracksRef.current = snapshot.tracks;
+        setTracks(snapshot.tracks);
+        setSession(restored);
+        setUndo(null);
+        if (previous !== restored.currentId) {
+          player.stop();
+          const next = restored.queue.find(
+            (entry) => entry.id === restored.currentId,
+          );
+          if (next) void player.load(next.trackId, false);
+        }
+        notify(
+          `Removed ${t.title} from the library. Original files stay on disk.`,
+        );
+      } finally {
+        suspendPersistence.current = false;
+      }
+    });
+  }
+  async function saveCommons(t: Track, play = false) {
+    await action(async () => {
+      if (play)
+        playTrack(tracksRef.current.find((saved) => saved.id === t.id) || t);
+      else await saveOnline(t);
+      notify(`${play ? "Playing" : "Saved"} ${t.title}`);
+    });
+  }
+  async function saveOnline(t: Track) {
+    const saved = await library.saveOnline(t);
+    tracksRef.current = [
+      ...tracksRef.current.filter((track) => track.id !== saved.id),
+      saved,
+    ];
+    setTracks(tracksRef.current);
+    return saved;
+  }
+  async function downloadTrack(t: Track) {
+    setDownloads((downloads) => ({ ...downloads, [t.id]: "downloading" }));
+    try {
+      if (!tracksRef.current.some((track) => track.id === t.id))
+        await saveOnline(t);
+      const saved = await library.download(t.id);
+      tracksRef.current = [
+        ...tracksRef.current.filter((track) => track.id !== saved.id),
+        saved,
+      ];
+      setTracks(tracksRef.current);
+      setDownloads((downloads) => ({ ...downloads, [t.id]: "complete" }));
+      notify(`${saved.title} is available offline`);
+    } catch (error) {
+      setDownloads((downloads) => ({ ...downloads, [t.id]: String(error) }));
+      setError(String(error));
+    }
+  }
+  function deleteOffline(t: Track) {
+    ask(
+      "Delete offline copy",
+      "Type DELETE to remove the app-owned audio copy. The saved online source stays in your library.",
+      "",
+      (value) => {
+        if (value !== "DELETE") return;
+        void action(async () => {
+          if (track?.id === t.id) player.stop();
+          const saved = await library.deleteDownload(t.id);
+          offlineTracks.delete(t.id);
+          setTracks((tracks) =>
+            tracks.map((track) => (track.id === saved.id ? saved : track)),
+          );
+          if (
+            sessionRef.current.queue.find(
+              (entry) => entry.id === sessionRef.current.currentId,
+            )?.trackId === t.id
+          )
+            void player.load(saved.id, false);
+          notify("Offline copy deleted. The online source is still saved.");
+        });
+      },
+    );
+  }
+  const collections = libraryCollections(tracks, session.playlists);
+  const collection = collections.find((candidate) => candidate.id === view);
+  const builtin = view.startsWith("collection:");
   const playlist = session.playlists.find((p) => p.id === view);
   const visible = tracks.filter(
     (t) =>
       (view !== "favorites" || session.favorites.includes(t.id)) &&
+      (!builtin || collection?.tracks.some((track) => track.id === t.id)) &&
       (!playlist || playlist.items.some((i) => i.trackId === t.id)) &&
       `${t.title} ${t.artist} ${t.album}`
         .toLocaleLowerCase()
@@ -556,8 +1011,8 @@ export function App() {
   const heading =
     view === "favorites"
       ? "Your favorites"
-      : playlist
-        ? playlist.name
+      : collection
+        ? collection.name
         : "Your library";
   const rows = playlist
     ? playlist.items.flatMap((entry) => {
@@ -567,7 +1022,9 @@ export function App() {
     : visible.map((t) => ({ t, entryId: t.id }));
 
   return (
-    <div className={`app ${queueOpen ? "with-queue" : ""}`}>
+    <div
+      className={`app ${queueOpen ? "with-queue" : ""} ${mobile ? "android" : ""}`}
+    >
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -592,7 +1049,7 @@ export function App() {
             onClick={() => setView("library")}
           >
             <Library size={19} />
-            Library<span className="nav-count">{tracks.length}</span>
+            Library<span className="nav-count">{collections.length}</span>
           </button>
           <button
             className={view === "discover" ? "selected" : ""}
@@ -681,6 +1138,13 @@ export function App() {
             <option value="favorites">Favorites</option>
             <option value="lyrics">Lyric room</option>
             <option value="settings">Settings & sources</option>
+            {collections
+              .filter((collection) => !collection.playlist)
+              .map((collection) => (
+                <option value={collection.id} key={collection.id}>
+                  {collection.name}
+                </option>
+              ))}
             {session.playlists.map((p) => (
               <option value={p.id} key={p.id}>
                 {p.name}
@@ -750,7 +1214,10 @@ export function App() {
             </div>
           )}
           {ready &&
-            (view === "library" || view === "favorites" || playlist) && (
+            (view === "library" ||
+              view === "favorites" ||
+              playlist ||
+              builtin) && (
               <>
                 <div className="page-heading">
                   <div>
@@ -768,6 +1235,27 @@ export function App() {
                     </p>
                   </div>
                   <div className="heading-actions">
+                    {view !== "library" && rows.length > 0 && (
+                      <button
+                        className="subtle"
+                        onClick={() => {
+                          const queue = rows
+                            .filter(({ t }) => !t.missing)
+                            .map(({ t }) => item(t.id));
+                          if (!queue.length) return;
+                          update((s) => ({
+                            ...s,
+                            queue,
+                            currentId: queue[0].id,
+                            position: 0,
+                          }));
+                          void player.load(queue[0].trackId, true);
+                        }}
+                      >
+                        <Play size={16} />
+                        Play collection
+                      </button>
+                    )}
                     {playlist && (
                       <>
                         <button
@@ -845,16 +1333,27 @@ export function App() {
                   <span className="muted">
                     {visible.length} {visible.length === 1 ? "track" : "tracks"}
                   </span>
-                  <button
-                    className="subtle"
-                    disabled={busy}
-                    onClick={() => void importMusic(true)}
-                  >
-                    <FolderOpen size={16} />
-                    Add folder
-                  </button>
+                  {!mobile && (
+                    <button
+                      className="subtle"
+                      disabled={busy}
+                      onClick={() => void importMusic(true)}
+                    >
+                      <FolderOpen size={16} />
+                      Add folder
+                    </button>
+                  )}
                 </section>
-                {!tracks.length ? (
+                {view === "library" ? (
+                  <Collections
+                    collections={collections}
+                    query={query}
+                    open={(id) => {
+                      setView(id);
+                      setQuery("");
+                    }}
+                  />
+                ) : !tracks.length ? (
                   <section className="welcome">
                     <div className="record-art">
                       <div className="record">
@@ -943,14 +1442,15 @@ export function App() {
                             className="track-meta"
                             onClick={() => playTrack(t)}
                           >
-                            <span className={`cover color-${index % 5}`}>
-                              <Music2 size={20} />
-                            </span>
+                            <Artwork
+                              url={t.artworkUrl}
+                              className={`color-${index % 5}`}
+                            />
                             <span>
                               <strong dir="auto">{t.title}</strong>
                               <small dir="auto">
                                 {t.artist}
-                                {` · ${t.format}`}
+                                {` · ${t.offline ? "Downloaded · Offline" : t.source ? "Saved online" : "Local file"} · ${t.format}`}
                                 {t.missing ? " · File missing" : ""}
                               </small>
                             </span>
@@ -981,37 +1481,73 @@ export function App() {
                                 •••
                               </summary>
                               <div className="menu-popover">
+                                <button
+                                  disabled={
+                                    busy ||
+                                    t.offline ||
+                                    downloads[t.id] === "downloading"
+                                  }
+                                  onClick={() => void removeTrack(t)}
+                                >
+                                  Remove from library
+                                </button>
+                                {t.source && !t.offline && (
+                                  <button
+                                    disabled={downloads[t.id] === "downloading"}
+                                    onClick={() => void downloadTrack(t)}
+                                  >
+                                    Download for offline
+                                  </button>
+                                )}
+                                {t.offline && (
+                                  <button onClick={() => deleteOffline(t)}>
+                                    Delete offline copy
+                                  </button>
+                                )}
                                 <button onClick={() => queueTrack(t.id, true)}>
                                   Play next
                                 </button>
                                 <button onClick={() => queueTrack(t.id)}>
                                   Add to queue
                                 </button>
-                                <button onClick={() => void relink(t)}>
-                                  <Link2 size={14} />
-                                  Relink file
-                                </button>
-                                {session.playlists.map((p) => (
+                                {t.source?.providerId === "youtube" && (
                                   <button
-                                    key={p.id}
-                                    onClick={() => {
-                                      update((s) => ({
-                                        ...s,
-                                        playlists: s.playlists.map((x) =>
-                                          x.id === p.id
-                                            ? {
-                                                ...x,
-                                                items: [...x.items, item(t.id)],
-                                              }
-                                            : x,
-                                        ),
-                                      }));
-                                      notify(`Added to ${p.name}`);
-                                    }}
+                                    disabled={busy}
+                                    onClick={() =>
+                                      void action(() => enrichOnline(t, true))
+                                    }
                                   >
-                                    Add to {p.name}
+                                    Refresh metadata
                                   </button>
-                                ))}
+                                )}
+                                {!t.source && (
+                                  <button
+                                    disabled={mobile}
+                                    title={
+                                      mobile
+                                        ? "Re-import this file with Add music in the Android prototype."
+                                        : undefined
+                                    }
+                                    onClick={() => void relink(t)}
+                                  >
+                                    <Link2 size={14} />
+                                    Relink file
+                                  </button>
+                                )}
+                                {t.source?.providerId ===
+                                  "wikimedia-commons" && (
+                                  <a
+                                    className="source-credits"
+                                    href={t.source.pageUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    {t.source.attribution} · {t.source.license}
+                                  </a>
+                                )}
+                                <button onClick={() => choosePlaylist(t)}>
+                                  Save to playlist
+                                </button>
                                 {playlist && (
                                   <button
                                     onClick={() => {
@@ -1040,8 +1576,8 @@ export function App() {
                       ))}
                     </div>
                     <p className="library-footer">
-                      <span className="small-dot" /> Your library lives here. No
-                      music leaves your device.
+                      <span className="small-dot" /> Your saved sources and
+                      files, organized here.
                     </p>
                   </>
                 )}
@@ -1061,14 +1597,109 @@ export function App() {
                       : "Choose a song to open its words."}
                   </p>
                 </div>
-                <button
-                  className="subtle"
-                  disabled={!track || busy}
-                  onClick={() => void attach("original")}
-                >
-                  <Upload size={16} />
-                  {doc ? "Replace original" : "Attach lyrics"}
-                </button>
+                <div className="lyric-heading-actions">
+                  <div className="lyric-settings">
+                    <button
+                      className="icon-button"
+                      aria-label="Lyrics settings"
+                      title="Lyrics settings"
+                      aria-haspopup="true"
+                      aria-expanded={lyricsMenuOpen}
+                      aria-controls="lyrics-settings-menu"
+                      onClick={() => setLyricsMenuOpen((x) => !x)}
+                    >
+                      <Settings2 size={16} />
+                    </button>
+                    {lyricsMenuOpen && (
+                      <div
+                        id="lyrics-settings-menu"
+                        className="lyric-settings-menu"
+                        role="group"
+                        aria-label="Lyrics settings"
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            setLyricsMenuOpen(false);
+                            e.currentTarget.parentElement
+                              ?.querySelector("button")
+                              ?.focus();
+                          }
+                        }}
+                      >
+                        <LyricsSettings
+                          settings={session.settings}
+                          setting={setting}
+                          doc={doc}
+                          cachedCount={
+                            Object.values(session.lyrics).filter(
+                              isFetchedLyrics,
+                            ).length
+                          }
+                          clearCache={() => {
+                            update(clearFetchedLyrics);
+                            setLyricRetry((retry) => retry + 1);
+                            notify(
+                              "Cached lyrics cleared. Imported lyrics and your private key are preserved.",
+                            );
+                          }}
+                          regenerate={() => {
+                            if (!track || !doc) return;
+                            const id = track.id,
+                              original = doc.id;
+                            void action(async () => {
+                              const romanisation = await romanizeDocument({
+                                ...doc,
+                                romanisation: {},
+                              });
+                              update((session) =>
+                                session.lyrics[id]?.id === original
+                                  ? {
+                                      ...session,
+                                      lyrics: {
+                                        ...session.lyrics,
+                                        [id]: {
+                                          ...session.lyrics[id],
+                                          romanisation,
+                                        },
+                                      },
+                                    }
+                                  : session,
+                              );
+                              notify(
+                                "Romanization refreshed locally. Original lyrics and timing are preserved.",
+                              );
+                            });
+                          }}
+                          applyTranslation={(id, values) =>
+                            update((session) => {
+                              const original =
+                                track && session.lyrics[track.id];
+                              return track && original?.id === id
+                                ? {
+                                    ...session,
+                                    lyrics: {
+                                      ...session.lyrics,
+                                      [track.id]: {
+                                        ...original,
+                                        translation: values,
+                                      },
+                                    },
+                                  }
+                                : session;
+                            })
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    className="subtle"
+                    disabled={!track || busy}
+                    onClick={() => void attach("original")}
+                  >
+                    <Upload size={16} />
+                    {doc ? "Replace original" : "Attach lyrics"}
+                  </button>
+                </div>
               </div>
               {!doc ? (
                 <div className="empty lyric-empty">
@@ -1088,14 +1719,7 @@ export function App() {
                         disabled={!track}
                         onClick={() => {
                           if (!track) return;
-                          lastLookupId.current = null;
-                          setLyricLookup({ status: "loading" });
-                          lookupLyrics(track, sessionRef.current.lyrics[track.id]).then((result) => {
-                            setLyricLookup(result);
-                            if (result.status === "found") {
-                              update((s) => ({ ...s, lyrics: { ...s.lyrics, [track.id]: result.doc } }));
-                            }
-                          });
+                          setLyricRetry((n) => n + 1);
                         }}
                       >
                         <RefreshCw size={16} />
@@ -1115,10 +1739,18 @@ export function App() {
                       <Wifi size={36} />
                       <h2>No lyrics found</h2>
                       <p>
-                        LRCLIB has no entry for this recording.
+                        No lyrics are available for this track yet.
                         <br />
                         Attach an LRC or text file manually.
                       </p>
+                      <button
+                        className="subtle"
+                        disabled={!track}
+                        onClick={() => setLyricRetry((n) => n + 1)}
+                      >
+                        <RefreshCw size={16} />
+                        Retry lookup
+                      </button>
                       <button
                         className="primary"
                         disabled={!track || busy}
@@ -1163,7 +1795,6 @@ export function App() {
                     </>
                   )}
                 </div>
-
               ) : doc.instrumental ? (
                 <div className="empty">
                   <Music2 size={36} />
@@ -1178,43 +1809,30 @@ export function App() {
                 </div>
               ) : (
                 <>
-                  <div className="lyric-toolbar">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={session.settings.romanisation}
-                        onChange={(e) =>
-                          setting("romanisation", e.target.checked)
-                        }
-                      />
-                      Latin romanisation
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={session.settings.translation}
-                        onChange={(e) =>
-                          setting("translation", e.target.checked)
-                        }
-                      />
-                      English meaning
-                    </label>
-                    <label className="font-control">
-                      Aa{" "}
-                      <input
-                        aria-label="Lyric font size"
-                        type="range"
-                        min={18}
-                        max={46}
-                        value={session.settings.lyricSize}
-                        onChange={(e) =>
-                          setting("lyricSize", Number(e.target.value))
-                        }
-                      />
-                    </label>
-                  </div>
+                  <p className="lyric-timing-status" role="status">
+                    {lyricSynced
+                      ? "Synced lyrics"
+                      : session.settings.estimatedScroll
+                        ? "Not synced · Estimated autoscroll"
+                        : "Not synced · Manual scrolling"}
+                  </p>
                   <div className="lyric-provenance">
-                    <span>Original · {doc.fileName}</span>
+                    <span>
+                      Original · {doc.fileName}
+                      {doc.source?.provider === "lrclib" &&
+                        Number.isSafeInteger(doc.source.recordId) && (
+                          <>
+                            {" · "}
+                            <a
+                              href={`https://lrclib.net/tracks/${doc.source.recordId}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {doc.source.title} · {doc.source.artist}
+                            </a>
+                          </>
+                        )}
+                    </span>
                     <button onClick={() => void attach("romanisation")}>
                       {Object.keys(doc.romanisation).length
                         ? "Replace"
@@ -1228,27 +1846,17 @@ export function App() {
                       supplied English
                     </button>
                   </div>
-                  {doc.warnings.map((w, i) => (
-                    <p className="parser-warning" key={i}>
-                      {w}
-                    </p>
-                  ))}
-                  {!Object.keys(doc.romanisation).length &&
-                    session.settings.romanisation && (
-                      <p className="missing-layer">
-                        Latin romanisation unavailable · attach supplied text
-                        above.
+                  {doc.warnings
+                    .filter(
+                      (w) => !w.startsWith("The selected lyric recording is "),
+                    )
+                    .map((w, i) => (
+                      <p className="parser-warning" key={i}>
+                        {w}
                       </p>
-                    )}
-                  {!Object.keys(doc.translation).length &&
-                    session.settings.translation && (
-                      <p className="missing-layer">
-                        English meaning unavailable · attach supplied text
-                        above.
-                      </p>
-                    )}
+                    ))}
                   <div
-                    className="lyric-lines"
+                    className={`lyric-lines ${lyricSynced ? "" : "unsynced"}`}
                     style={
                       {
                         "--lyric-size": `${session.settings.lyricSize}px`,
@@ -1260,9 +1868,9 @@ export function App() {
                     {doc.lines.map((line) => (
                       <button
                         key={line.id}
-                        ref={line.id === active ? activeRef : undefined}
+                        ref={line.id === followTarget ? activeRef : undefined}
                         className={`lyric-line ${active === line.id ? "is-active" : ""}`}
-                        disabled={line.time === null}
+                        disabled={!lyricSynced || line.time === null}
                         onClick={() =>
                           player.seek(
                             Math.max(
@@ -1273,84 +1881,95 @@ export function App() {
                           )
                         }
                         aria-label={
-                          line.time !== null
+                          lyricSynced && line.time !== null
                             ? `Seek to ${clock((line.time + doc.fileOffset + doc.userOffset) / 1000)}: ${line.text}`
                             : line.text
                         }
                       >
-                        <span
-                          className="lyric-original"
-                          lang={
-                            /[\u0B80-\u0BFF]/.test(line.text) ? "ta" : undefined
-                          }
-                          dir="auto"
-                        >
-                          {line.text || "♪"}
-                        </span>
-                        {session.settings.romanisation &&
-                          doc.romanisation[line.id] && (
+                        {lyricLayers(doc, line, session.settings).map(
+                          (layer, index) => (
                             <span
-                              className="lyric-roman"
-                              lang="ta-Latn"
+                              key={layer.kind}
+                              className={`lyric-${layer.kind} ${index === 0 ? "lyric-primary" : ""}`}
+                              lang={
+                                layer.kind === "translation"
+                                  ? "en"
+                                  : layer.kind === "roman"
+                                    ? "und-Latn"
+                                    : /[\u0b80-\u0bff]/.test(line.text)
+                                      ? "ta"
+                                      : /[\u0900-\u097f]/.test(line.text)
+                                        ? "und-Deva"
+                                        : undefined
+                              }
                               dir="auto"
                             >
-                              {doc.romanisation[line.id]}
+                              {layer.text}
                             </span>
-                          )}
-                        {session.settings.translation &&
-                          doc.translation[line.id] && (
-                            <span
-                              className="lyric-translation"
-                              lang="en"
-                              dir="auto"
-                            >
-                              {doc.translation[line.id]}
-                            </span>
-                          )}
+                          ),
+                        )}
                       </button>
                     ))}
                   </div>
                   <div className="lyric-bottom">
-                    <label>
-                      Timing{" "}
-                      <input
-                        aria-label="Lyric timing offset in milliseconds"
-                        type="number"
-                        step={50}
-                        min={-60000}
-                        max={60000}
-                        value={doc.userOffset}
-                        onChange={(e) => {
-                          const offset = Math.min(
-                            60000,
-                            Math.max(-60000, Number(e.target.value)),
-                          );
-                          update((s) => ({
-                            ...s,
-                            lyrics: {
-                              ...s.lyrics,
-                              [track!.id]: { ...doc, userOffset: offset },
-                            },
-                          }));
-                        }}
-                      />{" "}
-                      ms
-                    </label>
-                    <span>
-                      Positive = later · File offset {doc.fileOffset} ms
-                    </span>
+                    {lyricSynced && (
+                      <>
+                        <label>
+                          Timing{" "}
+                          <input
+                            aria-label="Lyric timing offset in milliseconds"
+                            type="number"
+                            step={50}
+                            min={-60000}
+                            max={60000}
+                            value={doc.userOffset}
+                            onChange={(e) => {
+                              const offset = Math.min(
+                                60000,
+                                Math.max(-60000, Number(e.target.value)),
+                              );
+                              update((s) => ({
+                                ...s,
+                                lyrics: {
+                                  ...s.lyrics,
+                                  [track!.id]: { ...doc, userOffset: offset },
+                                },
+                              }));
+                            }}
+                          />{" "}
+                          ms
+                        </label>
+                        <span>
+                          Positive = later · File offset {doc.fileOffset} ms
+                        </span>
+                      </>
+                    )}
+                    {!lyricSynced && (
+                      <span>
+                        {session.settings.estimatedScroll
+                          ? "Scrolling is estimated from playback progress."
+                          : "Estimated scrolling is off."}
+                      </span>
+                    )}
                     <button
                       className="subtle"
+                      disabled={
+                        !lyricSynced && !session.settings.estimatedScroll
+                      }
                       onClick={() => setFollow((x) => !x)}
                     >
-                      {follow ? "Following playback" : "Resume following"}
+                      {!lyricSynced && !session.settings.estimatedScroll
+                        ? "Manual scrolling"
+                        : follow
+                          ? "Following playback"
+                          : "Resume following"}
                     </button>
                   </div>
                 </>
               )}
             </section>
           )}
-          {ready && view === "discover" && (
+          {ready && view === "discover" && !mobile && (
             <section className="discover-page">
               <div className="page-heading">
                 <div>
@@ -1359,15 +1978,20 @@ export function App() {
                     Discover new music<span className="heading-dot">.</span>
                   </h1>
                   <p className="subtitle">
-                    {ytdlpAvailable 
-                      ? "Search YouTube and stream audio using yt-dlp. For personal, non-commercial use." 
+                    {ytdlpAvailable
+                      ? "Search YouTube and stream audio using yt-dlp. For personal, non-commercial use."
                       : "yt-dlp is required. Install yt-dlp and restart the app."}
                   </p>
                 </div>
               </div>
               {!ytdlpAvailable && (
                 <div className="banner error" role="alert">
-                  <span>yt-dlp not found. Please install yt-dlp (https://github.com/yt-dlp/yt-dlp) and place yt-dlp.exe in the same folder as Lumaire, or ensure it's available in your system PATH.</span>
+                  <span>
+                    yt-dlp not found. Please install yt-dlp
+                    (https://github.com/yt-dlp/yt-dlp) and place yt-dlp.exe in
+                    the same folder as Lumaire, or ensure it's available in your
+                    system PATH.
+                  </span>
                 </div>
               )}
               <section className="library-tools">
@@ -1380,19 +2004,26 @@ export function App() {
                     disabled={!ytdlpAvailable || discoverySearching}
                     onChange={(e) => setDiscoveryQuery(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && discoveryQuery.trim() && ytdlpAvailable) {
+                      if (
+                        e.key === "Enter" &&
+                        discoveryQuery.trim() &&
+                        ytdlpAvailable
+                      ) {
                         e.preventDefault();
                         setDiscoverySearching(true);
                         setDiscoveryError("");
-                        library.ytdlpSearch(discoveryQuery.trim(), 20)
-                          .then(results => {
+                        library
+                          .ytdlpSearch(discoveryQuery.trim(), 20)
+                          .then((results) => {
                             setDiscoveryResults(results);
                             setDiscoverySearching(false);
                             if (results.length === 0) {
-                              setDiscoveryError("No results found. Try different keywords.");
+                              setDiscoveryError(
+                                "No results found. Try different keywords.",
+                              );
                             }
                           })
-                          .catch(err => {
+                          .catch((err) => {
                             setDiscoveryError(formatError(err));
                             setDiscoverySearching(false);
                           });
@@ -1414,19 +2045,26 @@ export function App() {
                 </label>
                 <button
                   className="primary"
-                  disabled={discoverySearching || !discoveryQuery.trim() || !ytdlpAvailable}
+                  disabled={
+                    discoverySearching ||
+                    !discoveryQuery.trim() ||
+                    !ytdlpAvailable
+                  }
                   onClick={() => {
                     setDiscoverySearching(true);
                     setDiscoveryError("");
-                    library.ytdlpSearch(discoveryQuery.trim(), 20)
-                      .then(results => {
+                    library
+                      .ytdlpSearch(discoveryQuery.trim(), 20)
+                      .then((results) => {
                         setDiscoveryResults(results);
                         setDiscoverySearching(false);
                         if (results.length === 0) {
-                          setDiscoveryError("No results found. Try different keywords.");
+                          setDiscoveryError(
+                            "No results found. Try different keywords.",
+                          );
                         }
                       })
-                      .catch(err => {
+                      .catch((err) => {
                         setDiscoveryError(formatError(err));
                         setDiscoverySearching(false);
                       });
@@ -1448,22 +2086,29 @@ export function App() {
               {discoveryError && (
                 <div className="banner error" role="alert">
                   <span>{discoveryError}</span>
-                  <IconButton label="Dismiss error" onClick={() => setDiscoveryError("")}>
+                  <IconButton
+                    label="Dismiss error"
+                    onClick={() => setDiscoveryError("")}
+                  >
                     <X size={16} />
                   </IconButton>
                 </div>
               )}
-              {!discoveryResults.length && !discoverySearching && !discoveryError && ytdlpAvailable && (
-                <div className="empty">
-                  <Globe size={36} />
-                  <h2>Search YouTube</h2>
-                  <p>
-                    Find and stream music from YouTube.
-                    <br />
-                    Stream URLs expire after a few hours. For personal, non-commercial use only.
-                  </p>
-                </div>
-              )}
+              {!discoveryResults.length &&
+                !discoverySearching &&
+                !discoveryError &&
+                ytdlpAvailable && (
+                  <div className="empty">
+                    <Globe size={36} />
+                    <h2>Search YouTube</h2>
+                    <p>
+                      Find and stream music from YouTube.
+                      <br />
+                      Stream URLs expire after a few hours. For personal,
+                      non-commercial use only.
+                    </p>
+                  </div>
+                )}
               {discoverySearching && (
                 <div className="empty">
                   <Loader2 size={36} className="spin" />
@@ -1485,42 +2130,8 @@ export function App() {
                         <button
                           className="track-play"
                           aria-label={`Play ${t.title}`}
-                          onClick={() => {
-                            // Add to library and play
-                            const localTrack: Track = {
-                              id: `youtube:${t.id}`,
-                              title: t.title,
-                              artist: t.channel || "Unknown Artist",
-                              album: "YouTube",
-                              duration: t.duration || 0,
-                              fileName: t.title,
-                              missing: false,
-                              format: "YouTube",
-                              source: {
-                                providerId: "youtube",
-                                sourceId: t.id,
-                                pageUrl: `https://www.youtube.com/watch?v=${t.id}`,
-                                license: "YouTube Terms of Service",
-                                licenseUrl: "https://www.youtube.com/t/terms",
-                                attribution: t.channel || "Unknown",
-                              },
-                            };
-                            setTracks((all) => {
-                              if (all.find((x) => x.id === localTrack.id)) return all;
-                              return [...all, localTrack];
-                            });
-                            const entry = item(localTrack.id);
-                            update((s) => ({
-                              ...s,
-                              queue: [...s.queue, entry],
-                              currentId: entry.id,
-                              position: 0,
-                            }));
-                            // Play - resolver handles youtube: prefix
-                            void player.load(localTrack.id, true);
-                            setFollow(true);
-                            notify(`Playing ${t.title} from YouTube`);
-                          }}
+                          disabled={busy}
+                          onClick={() => void saveDiscovery(t, "play")}
                         >
                           <span className="track-index">
                             {String(index + 1).padStart(2, "0")}
@@ -1529,11 +2140,17 @@ export function App() {
                         </button>
                         <button
                           className="track-meta"
-                          onClick={() => window.open(`https://www.youtube.com/watch?v=${t.id}`, "_blank")}
+                          onClick={() =>
+                            window.open(
+                              `https://www.youtube.com/watch?v=${t.id}`,
+                              "_blank",
+                            )
+                          }
                         >
-                          <span className={`cover color-${index % 5}`}>
-                            <Music2 size={20} />
-                          </span>
+                          <Artwork
+                            url={t.thumbnail}
+                            className={`color-${index % 5}`}
+                          />
                           <span>
                             <strong dir="auto">{t.title}</strong>
                             <small dir="auto">
@@ -1550,7 +2167,12 @@ export function App() {
                         <div className="track-actions">
                           <IconButton
                             label={`View ${t.title} on YouTube`}
-                            onClick={() => window.open(`https://www.youtube.com/watch?v=${t.id}`, "_blank")}
+                            onClick={() =>
+                              window.open(
+                                `https://www.youtube.com/watch?v=${t.id}`,
+                                "_blank",
+                              )
+                            }
                           >
                             <ExternalLink size={17} />
                           </IconButton>
@@ -1559,63 +2181,41 @@ export function App() {
                               •••
                             </summary>
                             <div className="menu-popover">
-                              <button onClick={() => {
-                                const localTrack: Track = {
-                                  id: `youtube:${t.id}`,
-                                  title: t.title,
-                                  artist: t.channel || "Unknown Artist",
-                                  album: "YouTube",
-                                  duration: t.duration || 0,
-                                  fileName: t.title,
-                                  missing: false,
-                                  format: "YouTube",
-                                  source: {
-                                    providerId: "youtube",
-                                    sourceId: t.id,
-                                    pageUrl: `https://www.youtube.com/watch?v=${t.id}`,
-                                    license: "YouTube Terms of Service",
-                                    licenseUrl: "https://www.youtube.com/t/terms",
-                                    attribution: t.channel || "Unknown",
-                                  },
-                                };
-                                setTracks((all) => {
-                                  if (all.find((x) => x.id === localTrack.id)) return all;
-                                  return [...all, localTrack];
-                                });
-                                queueTrack(localTrack.id, true);
-                              }}>
+                              <button
+                                disabled={busy}
+                                onClick={() => void saveDiscovery(t, "save")}
+                              >
+                                Save to library
+                              </button>
+                              <button
+                                disabled={busy}
+                                onClick={() => void saveDiscovery(t, "next")}
+                              >
                                 Play next
                               </button>
-                              <button onClick={() => {
-                                const localTrack: Track = {
-                                  id: `youtube:${t.id}`,
-                                  title: t.title,
-                                  artist: t.channel || "Unknown Artist",
-                                  album: "YouTube",
-                                  duration: t.duration || 0,
-                                  fileName: t.title,
-                                  missing: false,
-                                  format: "YouTube",
-                                  source: {
-                                    providerId: "youtube",
-                                    sourceId: t.id,
-                                    pageUrl: `https://www.youtube.com/watch?v=${t.id}`,
-                                    license: "YouTube Terms of Service",
-                                    licenseUrl: "https://www.youtube.com/t/terms",
-                                    attribution: t.channel || "Unknown",
-                                  },
-                                };
-                                setTracks((all) => {
-                                  if (all.find((x) => x.id === localTrack.id)) return all;
-                                  return [...all, localTrack];
-                                });
-                                queueTrack(localTrack.id);
-                              }}>
+                              <button
+                                disabled={busy}
+                                onClick={() => void saveDiscovery(t, "queue")}
+                              >
                                 Add to queue
                               </button>
-                              <button onClick={() => window.open(`https://www.youtube.com/watch?v=${t.id}`, "_blank")}>
-                                <ExternalLink size={14} />
-                                View on YouTube
+                              <button
+                                disabled={busy}
+                                onClick={() => choosePlaylist(youtubeTrack(t))}
+                              >
+                                Save to playlist
+                              </button>
+                              <button
+                                disabled={
+                                  downloads[`youtube:${t.id}`] === "downloading"
+                                }
+                                onClick={() =>
+                                  void downloadTrack(youtubeTrack(t))
+                                }
+                              >
+                                {downloads[`youtube:${t.id}`] === "downloading"
+                                  ? "Downloading…"
+                                  : "Download for offline"}
                               </button>
                             </div>
                           </details>
@@ -1624,11 +2224,34 @@ export function App() {
                     ))}
                   </div>
                   <p className="library-footer">
-                    <span className="small-dot" /> Results from YouTube · {discoveryResults.length} tracks · URLs expire after a few hours
+                    <span className="small-dot" /> Results from YouTube ·{" "}
+                    {discoveryResults.length} tracks · URLs expire after a few
+                    hours
                   </p>
                 </>
               )}
             </section>
+          )}
+          {ready && view === "discover" && (
+            <>
+              {mobile && (
+                <section className="settings-card">
+                  <h2>Android prototype</h2>
+                  <p>
+                    Play local files or open music from Commons. YouTube
+                    playback and downloads need an Android resolver and are not
+                    available yet.
+                  </p>
+                </section>
+              )}
+              <CommonsDiscovery
+                save={(track, play) => void saveCommons(track, play)}
+                download={(track) => void downloadTrack(track)}
+                queue={queueRemote}
+                playlist={choosePlaylist}
+                pending={downloads}
+              />
+            </>
           )}
           {ready && view === "settings" && (
             <section className="settings-page">
@@ -1649,7 +2272,7 @@ export function App() {
                 <div className="button-row">
                   <button
                     className="subtle"
-                    disabled={busy}
+                    disabled={busy || mobile}
                     onClick={() =>
                       void action(async () => {
                         persist();
@@ -1670,7 +2293,7 @@ export function App() {
                   </button>
                   <button
                     className="subtle"
-                    disabled={busy}
+                    disabled={busy || mobile}
                     onClick={() =>
                       ask(
                         "Import library backup",
@@ -1719,8 +2342,9 @@ export function App() {
                   </button>
                 </div>
                 <small>
-                  Backups contain metadata and settings. Audio and lyric text
-                  are excluded. Files imported on another device require Relink.
+                  {mobile
+                    ? "Android backup import and export are not enabled in this prototype yet. Your library is stored on this device."
+                    : "Backups contain metadata and settings. Audio and lyric text are excluded. Files imported on another device require Relink."}
                 </small>
               </div>
               <div className="settings-card">
@@ -1769,6 +2393,50 @@ export function App() {
                 </div>
               </div>
               <div className="settings-card">
+                <h2>Offline downloads</h2>
+                <p>
+                  Only explicitly downloaded, licensed audio is stored here.
+                  External local files are never deleted by these controls.
+                </p>
+                {Object.entries(downloads)
+                  .filter(([, status]) => status !== "complete")
+                  .map(([id, status]) => (
+                    <div className="source-row" key={id}>
+                      <span>
+                        {tracks.find((track) => track.id === id)?.title ||
+                          "Audio download"}{" "}
+                        · {status === "downloading" ? "Downloading…" : status}
+                      </span>
+                      {status === "downloading" ? (
+                        <button onClick={() => void library.cancelDownload(id)}>
+                          Cancel download
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const track = tracks.find(
+                              (track) => track.id === id,
+                            );
+                            if (track) void downloadTrack(track);
+                          }}
+                        >
+                          Retry download
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                {tracks
+                  .filter((track) => track.offline)
+                  .map((track) => (
+                    <div className="source-row" key={track.id}>
+                      <span>{track.title} · Available offline</span>
+                      <button onClick={() => deleteOffline(track)}>
+                        Delete offline copy
+                      </button>
+                    </div>
+                  ))}
+              </div>
+              <div className="settings-card">
                 <h2>Sources</h2>
                 <div className="source-row">
                   <span className="source-symbol">
@@ -1786,14 +2454,20 @@ export function App() {
                   </span>
                   <div>
                     <strong>YouTube (via yt-dlp)</strong>
-                    <p>Search and stream · URLs expire · Personal, non-commercial use only</p>
+                    <p>
+                      Search and stream · URLs expire · Personal, non-commercial
+                      use only
+                    </p>
                   </div>
-                  <span className="source-status">{ytdlpAvailable ? "Enabled" : "Not Available"}</span>
+                  <span className="source-status">
+                    {ytdlpAvailable ? "Enabled" : "Not Available"}
+                  </span>
                 </div>
                 <p>
-                  YouTube streaming requires yt-dlp. Stream URLs expire after a few hours.
-                  Use is subject to YouTube Terms of Service. For personal, non-commercial use only.
-                  Local files work independently and offline.
+                  YouTube streaming requires yt-dlp. Stream URLs expire after a
+                  few hours. Use is subject to YouTube Terms of Service. For
+                  personal, non-commercial use only. Local files work
+                  independently and offline.
                 </p>
               </div>
               <div className="settings-card">
@@ -1829,7 +2503,16 @@ export function App() {
         <aside className="queue-pane">
           <header>
             <h2>
-              Up next <span>{session.queue.length}</span>
+              Up next{" "}
+              <span>
+                {
+                  session.queue.slice(
+                    session.queue.findIndex(
+                      (entry) => entry.id === session.currentId,
+                    ) + 1,
+                  ).length
+                }
+              </span>
             </h2>
             <IconButton label="Hide queue" onClick={() => setQueueOpen(false)}>
               <PanelRightClose size={18} />
@@ -1839,7 +2522,14 @@ export function App() {
           <div className="queue-items">
             {session.queue.length ? (
               session.queue.map((entry, index) => {
-                const t = tracks.find((t) => t.id === entry.trackId);
+                if (
+                  index <
+                  session.queue.findIndex(
+                    (entry) => entry.id === session.currentId,
+                  )
+                )
+                  return null;
+                const t = listeningTracks.find((t) => t.id === entry.trackId);
                 if (!t) return null;
                 return (
                   <div
@@ -1851,14 +2541,15 @@ export function App() {
                       aria-label={`Play queued ${t.title}`}
                       onClick={() => selectQueue(entry.id, true)}
                     >
-                      <span className={`cover color-${index % 5}`}>
-                        <Music2 size={17} />
-                      </span>
+                      <Artwork
+                        url={t.artworkUrl}
+                        className={`color-${index % 5}`}
+                      />
                       <span>
                         <strong dir="auto">{t.title}</strong>
                         <small>
                           {entry.id === session.currentId
-                            ? "Now selected"
+                            ? "Now playing"
                             : t.artist}
                         </small>
                       </span>
@@ -1866,24 +2557,28 @@ export function App() {
                     <div className="queue-controls">
                       <IconButton
                         label={`Move ${t.title} up`}
-                        disabled={index === 0}
+                        disabled={
+                          entry.id === session.currentId ||
+                          index <=
+                            session.queue.findIndex(
+                              (entry) => entry.id === session.currentId,
+                            ) +
+                              1
+                        }
                         onClick={() =>
-                          update((s) => ({
-                            ...s,
-                            queue: move(s.queue, entry.id, -1),
-                          }))
+                          update((s) => reorderUpcoming(s, entry.id, -1))
                         }
                       >
                         <ArrowUp size={13} />
                       </IconButton>
                       <IconButton
                         label={`Move ${t.title} down`}
-                        disabled={index === session.queue.length - 1}
+                        disabled={
+                          entry.id === session.currentId ||
+                          index === session.queue.length - 1
+                        }
                         onClick={() =>
-                          update((s) => ({
-                            ...s,
-                            queue: move(s.queue, entry.id, 1),
-                          }))
+                          update((s) => reorderUpcoming(s, entry.id, 1))
                         }
                       >
                         <ArrowDown size={13} />
@@ -1923,16 +2618,19 @@ export function App() {
             )}
             <button
               className="subtle"
-              disabled={!session.queue.length}
+              disabled={
+                !session.queue.slice(
+                  session.queue.findIndex(
+                    (entry) => entry.id === session.currentId,
+                  ) + 1,
+                ).length
+              }
               onClick={() => {
                 setUndo(session.queue);
                 update((s) => ({
                   ...s,
-                  queue: [],
-                  currentId: null,
-                  position: 0,
+                  queue: s.queue.filter((entry) => entry.id === s.currentId),
                 }));
-                player.stop();
               }}
             >
               Clear queue
@@ -1943,19 +2641,34 @@ export function App() {
       )}
       <footer className="transport" aria-label="Playback controls">
         <div className="now-playing">
-          <span className="cover transport-cover">
-            {track ? <Music2 size={25} /> : <Disc3 size={25} />}
-          </span>
+          <Artwork url={track?.artworkUrl} className="transport-cover" />
           <div>
             <strong dir="auto">
               {track?.title ?? "Room for a little music"}
             </strong>
             <small dir="auto">
               {track?.artist ?? "Choose a track to begin"}
-              {track ? ` · Local ${track.format}` : ""}
+              {track
+                ? ` · ${track.offline ? "Offline download" : track.source ? "Online" : "Local"} ${track.format}`
+                : ""}
             </small>
           </div>
-          {track && (
+          {track && !tracks.some((saved) => saved.id === track.id) && (
+            <button
+              className="subtle save-current"
+              disabled={busy}
+              title="Keep this online source in your library. Audio is not downloaded."
+              onClick={() =>
+                void action(async () => {
+                  await saveOnline(track);
+                  notify("Saved to library · Internet required for streaming");
+                })
+              }
+            >
+              <Plus size={16} /> Save
+            </button>
+          )}
+          {track && tracks.some((saved) => saved.id === track.id) && (
             <IconButton
               label="Favorite current track"
               active={session.favorites.includes(track.id)}
@@ -1968,6 +2681,49 @@ export function App() {
                 }
               />
             </IconButton>
+          )}
+          {track?.source && !track.offline && (
+            <IconButton
+              label="Download current track for offline"
+              disabled={downloads[track.id] === "downloading"}
+              onClick={() => void downloadTrack(track)}
+            >
+              <Download size={17} />
+            </IconButton>
+          )}
+          {track && (
+            <details className="track-menu current-track-menu">
+              <summary aria-label="Current song actions">•••</summary>
+              <div className="menu-popover">
+                <button disabled={busy} onClick={() => choosePlaylist(track)}>
+                  Save to playlist
+                </button>
+                {track.source &&
+                  !track.offline &&
+                  (downloads[track.id] === "downloading" ? (
+                    <button
+                      onClick={() =>
+                        void action(() => library.cancelDownload(track.id))
+                      }
+                    >
+                      Cancel download
+                    </button>
+                  ) : (
+                    <button onClick={() => void downloadTrack(track)}>
+                      Download for offline
+                    </button>
+                  ))}
+                {track.offline && (
+                  <button onClick={() => deleteOffline(track)}>
+                    Delete offline copy
+                  </button>
+                )}
+                <small>
+                  Download only content you’re permitted to download. Saved
+                  sources need internet; downloaded audio plays offline.
+                </small>
+              </div>
+            </details>
           )}
         </div>
         <div className="player-center">
@@ -1993,7 +2749,9 @@ export function App() {
                   ? "Pause"
                   : "Play"
               }
-              disabled={!tracks.length || playback.status === "loading"}
+              disabled={
+                (!track && !tracks.length) || playback.status === "loading"
+              }
               onClick={togglePlay}
             >
               {playback.status === "playing" ||
@@ -2077,14 +2835,73 @@ export function App() {
         onCancel={() => {
           setDialog(null);
           setVariant(null);
+          setPlaylistTarget(null);
         }}
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             setDialog(null);
             setVariant(null);
+            setPlaylistTarget(null);
           }
         }}
       >
+        {playlistTarget && (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              const name = dialogValue.trim();
+              if (name)
+                void addOnlineToPlaylist(
+                  playlistTarget,
+                  crypto.randomUUID(),
+                  name,
+                );
+            }}
+          >
+            <p className="eyebrow">YOUR COLLECTION</p>
+            <h2>Save to playlist</h2>
+            <p dir="auto">{playlistTarget.title}</p>
+            <div className="playlist-choices">
+              {session.playlists.map((playlist) => (
+                <button
+                  className="subtle"
+                  type="button"
+                  disabled={busy}
+                  key={playlist.id}
+                  onClick={() =>
+                    void addOnlineToPlaylist(playlistTarget, playlist.id)
+                  }
+                >
+                  {playlist.name}
+                </button>
+              ))}
+            </div>
+            <label>
+              New playlist name
+              <input
+                autoFocus
+                maxLength={100}
+                value={dialogValue}
+                onChange={(event) => setDialogValue(event.target.value)}
+              />
+            </label>
+            <div className="dialog-actions">
+              <button
+                className="subtle"
+                type="button"
+                onClick={() => setPlaylistTarget(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="primary"
+                disabled={busy || !dialogValue.trim()}
+              >
+                Create and save
+              </button>
+            </div>
+          </form>
+        )}
         {dialog && (
           <form
             onSubmit={(e) => {

@@ -63,15 +63,89 @@ export function parseLyrics(raw: string, fileName = "Lyrics"): LyricDocument {
     warnings,
     romanisation: {},
     translation: {},
+    timingMode: timed ? "synced" : "unsynced",
   };
 }
 
 export function activeLine(doc: LyricDocument, mediaMs: number): string | null {
+  if (doc.timingMode === "unsynced") return null;
   const clock = mediaMs - doc.fileOffset - doc.userOffset;
   let active: string | null = null;
   for (const line of doc.lines)
     if (line.time !== null && line.time <= clock) active = line.id;
   return active;
+}
+
+export function synchronizedLyrics(
+  doc: LyricDocument,
+  duration: number,
+): boolean {
+  if (
+    doc.timingMode === "unsynced" ||
+    doc.instrumental ||
+    !doc.lines.some((line) => line.time !== null)
+  )
+    return false;
+  // Legacy cached documents may contain LRC from a different-duration edition.
+  if (
+    doc.source &&
+    (duration <= 0 || Math.abs(doc.source.duration - duration) > 2)
+  )
+    return false;
+  return !doc.lines.some(
+    (line) =>
+      line.time !== null && duration > 0 && line.time > (duration + 2) * 1000,
+  );
+}
+
+/** Approximate reading position only. Never assign timestamps or enable seeking. */
+export function estimatedFollowLine(
+  doc: LyricDocument,
+  time: number,
+  duration: number,
+): string | null {
+  if (
+    !Number.isFinite(time) ||
+    !Number.isFinite(duration) ||
+    duration <= 0 ||
+    doc.instrumental
+  )
+    return null;
+  const lines = doc.lines.filter((line) => line.text.trim());
+  if (!lines.length) return null;
+  const progress = Math.max(0, Math.min(1, time / duration));
+  const weights = lines.map((line) =>
+    Math.max(1, Array.from(line.text.trim()).length),
+  );
+  const target = progress * weights.reduce((sum, weight) => sum + weight, 0);
+  let read = 0;
+  for (let i = 0; i < lines.length; i++) {
+    read += weights[i];
+    if (target < read) return lines[i].id;
+  }
+  return lines.at(-1)!.id;
+}
+
+export function normalizeCachedLyrics(
+  doc: LyricDocument,
+  duration: number,
+): LyricDocument {
+  if (!doc.source) return doc; // Preserve explicitly imported local documents.
+  const unsynced = !synchronizedLyrics(
+    { ...doc, timingMode: "synced" },
+    duration,
+  );
+  const warnings = doc.warnings.filter(
+    (warning) => !warning.startsWith("The selected lyric recording is "),
+  );
+  const timingMode = unsynced ? "unsynced" : "synced";
+  if (timingMode === doc.timingMode && warnings.length === doc.warnings.length)
+    return doc;
+  return {
+    ...doc,
+    warnings,
+    timingMode,
+  };
 }
 
 // A supplied LRC must have identical occurrence timestamps. Plain text requires explicit row confirmation.

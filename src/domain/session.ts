@@ -4,8 +4,70 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
   const base = defaults();
   if (!value || typeof value !== "object") return base;
   const v = value as Partial<Session>,
-    ids = new Set(tracks.map((t) => t.id));
-  const cleanItems = (items: unknown): QueueItem[] =>
+    savedIds = new Set(tracks.map((t) => t.id));
+  const requestedIds = new Set(
+    Array.isArray(v.queue) ? v.queue.map((entry) => entry?.trackId) : [],
+  );
+  const queueTracks: Record<string, Track> = {};
+  // Only stable remote identities can be restored without a library row. Local
+  // file access always requires the backend's saved path mapping.
+  for (const [id, candidate] of Object.entries(v.queueTracks ?? {})
+    .filter(([id]) => requestedIds.has(id) && !savedIds.has(id))
+    .slice(0, 500)) {
+    const t = candidate as Track;
+    const source = t?.source;
+    if (t?.id !== id || !source || typeof source.sourceId !== "string")
+      continue;
+    const youtube =
+      source.providerId === "youtube" &&
+      /^[A-Za-z0-9_-]{11}$/.test(source.sourceId);
+    const commons =
+      source.providerId === "wikimedia-commons" &&
+      /^[1-9]\d*$/.test(source.sourceId);
+    if (
+      (!youtube && !commons) ||
+      id !== `${source.providerId}:${source.sourceId}` ||
+      ![
+        t.title,
+        t.artist,
+        t.album,
+        t.fileName,
+        t.format,
+        source.pageUrl,
+        source.license,
+        source.licenseUrl,
+        source.attribution,
+      ].every((value) => typeof value === "string") ||
+      !Number.isFinite(t.duration)
+    )
+      continue;
+    queueTracks[id] = {
+      id,
+      title: t.title,
+      artist: t.artist,
+      album: t.album,
+      fileName: t.fileName,
+      duration: Math.max(0, t.duration),
+      format: t.format,
+      missing: false,
+      artworkUrl:
+        typeof t.artworkUrl === "string" && t.artworkUrl.startsWith("https://")
+          ? t.artworkUrl
+          : null,
+      source: {
+        providerId: source.providerId,
+        sourceId: source.sourceId,
+        pageUrl: youtube
+          ? `https://www.youtube.com/watch?v=${source.sourceId}`
+          : `https://commons.wikimedia.org/?curid=${source.sourceId}`,
+        license: source.license,
+        licenseUrl: source.licenseUrl,
+        attribution: source.attribution,
+      },
+    };
+  }
+  const ids = new Set([...savedIds, ...Object.keys(queueTracks)]);
+  const cleanItems = (items: unknown, validIds = ids): QueueItem[] =>
     Array.isArray(items)
       ? items
           .filter(
@@ -13,10 +75,14 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
               i &&
               typeof i.id === "string" &&
               typeof i.trackId === "string" &&
-              ids.has(i.trackId),
+              validIds.has(i.trackId),
           )
           .slice(0, 50000)
-          .map((i) => ({ id: i.id, trackId: i.trackId }))
+          .map((i) => ({
+            id: i.id,
+            trackId: i.trackId,
+            ...(i.requested === true ? { requested: true } : {}),
+          }))
       : [];
   const queue = cleanItems(v.queue);
   // Item IDs must remain unique, even when the same track is intentionally repeated.
@@ -29,12 +95,13 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
   return {
     ...base,
     queue,
+    queueTracks,
     currentId: queue.some((i) => i.id === v.currentId)
       ? v.currentId!
       : (queue[0]?.id ?? null),
     position: Number.isFinite(v.position) ? Math.max(0, Number(v.position)) : 0,
     favorites: Array.isArray(v.favorites)
-      ? v.favorites.filter((id) => ids.has(id))
+      ? v.favorites.filter((id) => savedIds.has(id))
       : [],
     playlists: Array.isArray(v.playlists)
       ? v.playlists
@@ -44,7 +111,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
           .map((p) => ({
             ...p,
             name: p.name.slice(0, 100),
-            items: cleanItems(p.items),
+            items: cleanItems(p.items, savedIds),
           }))
       : [],
     lyrics:
@@ -92,6 +159,15 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
       shuffle: p.shuffle === true,
       romanisation: p.romanisation !== false,
       translation: p.translation !== false,
+      originalScript: p.originalScript !== false,
+      originalFirst: p.originalFirst !== false,
+      autoOpenLyrics: p.autoOpenLyrics === true,
+      estimatedScroll: p.estimatedScroll !== false,
+      geminiModel:
+        typeof p.geminiModel === "string" &&
+        /^[A-Za-z0-9._-]{1,100}$/.test(p.geminiModel)
+          ? p.geminiModel
+          : base.settings.geminiModel,
       lyricSize: Number.isFinite(p.lyricSize)
         ? Math.max(18, Math.min(46, p.lyricSize))
         : 28,

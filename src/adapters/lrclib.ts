@@ -11,23 +11,32 @@
  */
 
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import { parseLyrics } from "../domain/lyrics";
+import { normalizeCachedLyrics, parseLyrics } from "../domain/lyrics";
 import type { LyricDocument, Track } from "../domain/types";
 
 /** Shape returned by the Rust fetch_lyrics command. */
 type LyricResult =
-  | { kind: "synced"; lrc: string }
-  | { kind: "plain"; text: string }
+  | { kind: "synced"; lrc: string; matched?: LyricMatch | null }
+  | { kind: "plain"; text: string; matched?: LyricMatch | null }
   | { kind: "instrumental" }
   | { kind: "not_found" };
+
+interface LyricMatch {
+  id: number;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+}
 
 export type LookupState =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "found"; doc: LyricDocument }
-  | { status: "instrumental" }
   | { status: "not_found" }
   | { status: "error"; message: string };
+
+const pending = new Map<string, Promise<LookupState>>();
 
 /**
  * Fetch lyrics for a track from LRCLIB via the native command.
@@ -40,39 +49,105 @@ export async function lookupLyrics(
   track: Track,
   cachedDoc?: LyricDocument,
 ): Promise<LookupState> {
+  if (cachedDoc)
+    return {
+      status: "found",
+      doc: normalizeCachedLyrics(cachedDoc, track.duration),
+    };
+  const key = JSON.stringify([
+    track.title,
+    track.artist,
+    track.album,
+    track.duration,
+  ]);
+  const existing = pending.get(key);
+  if (existing) return existing;
+  const request = fetchLyrics(track).finally(() => pending.delete(key));
+  pending.set(key, request);
+  return request;
+}
+
+async function fetchLyrics(track: Track): Promise<LookupState> {
   // Not running inside Tauri — skip silently.
   if (!isTauri()) return { status: "idle" };
-
-  // Use cached session lyrics if present (manually attached or prior lookup).
-  if (cachedDoc) return { status: "found", doc: cachedDoc };
 
   try {
     const result = await invoke<LyricResult>("fetch_lyrics", {
       title: track.title,
-      artist: track.artist === "Unknown artist" ? "" : track.artist,
-      album: track.album,
+      // Local imports use "Unknown artist", YouTube imports "Unknown Artist".
+      // Treat both as "no artist" so the Rust side can fall back to the title.
+      artist: /^unknown artist$/i.test(track.artist.trim()) ? "" : track.artist,
+      album: /^(youtube|local collection|unknown album)$/i.test(
+        track.album.trim(),
+      )
+        ? ""
+        : track.album,
       duration: track.duration,
     });
 
-    switch (result.kind) {
-      case "synced": {
-        // Use filename "<title> · LRCLIB" so provenance is clear in the UI.
-        const doc = parseLyrics(result.lrc, `${track.title} · LRCLIB`);
-        return { status: "found", doc };
-      }
-      case "plain": {
-        const doc = parseLyrics(result.text, `${track.title} · LRCLIB (plain)`);
-        return { status: "found", doc };
-      }
-      case "instrumental":
-        return { status: "instrumental" };
-      case "not_found":
-        return { status: "not_found" };
-    }
+    return shapeResult(result, track);
   } catch (e) {
-    return {
-      status: "error",
-      message: e instanceof Error ? e.message : String(e),
-    };
+    return lookupError(e);
   }
+}
+
+function lookupError(e: unknown): LookupState {
+  return {
+    status: "error",
+    message: e instanceof Error ? e.message : String(e),
+  };
+}
+
+function shapeResult(result: LyricResult, track: Track): LookupState {
+  switch (result.kind) {
+    case "synced": {
+      // Use filename "<title> · LRCLIB" so provenance is clear in the UI.
+      const doc = parseLyrics(result.lrc, `${track.title} · LRCLIB`);
+      addProvenance(doc, result.matched);
+      return {
+        status: "found",
+        doc: normalizeCachedLyrics(doc, track.duration),
+      };
+    }
+    case "plain": {
+      const doc = parseLyrics(result.text, `${track.title} · LRCLIB (plain)`);
+      addProvenance(doc, result.matched);
+      doc.timingMode = "unsynced";
+      doc.lines = doc.lines.map((line) => ({ ...line, time: null }));
+      return { status: "found", doc };
+    }
+    case "instrumental": {
+      const doc: LyricDocument = {
+        origin: "provider",
+        id: crypto.randomUUID(),
+        raw: "",
+        fileName: "Instrumental · LRCLIB",
+        lines: [],
+        fileOffset: 0,
+        userOffset: 0,
+        warnings: [],
+        romanisation: {},
+        translation: {},
+        instrumental: true,
+      };
+      return { status: "found", doc };
+    }
+    case "not_found":
+      return { status: "not_found" };
+  }
+}
+
+function addProvenance(
+  doc: LyricDocument,
+  matched: LyricMatch | null | undefined,
+) {
+  doc.origin = "provider";
+  if (!matched) return;
+  doc.source = {
+    provider: "lrclib",
+    recordId: matched.id,
+    title: matched.title,
+    artist: matched.artist,
+    duration: matched.duration,
+  };
 }

@@ -6,15 +6,29 @@ use lofty::{
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::{
-    fs,
+    env, fs,
     path::{Path, PathBuf},
-    sync::Mutex,
+    sync::{Mutex, OnceLock},
     time::Duration,
 };
 use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
 
+mod android;
+mod artwork_cache;
+mod downloads;
+mod itunes_metadata;
+mod lyric_identity;
+mod lyrics_provider;
+mod private_settings;
+mod provider_http;
+mod spotify;
+mod translation;
 mod ytdlp;
+
+use spotify::SpotifyClient;
+
+static SPOTIFY_CLIENT: OnceLock<SpotifyClient> = OnceLock::new();
 
 struct Store(Mutex<Connection>);
 
@@ -31,6 +45,10 @@ struct Track {
     format: String,
     #[serde(default)]
     source: Option<RemoteSource>,
+    #[serde(default)]
+    artwork_url: Option<String>,
+    #[serde(default)]
+    offline: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,6 +81,9 @@ struct RemoteTrack {
 struct ResolvedMedia {
     url: String,
     mime_type: String,
+    license: String,
+    license_url: String,
+    attribution: String,
 }
 
 #[derive(Serialize)]
@@ -80,6 +101,57 @@ struct Imported {
 struct TextInput {
     text: String,
     file_name: String,
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn import_audio(app: AppHandle, folder: bool) -> Result<Imported> {
+    let _ = folder;
+    let picked = android::call(&app, "pickAudio", serde_json::json!({})).await?;
+    let paths: Vec<String> = serde_json::from_value(picked["paths"].clone()).map_err(err)?;
+    work(app, move |app, db| {
+        import_selected(app, db, paths.into_iter().map(PathBuf::from).collect())
+    })
+    .await
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn pick_lyrics(app: AppHandle) -> Result<Option<TextInput>> {
+    let picked = android::call(&app, "pickText", serde_json::json!({})).await?;
+    if picked.is_null() {
+        return Ok(None);
+    }
+    Ok(Some(TextInput {
+        text: picked["text"]
+            .as_str()
+            .ok_or("Could not read selected text.")?
+            .to_string(),
+        file_name: picked["fileName"]
+            .as_str()
+            .unwrap_or("lyrics.txt")
+            .to_string(),
+    }))
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn relink_audio(_app: AppHandle, id: String) -> Result<Option<Track>> {
+    let _ = id;
+    Err("Re-import the original audio through Add music in this Android prototype.".into())
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn export_library(_app: AppHandle, session: serde_json::Value) -> Result<bool> {
+    let _ = session;
+    Err("Android backup export is not implemented in this prototype yet.".into())
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn import_library(_app: AppHandle) -> Result<Option<Snapshot>> {
+    Err("Android backup restore is not implemented in this prototype yet.".into())
 }
 
 type Result<T> = std::result::Result<T, String>;
@@ -120,7 +192,20 @@ fn snapshot(db: &Connection) -> Result<Snapshot> {
     for row in rows {
         let (json, path) = row.map_err(err)?;
         let mut track: Track = serde_json::from_str(&json).map_err(err)?;
-        track.missing = path.as_ref().is_none_or(|p| !Path::new(p).is_file());
+        if track.source.is_none() && track.artwork_url.is_none() {
+            if let Some(metadata) = path.as_ref().and_then(|path| fs::metadata(path).ok()) {
+                let stamp = metadata
+                    .modified()
+                    .ok()
+                    .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|time| time.as_secs())
+                    .unwrap_or(0);
+                track.artwork_url =
+                    Some(format!("local:{}?v={stamp}-{}", track.id, metadata.len()));
+            }
+        }
+        track.missing = (track.source.is_none() || track.offline)
+            && path.as_ref().is_none_or(|p| !Path::new(p).is_file());
         tracks.push(track);
     }
     let raw: Option<String> = db
@@ -176,10 +261,21 @@ fn inspect(path: &Path, id: String) -> Track {
             .to_string_lossy()
             .to_uppercase(),
         source: None,
+        artwork_url: None,
+        offline: false,
     };
     if let Ok(file) = Probe::open(path).and_then(|p| p.read()) {
         track.duration = file.properties().duration().as_secs_f64();
         if let Some(tag) = file.primary_tag().or_else(|| file.first_tag()) {
+            if !tag.pictures().is_empty() {
+                let stamp = fs::metadata(path)
+                    .ok()
+                    .and_then(|metadata| metadata.modified().ok())
+                    .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|time| time.as_secs())
+                    .unwrap_or(0);
+                track.artwork_url = Some(format!("local:{}?v={stamp}", track.id));
+            }
             if let Some(v) = tag.title() {
                 track.title = v.chars().take(1000).collect();
             }
@@ -196,6 +292,18 @@ fn inspect(path: &Path, id: String) -> Track {
 
 const COMMONS_API: &str = "https://commons.wikimedia.org/w/api.php";
 const COMMONS_PROVIDER: &str = "wikimedia-commons";
+
+fn commons_mime(info: &serde_json::Value) -> String {
+    let mime = info["mime"]
+        .as_str()
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    if mime == "application/ogg" && info["mediatype"].as_str() == Some("AUDIO") {
+        "audio/ogg".into()
+    } else {
+        mime
+    }
+}
 
 fn commons_client() -> Result<reqwest::Client> {
     reqwest::Client::builder()
@@ -233,18 +341,26 @@ fn licensed_audio(mime: &str, license: &str) -> bool {
     let known_license = license.starts_with("cc-by-")
         || license.starts_with("cc-by-sa-")
         || license == "cc0"
+        || license == "cc-zero"
         || license.starts_with("pd-")
         || license == "public domain";
-    known_license && matches!(mime, "audio/mpeg" | "audio/ogg" | "audio/wav" | "audio/flac")
+    known_license
+        && matches!(
+            mime,
+            "audio/mpeg" | "audio/ogg" | "audio/wav" | "audio/flac"
+        )
 }
 
 fn commons_track(page: &serde_json::Value) -> Option<RemoteTrack> {
     let page_id = page["pageid"].as_i64()?;
     let file_title = page["title"].as_str()?;
     let info = page["imageinfo"].as_array()?.first()?;
-    let mime = info["mime"].as_str()?.to_ascii_lowercase();
+    let mime = commons_mime(info);
     let metadata = &info["extmetadata"];
-    let license = metadata["License"].get("value")?.as_str()?.to_ascii_lowercase();
+    let license = metadata["License"]
+        .get("value")?
+        .as_str()?
+        .to_ascii_lowercase();
     if !licensed_audio(&mime, &license) {
         return None;
     }
@@ -254,7 +370,10 @@ fn commons_track(page: &serde_json::Value) -> Option<RemoteTrack> {
     }
     let object_name = plain_metadata(&metadata["ObjectName"]);
     let title = if object_name.is_empty() {
-        file_title.strip_prefix("File:").unwrap_or(file_title).to_string()
+        file_title
+            .strip_prefix("File:")
+            .unwrap_or(file_title)
+            .to_string()
     } else {
         object_name
     };
@@ -285,14 +404,21 @@ fn commons_track(page: &serde_json::Value) -> Option<RemoteTrack> {
         artist,
         album: "Wikimedia Commons · individually licensed".into(),
         duration,
-        file_name: file_title.strip_prefix("File:").unwrap_or(file_title).into(),
+        file_name: file_title
+            .strip_prefix("File:")
+            .unwrap_or(file_title)
+            .into(),
         missing: false,
         format: extension.into(),
         source: RemoteSource {
             provider_id: COMMONS_PROVIDER.into(),
             source_id: page_id.to_string(),
             page_url: page_url.into(),
-            license: if license_name.is_empty() { license } else { license_name },
+            license: if license_name.is_empty() {
+                license
+            } else {
+                license_name
+            },
             license_url,
             attribution,
         },
@@ -311,23 +437,28 @@ async fn search_commons_audio(query: String) -> Result<Vec<RemoteTrack>> {
             ("action", "query"),
             ("generator", "search"),
             ("gsrnamespace", "6"),
-            ("gsrlimit", "30"),
-            ("gsrsearch", query),
+            ("gsrlimit", "10"),
+            ("gsrsearch", &format!("filetype:audio {query}")),
             ("prop", "imageinfo"),
-            ("iiprop", "url|mime|size|extmetadata"),
+            ("iiprop", "url|mime|mediatype|size|metadata|extmetadata"),
             ("iiurlwidth", "0"),
             ("format", "json"),
         ])
         .send()
         .await
-        .map_err(|_| "Wikimedia Commons could not be reached. Check your connection and retry.".to_string())?;
+        .map_err(|_| {
+            "Wikimedia Commons could not be reached. Check your connection and retry.".to_string()
+        })?;
     if !response.status().is_success() {
         return Err("Wikimedia Commons search is temporarily unavailable.".into());
     }
     if response.content_length().is_some_and(|n| n > 2_000_000) {
         return Err("The music search response exceeded its size limit.".into());
     }
-    let bytes = response.bytes().await.map_err(|_| "The music search response could not be read.".to_string())?;
+    let bytes = response
+        .bytes()
+        .await
+        .map_err(|_| "The music search response could not be read.".to_string())?;
     if bytes.len() > 2_000_000 {
         return Err("The music search response exceeded its size limit.".into());
     }
@@ -359,12 +490,15 @@ async fn resolve_commons_audio(source_id: String) -> Result<ResolvedMedia> {
             ("action", "query"),
             ("pageids", &page_id.to_string()),
             ("prop", "imageinfo"),
-            ("iiprop", "url|mime|extmetadata"),
+            ("iiprop", "url|mime|mediatype|extmetadata"),
             ("format", "json"),
         ])
         .send()
         .await
-        .map_err(|_| "This Commons track could not be refreshed. Check your connection and retry.".to_string())?;
+        .map_err(|_| {
+            "This Commons track could not be refreshed. Check your connection and retry."
+                .to_string()
+        })?;
     if !response.status().is_success() {
         return Err("This Commons track is temporarily unavailable.".into());
     }
@@ -373,18 +507,32 @@ async fn resolve_commons_audio(source_id: String) -> Result<ResolvedMedia> {
         .await
         .map_err(|_| "Commons returned an unreadable track response.".to_string())?;
     let page = &body["query"]["pages"][page_id.to_string()];
-    let info = page["imageinfo"].as_array().and_then(|items| items.first())
+    let info = page["imageinfo"]
+        .as_array()
+        .and_then(|items| items.first())
         .ok_or_else(|| "This track is no longer available on Wikimedia Commons.".to_string())?;
-    let mime = info["mime"].as_str().unwrap_or_default().to_ascii_lowercase();
-    let license = info["extmetadata"]["License"].get("value").and_then(|v| v.as_str()).unwrap_or_default().to_ascii_lowercase();
+    let mime = commons_mime(info);
+    let license = info["extmetadata"]["License"]
+        .get("value")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
     if !licensed_audio(&mime, &license) {
-        return Err("This Commons file has no supported audio format or recognized reuse license.".into());
+        return Err(
+            "This Commons file has no supported audio format or recognized reuse license.".into(),
+        );
     }
     let url = info["url"].as_str().unwrap_or_default();
     if !url.starts_with("https://upload.wikimedia.org/") {
         return Err("Commons returned an unsupported media location.".into());
     }
-    Ok(ResolvedMedia { url: url.into(), mime_type: mime })
+    Ok(ResolvedMedia {
+        url: url.into(),
+        mime_type: mime,
+        license: plain_metadata(&info["extmetadata"]["LicenseShortName"]),
+        license_url: plain_metadata(&info["extmetadata"]["LicenseUrl"]),
+        attribution: plain_metadata(&info["extmetadata"]["Artist"]),
+    })
 }
 fn is_audio(path: &Path) -> bool {
     path.extension().and_then(|s| s.to_str()).is_some_and(|s| {
@@ -395,6 +543,7 @@ fn is_audio(path: &Path) -> bool {
 
 // Deterministic native I/O for end-to-end tests. Compiled out of release builds;
 // only a launch-time environment variable can enable it, never a web command.
+#[cfg(not(target_os = "android"))]
 fn test_picker(kind: &str) -> Option<Option<PathBuf>> {
     #[cfg(debug_assertions)]
     if let Some(root) = std::env::var_os("LUMAIRE_TEST_PICKER") {
@@ -412,6 +561,7 @@ fn test_picker(kind: &str) -> Option<Option<PathBuf>> {
     let _ = kind;
     None
 }
+#[cfg(not(target_os = "android"))]
 fn pick_audio_file(title: &str) -> Option<PathBuf> {
     if let Some(path) = test_picker("audio") {
         return path;
@@ -466,7 +616,112 @@ fn import_selected(app: &AppHandle, db: &mut Connection, paths: Vec<PathBuf>) ->
 async fn load_library(app: AppHandle) -> Result<Snapshot> {
     work(app, |_, db| snapshot(db)).await
 }
+
+// Only stable provider identity is accepted; local paths and expiring stream
+// locations cannot be introduced through this command.
+fn save_remote(db: &Connection, mut track: Track) -> Result<Track> {
+    let source = track
+        .source
+        .as_ref()
+        .ok_or("A saved online track needs a source.")?;
+    let valid_id = match source.provider_id.as_str() {
+        "youtube" => {
+            source.source_id.len() == 11
+                && source
+                    .source_id
+                    .bytes()
+                    .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
+        }
+        "wikimedia-commons" => source.source_id.parse::<u64>().is_ok_and(|id| id > 0),
+        _ => false,
+    };
+    if !valid_id
+        || track.id != format!("{}:{}", source.provider_id, source.source_id)
+        || track.title.trim().is_empty()
+        || track.title.len() > 4000
+        || track.artist.len() > 4000
+        || track.album.len() > 4000
+        || !track.duration.is_finite()
+        || track.duration < 0.0
+    {
+        return Err("Invalid online track information.".into());
+    }
+    track.missing = false;
+    // Derive the source page rather than trusting renderer-provided locations.
+    let source = track.source.as_mut().unwrap();
+    source.page_url = if source.provider_id == "youtube" {
+        format!("https://www.youtube.com/watch?v={}", source.source_id)
+    } else {
+        format!("https://commons.wikimedia.org/?curid={}", source.source_id)
+    };
+    track.artwork_url = track.artwork_url.filter(|url| {
+        reqwest::Url::parse(url).is_ok_and(|url| {
+            url.scheme() == "https"
+                && matches!(
+                    url.host_str(),
+                    Some(
+                        "i.ytimg.com"
+                            | "i.scdn.co"
+                            | "upload.wikimedia.org"
+                            | "coverartarchive.org"
+                    )
+                )
+        })
+    });
+    let json = serde_json::to_string(&track).map_err(err)?;
+    if json.len() > 32000 {
+        return Err("Online track metadata is too large.".into());
+    }
+    let previous: Option<(Option<String>, String)> = db
+        .query_row(
+            "SELECT path,metadata FROM tracks WHERE id=?1",
+            [&track.id],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .optional()
+        .map_err(err)?;
+    if let Some((path, metadata)) = previous {
+        let stored: Track = serde_json::from_str(&metadata).map_err(err)?;
+        if path.is_some() && (!stored.offline || stored.source.is_none()) {
+            return Err("This identity belongs to a linked local file.".into());
+        }
+        track.offline = stored.offline;
+    } else {
+        track.offline = false;
+    }
+    let json = serde_json::to_string(&track).map_err(err)?;
+    let written = db.execute("INSERT INTO tracks(id,path,metadata) VALUES(?1,NULL,?2) ON CONFLICT(id) DO UPDATE SET metadata=excluded.metadata",
+        params![track.id, json]).map_err(err)?;
+    if written == 0 {
+        return Err("This track identity already belongs to a linked local file.".into());
+    }
+    Ok(track)
+}
+
 #[tauri::command]
+async fn save_online_track(
+    app: AppHandle,
+    track: Track,
+    update_only: Option<bool>,
+) -> Result<Track> {
+    work(app, move |_, db| {
+        if update_only.unwrap_or(false)
+            && !db
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM tracks WHERE id=?1)",
+                    [&track.id],
+                    |row| row.get::<_, bool>(0),
+                )
+                .map_err(err)?
+        {
+            return Err("This track has been removed from the library.".into());
+        }
+        save_remote(db, track)
+    })
+    .await
+}
+#[tauri::command]
+#[cfg(not(target_os = "android"))]
 async fn import_audio(app: AppHandle, folder: bool) -> Result<Imported> {
     // Dialog and metadata reads run outside the UI thread.
     work(app, move |app, db| {
@@ -526,6 +781,7 @@ async fn media_path(app: AppHandle, id: String) -> Result<String> {
     .await
 }
 #[tauri::command]
+#[cfg(not(target_os = "android"))]
 async fn relink_audio(app: AppHandle, id: String) -> Result<Option<Track>> {
     work(app,move |app,db|{
         let exists:bool=db.query_row("SELECT EXISTS(SELECT 1 FROM tracks WHERE id=?1)",[&id],|r|r.get(0)).map_err(err)?;
@@ -550,6 +806,91 @@ async fn save_session(app: AppHandle, session: serde_json::Value) -> Result<()> 
         Ok(())
     }).await
 }
+
+fn remove_track_data(
+    db: &mut Connection,
+    id: &str,
+    mut session: serde_json::Value,
+) -> Result<Snapshot> {
+    validate_session(&session)?;
+    let old_index = session["queue"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .position(|entry| entry["id"] == session["currentId"])
+        .unwrap_or(0);
+    for key in ["queue", "history"] {
+        session[key]
+            .as_array_mut()
+            .unwrap()
+            .retain(|entry| entry["trackId"].as_str() != Some(id));
+    }
+    if let Some(metadata) = session
+        .get_mut("queueTracks")
+        .and_then(|value| value.as_object_mut())
+    {
+        metadata.remove(id);
+    }
+    session["favorites"]
+        .as_array_mut()
+        .unwrap()
+        .retain(|entry| entry.as_str() != Some(id));
+    for playlist in session["playlists"].as_array_mut().unwrap() {
+        if let Some(items) = playlist["items"].as_array_mut() {
+            items.retain(|entry| entry["trackId"].as_str() != Some(id));
+        }
+    }
+    if let Some(lyrics) = session["lyrics"].as_object_mut() {
+        lyrics.remove(id);
+    }
+    let queue = session["queue"].as_array().unwrap();
+    if !queue
+        .iter()
+        .any(|entry| entry["id"] == session["currentId"])
+    {
+        session["currentId"] = queue
+            .get(old_index.min(queue.len().saturating_sub(1)))
+            .map(|entry| entry["id"].clone())
+            .unwrap_or(serde_json::Value::Null);
+        session["position"] = serde_json::json!(0);
+    }
+    let json = serde_json::to_string(&session).map_err(err)?;
+    if json.len() > 20 * 1024 * 1024 {
+        return Err("Library text exceeds 20 MB.".into());
+    }
+    let tx = db.transaction().map_err(err)?;
+    let metadata: Option<String> = tx
+        .query_row("SELECT metadata FROM tracks WHERE id=?1", [id], |row| {
+            row.get(0)
+        })
+        .optional()
+        .map_err(err)?;
+    if metadata
+        .as_deref()
+        .map(serde_json::from_str::<Track>)
+        .transpose()
+        .map_err(err)?
+        .is_some_and(|track| track.offline)
+    {
+        return Err("Delete the app-owned offline copy before removing this track.".into());
+    }
+    if tx
+        .execute("DELETE FROM tracks WHERE id=?1", [id])
+        .map_err(err)?
+        == 0
+    {
+        return Err("This track is no longer in the library.".into());
+    }
+    tx.execute("INSERT INTO app_state(id,data) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET data=excluded.data", [json]).map_err(err)?;
+    tx.commit().map_err(err)?;
+    // This operation deliberately does not delete or move any audio file.
+    snapshot(db)
+}
+
+#[tauri::command]
+async fn remove_track(app: AppHandle, id: String, session: serde_json::Value) -> Result<Snapshot> {
+    work(app, move |_, db| remove_track_data(db, &id, session)).await
+}
 fn validate_session(s: &serde_json::Value) -> Result<()> {
     if !s.is_object()
         || !s["queue"].is_array()
@@ -565,6 +906,7 @@ fn validate_session(s: &serde_json::Value) -> Result<()> {
     }
     Ok(())
 }
+#[cfg(not(target_os = "android"))]
 fn read_text(path: &Path, limit: u64) -> Result<String> {
     if fs::metadata(path).map_err(err)?.len() > limit {
         return Err("This text file exceeds the import size limit.".into());
@@ -574,6 +916,7 @@ fn read_text(path: &Path, limit: u64) -> Result<String> {
     })
 }
 #[tauri::command]
+#[cfg(not(target_os = "android"))]
 async fn pick_lyrics(app: AppHandle) -> Result<Option<TextInput>> {
     work(app, |_, _| {
         let Some(path) = test_picker("lyrics").unwrap_or_else(|| {
@@ -599,13 +942,236 @@ async fn pick_lyrics(app: AppHandle) -> Result<Option<TextInput>> {
 #[serde(rename_all = "camelCase", tag = "kind")]
 enum LyricResult {
     #[serde(rename = "synced")]
-    Synced { lrc: String },
+    Synced {
+        lrc: String,
+        matched: Option<lyrics_provider::MatchInfo>,
+    },
     #[serde(rename = "plain")]
-    Plain { text: String },
+    Plain {
+        text: String,
+        matched: Option<lyrics_provider::MatchInfo>,
+    },
     #[serde(rename = "instrumental")]
     Instrumental,
     #[serde(rename = "not_found")]
     NotFound,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CanonicalMetadata {
+    title: String,
+    artist: String,
+    album: String,
+    duration: Option<f64>,
+    source_id: Option<String>,
+    artwork_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MusicBrainzResponse {
+    recordings: Vec<MusicBrainzRecording>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MusicBrainzRecording {
+    id: String,
+    title: String,
+    score: Option<u32>,
+    length: Option<u64>,
+    #[serde(rename = "artist-credit")]
+    artist_credit: Option<Vec<MusicBrainzArtistCredit>>,
+    releases: Option<Vec<MusicBrainzRelease>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MusicBrainzArtistCredit {
+    name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct MusicBrainzRelease {
+    id: Option<String>,
+    title: String,
+}
+
+fn metadata_candidate_matches(
+    recording: &MusicBrainzRecording,
+    title: &str,
+    artist: &str,
+    duration: f64,
+) -> bool {
+    let recording_artist = recording
+        .artist_credit
+        .as_ref()
+        .map(|credits| {
+            credits
+                .iter()
+                .map(|credit| credit.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        })
+        .unwrap_or_default();
+    let title_matches = lyric_identity::title(&recording.title) == lyric_identity::title(title);
+    let artist_matches = lyric_identity::primary_artist(artist).is_empty()
+        || lyric_identity::artists_match(&recording_artist, artist);
+    let duration_matches = duration <= 0.0
+        || recording.length.is_none()
+        || ((recording.length.unwrap_or_default() as f64 / 1000.0) - duration).abs() <= 10.0;
+    title_matches && artist_matches && duration_matches && recording.score.unwrap_or(0) >= 80
+}
+
+fn canonical_metadata(
+    recording: &MusicBrainzRecording,
+    fallback_artist: &str,
+) -> CanonicalMetadata {
+    let release = recording
+        .releases
+        .as_ref()
+        .and_then(|releases| releases.first());
+    CanonicalMetadata {
+        title: recording.title.clone(),
+        artist: recording
+            .artist_credit
+            .as_ref()
+            .filter(|credits| !credits.is_empty())
+            .map(|credits| {
+                credits
+                    .iter()
+                    .map(|credit| credit.name.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            })
+            .unwrap_or_else(|| fallback_artist.to_string()),
+        album: release
+            .map(|release| release.title.clone())
+            .unwrap_or_default(),
+        duration: recording.length.map(|length| length as f64 / 1000.0),
+        source_id: Some(recording.id.clone()),
+        artwork_url: release
+            .and_then(|release| release.id.as_ref())
+            .and_then(|id| Uuid::parse_str(id).ok())
+            .map(|id| format!("https://coverartarchive.org/release/{id}/front-500")),
+    }
+}
+
+#[tauri::command]
+async fn spotify_search_track(
+    title: String,
+    artist: String,
+    duration: f64,
+) -> Result<Option<spotify::SpotifyMetadata>> {
+    if !duration.is_finite() || title.len() > 2000 || artist.len() > 2000 {
+        return Err("Invalid metadata lookup information.".into());
+    }
+    let (artist, title) = clean_artist_for_lyrics(&artist, &title);
+    let client = SPOTIFY_CLIENT.get().ok_or_else(|| {
+        "Spotify client not initialized. Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET environment variables.".to_string()
+    })?;
+
+    client
+        .search_track(&title, &artist, duration)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn lookup_metadata(
+    title: String,
+    artist: String,
+    duration: f64,
+) -> Result<Option<CanonicalMetadata>> {
+    if !duration.is_finite() || title.len() > 2000 || artist.len() > 2000 {
+        return Err("Invalid metadata lookup information.".into());
+    }
+    let prepared_title = lyric_identity::query_title(&title);
+    let (clean_artist, clean_title) = clean_artist_for_lyrics(&artist, &prepared_title);
+    if clean_title.is_empty() {
+        return Ok(None);
+    }
+    match itunes_metadata::lookup(&clean_title, &clean_artist, duration).await {
+        Ok(Some(metadata)) => return Ok(Some(metadata)),
+        Ok(None) => (),
+        Err(error) => eprintln!("[Metadata] {error} Trying MusicBrainz."),
+    }
+    lookup_musicbrainz(clean_title, clean_artist, duration).await
+}
+
+async fn lookup_musicbrainz(
+    clean_title: String,
+    clean_artist: String,
+    duration: f64,
+) -> Result<Option<CanonicalMetadata>> {
+    // MusicBrainz requires at most one request/second. Hold this gate across
+    // retries and enforce a gap after every lookup, including failed requests.
+    static GATE: tokio::sync::Mutex<Option<tokio::time::Instant>> =
+        tokio::sync::Mutex::const_new(None);
+    let mut last = GATE.lock().await;
+    if let Some(previous) = *last {
+        tokio::time::sleep_until(previous + Duration::from_millis(1100)).await;
+    }
+    let response = provider_http::get(
+        "https://musicbrainz.org/ws/2/recording/",
+        &[
+            (
+                "query",
+                if lyric_identity::primary_artist(&clean_artist).is_empty() {
+                    format!("recording:\"{}\"", clean_title.replace(['"', '\\'], " "))
+                } else {
+                    format!(
+                        "recording:\"{}\" AND artist:\"{}\"",
+                        clean_title.replace(['"', '\\'], " "),
+                        lyric_identity::primary_artist(&clean_artist).replace(['"', '\\'], " ")
+                    )
+                },
+            ),
+            ("fmt", "json".into()),
+            ("limit", "25".into()),
+        ],
+    )
+    .await;
+    *last = Some(tokio::time::Instant::now());
+    let response = response?;
+    if !response.status().is_success() {
+        return Err(format!(
+            "MusicBrainz is unavailable (HTTP {}).",
+            response.status()
+        ));
+    }
+    let body: MusicBrainzResponse = response.json().await.map_err(|e| e.to_string())?;
+    let candidates: Vec<_> = body
+        .recordings
+        .iter()
+        .filter(|recording| {
+            metadata_candidate_matches(recording, &clean_title, &clean_artist, duration)
+        })
+        .collect();
+    let Some(recording) = candidates.first() else {
+        return Ok(None);
+    };
+    if lyric_identity::primary_artist(&clean_artist).is_empty() {
+        let performer = |r: &MusicBrainzRecording| {
+            r.artist_credit
+                .as_ref()
+                .map(|credits| {
+                    credits
+                        .iter()
+                        .map(|c| c.name.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_default()
+        };
+        if duration <= 0.0
+            || recording.length.is_none()
+            || candidates.iter().any(|candidate| {
+                !lyric_identity::artists_match(&performer(recording), &performer(candidate))
+            })
+        {
+            return Ok(None);
+        }
+    }
+    Ok(Some(canonical_metadata(recording, &clean_artist)))
 }
 
 /// Clean YouTube title by removing common video metadata suffixes
@@ -631,29 +1197,82 @@ fn clean_title_for_lyrics(title: &str) -> String {
         "[4K]",
         "- Topic",
     ];
-    
+
     let mut cleaned = title.to_string();
     for pattern in &patterns {
-        cleaned = cleaned.replace(pattern, "");
+        cleaned = remove_case_insensitive(&cleaned, pattern);
     }
-    
+
+    if let Some((song, _)) = cleaned.split_once(" | ") {
+        cleaned = song.to_string();
+    }
+
+    let lower = cleaned.to_ascii_lowercase();
+    for marker in [" ft. ", " feat. ", " featuring "] {
+        if let Some(index) = lower.find(marker) {
+            cleaned.truncate(index);
+            break;
+        }
+    }
+    if cleaned.to_ascii_lowercase().ends_with(" from youtube") {
+        let end = cleaned.len() - " from youtube".len();
+        cleaned.truncate(end);
+    }
+
     // Remove excessive whitespace
     cleaned = cleaned.split_whitespace().collect::<Vec<_>>().join(" ");
     cleaned.trim().to_string()
 }
 
-/// Extract artist from "Artist - Title" format common in YouTube titles
+fn remove_case_insensitive(value: &str, pattern: &str) -> String {
+    let lower_value = value.to_ascii_lowercase();
+    let lower_pattern = pattern.to_ascii_lowercase();
+    let Some(index) = lower_value.find(&lower_pattern) else {
+        return value.to_string();
+    };
+    let mut result = value.to_string();
+    result.replace_range(index..index + pattern.len(), "");
+    result
+}
+
+/// Extract artist from "Artist - Title" format common in YouTube titles.
+/// Also removes artist prefix from the title when present.
 fn clean_artist_for_lyrics(artist: &str, title: &str) -> (String, String) {
-    // If artist is empty or looks like a placeholder, try to extract from title
-    if artist.is_empty() || artist == "Unknown Artist" {
-        if let Some(dash_pos) = title.find(" - ") {
-            let extracted_artist = title[..dash_pos].trim().to_string();
-            let extracted_title = title[dash_pos + 3..].trim().to_string();
-            return (extracted_artist, clean_title_for_lyrics(&extracted_title));
+    let clean_title_first = clean_title_for_lyrics(title);
+
+    let artist = remove_case_insensitive(artist, " - Topic");
+    let artist = artist.trim();
+    // Case 1: Title has "Artist - Track" format (extract both)
+    if let Some(dash_pos) = clean_title_first.find(" - ") {
+        let title_artist = clean_title_first[..dash_pos].trim();
+        let title_track = clean_title_first[dash_pos + 3..].trim();
+
+        // If artist param is empty/unknown, use extracted artist
+        if artist.trim().is_empty() || artist.trim().eq_ignore_ascii_case("Unknown Artist") {
+            return (title_artist.to_string(), title_track.to_string());
         }
+
+        // If artist param matches the title's artist, use title's artist (might have better casing)
+        if title_artist.eq_ignore_ascii_case(artist.trim()) {
+            return (title_artist.to_string(), title_track.to_string());
+        }
+
+        // Otherwise use extracted track name with provided artist
+        return (artist.trim().to_string(), clean_title_first);
     }
-    
-    (artist.to_string(), clean_title_for_lyrics(title))
+
+    // Case 2: Title starts with artist name (e.g. "KR$NA Sensitive")
+    let artist_prefix = format!("{} - ", artist.trim());
+    let mut result_title = clean_title_first.clone();
+
+    if result_title
+        .get(..artist_prefix.len())
+        .is_some_and(|prefix| prefix.eq_ignore_ascii_case(&artist_prefix))
+    {
+        result_title = result_title[artist_prefix.len()..].trim().to_string();
+    }
+
+    (artist.trim().to_string(), result_title)
 }
 
 /// Fetch lyrics from LRCLIB. Called from the renderer; runs in Tauri's async runtime.
@@ -665,75 +1284,12 @@ async fn fetch_lyrics(
     album: String,
     duration: f64,
 ) -> Result<LyricResult> {
-    if title.is_empty() {
-        return Ok(LyricResult::NotFound);
-    }
-    
-    // Clean YouTube metadata from title and extract artist if needed
-    let (clean_artist, clean_title) = clean_artist_for_lyrics(&artist, &title);
-    
-    log::info!(
-        "LRCLIB lookup: original='{}' by '{}' → cleaned='{}' by '{}'",
-        title, artist, clean_title, clean_artist
-    );
-    
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let mut params: Vec<(&str, String)> = vec![("track_name", clean_title.clone())];
-    // Only add artist_name/album_name when non-empty — LRCLIB returns 400 on empty string params.
-    if !clean_artist.is_empty() {
-        params.push(("artist_name", clean_artist.clone()));
-    }
-    if !album.is_empty() && album != "Local collection" {
-        params.push(("album_name", album.clone()));
-    }
-    // Duration helps LRCLIB reject wrong versions (e.g. radio edits vs album cuts).
-    if duration > 0.0 {
-        params.push(("duration", format!("{:.0}", duration)));
-    }
-
-    let resp = client
-        .get("https://lrclib.net/api/get")
-        .query(&params)
-        .header("Lrclib-Client", "Lumaire/0.1 (https://github.com/lumaire)")
-        .send()
-        .await
-        .map_err(|e| format!("Lyrics lookup failed: {e}"))?;
-
-    if resp.status() == 404 {
-        return Ok(LyricResult::NotFound);
-    }
-    if !resp.status().is_success() {
-        return Err(format!("LRCLIB returned status {}", resp.status()));
-    }
-
-    #[derive(Deserialize)]
-    #[serde(rename_all = "camelCase")]
-    struct LrclibResp {
-        instrumental: bool,
-        synced_lyrics: Option<String>,
-        plain_lyrics: Option<String>,
-    }
-
-    let body: LrclibResp = resp.json().await.map_err(|e| e.to_string())?;
-
-    if body.instrumental {
-        return Ok(LyricResult::Instrumental);
-    }
-    if let Some(lrc) = body.synced_lyrics.filter(|s| !s.trim().is_empty()) {
-        return Ok(LyricResult::Synced { lrc });
-    }
-    if let Some(text) = body.plain_lyrics.filter(|s| !s.trim().is_empty()) {
-        return Ok(LyricResult::Plain { text });
-    }
-    Ok(LyricResult::NotFound)
+    lyrics_provider::fetch(title, artist, album, duration).await
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg(not(target_os = "android"))]
 struct Archive {
     format: String,
     version: u32,
@@ -742,6 +1298,7 @@ struct Archive {
 }
 
 #[tauri::command]
+#[cfg(not(target_os = "android"))]
 async fn export_library(app: AppHandle, session: serde_json::Value) -> Result<bool> {
     work(app, move |_, db| {
         validate_session(&session)?;
@@ -772,6 +1329,7 @@ async fn export_library(app: AppHandle, session: serde_json::Value) -> Result<bo
     .await
 }
 #[tauri::command]
+#[cfg(not(target_os = "android"))]
 async fn import_library(app: AppHandle) -> Result<Option<Snapshot>> {
     work(app,|_,db|{
         let Some(path)=test_picker("backup").unwrap_or_else(||rfd::FileDialog::new().set_title("Import a Lumaire library backup").add_filter("Lumaire library",&["json"]).pick_file()) else {return Ok(None);};
@@ -788,6 +1346,7 @@ async fn import_library(app: AppHandle) -> Result<Option<Snapshot>> {
         for mut track in archive.tracks {
             if track.id.len()>100 || track.title.len()>4000 || track.artist.len()>4000 || track.album.len()>4000 || !track.duration.is_finite() || track.duration<0.0 {return Err("Invalid track metadata in backup.".into());}
             track.missing=true;
+            track.offline=false;
             tx.execute("INSERT OR IGNORE INTO tracks(id,path,metadata) VALUES(?1,NULL,?2)",params![track.id,serde_json::to_string(&track).map_err(err)?]).map_err(err)?;
         }
         tx.execute("INSERT INTO app_state(id,data) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET data=excluded.data",[serde_json::to_string(&archive.session).map_err(err)?]).map_err(err)?;
@@ -796,7 +1355,22 @@ async fn import_library(app: AppHandle) -> Result<Option<Snapshot>> {
     }).await
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialize Spotify client from environment variables
+    if let (Ok(client_id), Ok(client_secret)) = (
+        std::env::var("SPOTIFY_CLIENT_ID"),
+        std::env::var("SPOTIFY_CLIENT_SECRET"),
+    ) {
+        let client = SpotifyClient::new(client_id, client_secret);
+        if SPOTIFY_CLIENT.set(client).is_ok() {
+            eprintln!("[Spotify] Client initialized from environment variables");
+        }
+    } else {
+        eprintln!("[Spotify] Client ID/Secret not found in environment. Spotify metadata will not be available.");
+        eprintln!("[Spotify] Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET to enable.");
+    }
+
     #[allow(unused_mut)]
     let mut context = tauri::generate_context!();
     #[cfg(debug_assertions)]
@@ -806,6 +1380,7 @@ pub fn run() {
         }
     }
     tauri::Builder::default()
+        .plugin(android::init())
         .setup(|app| {
             // Tests may isolate data; release builds always use the normal app-private directory.
             let root = if cfg!(debug_assertions) {
@@ -816,6 +1391,7 @@ pub fn run() {
                 app.path().app_data_dir()?
             };
             fs::create_dir_all(&root)?;
+            downloads::cleanup_incomplete(&root.join("downloads"));
             let mut db = Connection::open(root.join("library.sqlite3"))?;
             initialize(&mut db).map_err(std::io::Error::other)?;
             #[cfg(debug_assertions)]
@@ -832,19 +1408,33 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             load_library,
+            save_online_track,
             import_audio,
             media_path,
             relink_audio,
             save_session,
+            remove_track,
+            artwork_cache::cached_artwork,
+            downloads::download_track,
+            downloads::cancel_download,
+            downloads::delete_download,
+            translation::translate_lyrics,
+            private_settings::gemini_key_status,
+            private_settings::save_gemini_key,
+            private_settings::delete_gemini_key,
             pick_lyrics,
             fetch_lyrics,
+            lookup_metadata,
+            spotify_search_track,
             export_library,
             import_library,
             search_commons_audio,
             resolve_commons_audio,
             ytdlp::ytdlp_check_available,
             ytdlp::ytdlp_search,
-            ytdlp::ytdlp_get_stream
+            ytdlp::ytdlp_get_stream,
+            android::android_playback,
+            android::android_demo_track
         ])
         .run(context)
         .expect("Lumaire could not start");
@@ -883,5 +1473,252 @@ mod tests {
     #[test]
     fn invalid_session_is_rejected() {
         assert!(validate_session(&serde_json::json!({"queue":[]})).is_err());
+    }
+
+    #[test]
+    fn commons_audio_mime_and_license_codes_are_validated() {
+        let audio = serde_json::json!({"mime":"application/ogg","mediatype":"AUDIO"});
+        assert_eq!(commons_mime(&audio), "audio/ogg");
+        assert!(licensed_audio(&commons_mime(&audio), "cc-by-sa-4.0"));
+        assert!(licensed_audio("audio/wav", "cc-zero"));
+        assert!(!licensed_audio("audio/wav", "all-rights-reserved"));
+        assert!(!licensed_audio(
+            &commons_mime(&serde_json::json!({"mime":"application/ogg","mediatype":"VIDEO"})),
+            "cc-by-sa-4.0"
+        ));
+    }
+
+    #[test]
+    fn removing_linked_music_cleans_all_references_and_preserves_the_external_file() {
+        let folder = std::env::temp_dir().join(format!("lumaire-remove-{}", Uuid::new_v4()));
+        fs::create_dir(&folder).unwrap();
+        let audio = folder.join("external.wav");
+        fs::write(&audio, b"external file remains").unwrap();
+        let database = folder.join("library.db");
+        let mut db = Connection::open(&database).unwrap();
+        initialize(&mut db).unwrap();
+        let track = inspect(&audio, "local".into());
+        db.execute(
+            "INSERT INTO tracks(id,path,metadata) VALUES(?1,?2,?3)",
+            params![
+                track.id,
+                audio.to_string_lossy(),
+                serde_json::to_string(&track).unwrap()
+            ],
+        )
+        .unwrap();
+        let session = serde_json::json!({"queue":[{"id":"one","trackId":"local"},{"id":"two","trackId":"local"}],"currentId":"one","position":9,"favorites":["local"],"playlists":[{"id":"keep","name":"Keep","items":[{"id":"three","trackId":"local"}]}],"history":[{"trackId":"local","at":"today"}],"lyrics":{"local":{"raw":"text"}},"settings":{}});
+        let result = remove_track_data(&mut db, "local", session).unwrap();
+        assert!(result.tracks.is_empty());
+        let session = result.session.unwrap();
+        assert!(session["queue"].as_array().unwrap().is_empty());
+        assert_eq!(session["currentId"], serde_json::Value::Null);
+        assert_eq!(session["position"], 0);
+        assert!(session["favorites"].as_array().unwrap().is_empty());
+        assert!(session["history"].as_array().unwrap().is_empty());
+        assert!(session["lyrics"].as_object().unwrap().is_empty());
+        assert_eq!(session["playlists"][0]["name"], "Keep");
+        assert!(session["playlists"][0]["items"]
+            .as_array()
+            .unwrap()
+            .is_empty());
+        drop(db);
+        let db = Connection::open(&database).unwrap();
+        assert!(snapshot(&db).unwrap().tracks.is_empty());
+        drop(db);
+        assert!(audio.exists());
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    fn offline_source_identity_and_file_path_survive_reopen_and_metadata_updates() {
+        let folder = std::env::temp_dir().join(format!("lumaire-offline-{}", Uuid::new_v4()));
+        fs::create_dir(&folder).unwrap();
+        let audio = folder.join("managed.wav");
+        fs::write(&audio, b"fixture audio").unwrap();
+        let database = folder.join("library.db");
+        let mut db = Connection::open(&database).unwrap();
+        initialize(&mut db).unwrap();
+        let mut track: Track = serde_json::from_value(serde_json::json!({"id":"wikimedia-commons:42","title":"Open audio","artist":"Author","album":"Commons","duration":1,"fileName":"open.wav","format":"WAV","missing":false,"source":{"providerId":"wikimedia-commons","sourceId":"42","pageUrl":"untrusted","license":"CC0","licenseUrl":"https://creativecommons.org/publicdomain/zero/1.0/","attribution":"Author"}})).unwrap();
+        save_remote(&db, track.clone()).unwrap();
+        track.offline = true;
+        db.execute(
+            "UPDATE tracks SET path=?1,metadata=?2",
+            params![
+                audio.to_string_lossy(),
+                serde_json::to_string(&track).unwrap()
+            ],
+        )
+        .unwrap();
+        let updated = save_remote(&db, track).unwrap();
+        assert!(updated.offline);
+        drop(db);
+        let db = Connection::open(&database).unwrap();
+        let saved = snapshot(&db).unwrap();
+        assert_eq!(saved.tracks.len(), 1);
+        assert!(saved.tracks[0].offline);
+        assert!(!saved.tracks[0].missing);
+        assert!(saved.tracks[0].source.is_some());
+        drop(db);
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
+    #[ignore = "explicit live metadata check; requires network"]
+    fn live_musicbrainz_snowman_lookup() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let metadata = runtime
+            .block_on(lookup_musicbrainz("Snowman".into(), "Sia".into(), 173.0))
+            .unwrap();
+        assert!(metadata.is_some(), "No verified recording returned");
+    }
+
+    #[test]
+    #[ignore = "explicit regional metadata check; requires network"]
+    fn live_regional_metadata_without_an_artist() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        runtime.block_on(async {
+            for (title, duration) in [("Karuppa Kooda Va", 258.0), ("Radhimaa", 260.0)] {
+                let metadata = lookup_metadata(title.into(), "Unknown artist".into(), duration)
+                    .await
+                    .unwrap()
+                    .expect("Regional track was not recognized");
+                assert!(metadata.artist.contains("Sai Abhyankkar"));
+                assert!(metadata
+                    .source_id
+                    .as_deref()
+                    .unwrap()
+                    .starts_with("itunes:"));
+                assert!(!metadata.album.is_empty());
+                assert!(lyric_identity::title(&metadata.title) == lyric_identity::title(title));
+            }
+            let metadata = lookup_metadata("Aarzu".into(), "Noor, Khan, Madhurxo".into(), 226.0)
+                .await
+                .unwrap()
+                .expect("Hindi collaboration was not recognized");
+            assert!(lyric_identity::artists_match(&metadata.artist, "Noor"));
+        });
+    }
+
+    #[test]
+    fn metadata_matches_collaboration_and_preserves_release_artwork() {
+        let recording: MusicBrainzRecording = serde_json::from_value(serde_json::json!({
+            "id":"recording-id", "title":"கூட - From \"படம்\"", "score":100, "length":188000,
+            "artist-credit":[{"name":"Noor"},{"name":"Khan"}],
+            "releases":[{"id":"76df3287-6cda-33eb-8e9a-044b5e15ffdd","title":"Album"}]
+        }))
+        .unwrap();
+        assert!(metadata_candidate_matches(
+            &recording,
+            "கூட",
+            "Noor, Khan, Madhurxo",
+            188.0
+        ));
+        assert!(!metadata_candidate_matches(
+            &recording,
+            "கூட",
+            "Unrelated artist",
+            188.0
+        ));
+        assert!(!metadata_candidate_matches(
+            &recording,
+            "கூட (Live)",
+            "Noor",
+            188.0
+        ));
+        assert!(!metadata_candidate_matches(&recording, "கட", "Noor", 188.0));
+        assert!(!metadata_candidate_matches(
+            &recording,
+            "கூட",
+            "Noor",
+            226.0
+        ));
+        let value = serde_json::to_value(canonical_metadata(&recording, "fallback")).unwrap();
+        assert_eq!(value["artist"], "Noor, Khan");
+        assert_eq!(
+            value["artworkUrl"],
+            "https://coverartarchive.org/release/76df3287-6cda-33eb-8e9a-044b5e15ffdd/front-500"
+        );
+        assert_eq!(value["sourceId"], "recording-id");
+    }
+
+    #[test]
+    fn online_tracks_survive_reopen_and_duplicate_saves_without_missing_file_flags() {
+        let path = std::env::temp_dir().join(format!("lumaire-remote-{}.db", Uuid::new_v4()));
+        let track: Track = serde_json::from_value(serde_json::json!({
+            "id":"youtube:abcdefghijk", "title":"Snowman", "artist":"Sia", "album":"", "duration":173,
+            "fileName":"Snowman", "missing":false, "format":"YouTube",
+            "artworkUrl":"https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg",
+            "source":{"providerId":"youtube", "sourceId":"abcdefghijk", "pageUrl":"untrusted",
+                "license":"YouTube", "licenseUrl":"https://www.youtube.com/t/terms", "attribution":"Sia"}
+        })).unwrap();
+        {
+            let mut db = Connection::open(&path).unwrap();
+            initialize(&mut db).unwrap();
+            save_remote(&db, track.clone()).unwrap();
+            save_remote(&db, track.clone()).unwrap();
+        }
+        {
+            let db = Connection::open(&path).unwrap();
+            let saved = snapshot(&db).unwrap().tracks;
+            assert_eq!(saved.len(), 1);
+            assert!(!saved[0].missing);
+            assert_eq!(saved[0].artwork_url, track.artwork_url);
+            assert_eq!(
+                saved[0].source.as_ref().unwrap().page_url,
+                "https://www.youtube.com/watch?v=abcdefghijk"
+            );
+            let local_path: Option<String> = db
+                .query_row("SELECT path FROM tracks", [], |r| r.get(0))
+                .unwrap();
+            assert!(local_path.is_none());
+            let mut invalid = track.clone();
+            invalid.id = "someone-elses-local-track".into();
+            assert!(save_remote(&db, invalid).is_err());
+            db.execute("UPDATE tracks SET path='local-file-reference'", [])
+                .unwrap();
+            let mut conflicting = track.clone();
+            conflicting.title = "Must not overwrite local identity".into();
+            assert!(save_remote(&db, conflicting).is_err());
+            assert_eq!(snapshot(&db).unwrap().tracks[0].title, "Snowman");
+        }
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn cleans_youtube_title_labels_and_channel_segments() {
+        assert_eq!(
+            clean_artist_for_lyrics(
+                "KR$NA",
+                "KR$NA - Sensitive Ft. Seedhe Maut | Samay Raina | Prod. Hurricane | Official Music Video from YouTube"
+            ),
+            ("KR$NA".to_string(), "Sensitive".to_string())
+        );
+    }
+
+    #[test]
+    fn cleans_video_labels_without_an_artist_prefix() {
+        assert_eq!(
+            clean_title_for_lyrics("Sensitive [Official Music Video] from YouTube"),
+            "Sensitive"
+        );
+        assert_eq!(
+            clean_title_for_lyrics("Sensitive | KR$NA - Topic | Official Audio"),
+            "Sensitive"
+        );
+    }
+
+    #[test]
+    fn extracts_artist_from_separator_title() {
+        assert_eq!(
+            clean_artist_for_lyrics("unknown artist", "KR$NA - Sensitive (Official Video)"),
+            ("KR$NA".to_string(), "Sensitive".to_string())
+        );
     }
 }

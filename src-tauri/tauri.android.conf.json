@@ -1,0 +1,15 @@
+{
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Lumaire",
+        "width": 390,
+        "height": 844,
+        "minWidth": 320,
+        "minHeight": 480
+      }
+    ]
+  },
+  "bundle": { "android": { "minSdkVersion": 26 } }
+}

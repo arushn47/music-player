@@ -8,12 +8,20 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:e2e": "node scripts/desktop-test.mjs",
+    "test:phase4-ui": "node scripts/phase4-ui-test.mjs",
+    "test:translation-live": "node scripts/translation-test.mjs",
     "tauri": "node scripts/tauri.mjs",
     "desktop": "node scripts/tauri.mjs dev",
     "desktop:build": "node scripts/tauri.mjs build --no-bundle",
+    "android:doctor": "node scripts/android.mjs doctor",
+    "android:init": "node scripts/android.mjs init",
+    "android:build": "node scripts/android.mjs build --debug --target aarch64",
+    "android:dev": "node scripts/android.mjs dev",
+    "test:android": "node scripts/android-test.mjs",
     "fixtures": "node scripts/fixtures.mjs"
   },
   "dependencies": {
+    "@indic-transliteration/sanscript": "1.3.3",
     "@tauri-apps/api": "^2.8.0",
     "lucide-react": "^0.468.0",
     "react": "^19.1.0",
@@ -25,10 +33,14 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "dotenv": "^18.0.8",
     "playwright-core": "^1.55.0",
     "prettier": "^3.9.10",
     "typescript": "^5.9.0",
     "vite": "^7.1.0",
     "vitest": "^3.2.0"
+  },
+  "overrides": {
+    "toml": "^4.2.0"
   }
 }

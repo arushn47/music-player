@@ -4,6 +4,15 @@ Generated from the resolved lockfiles. This inventory does not grant rights to a
 
 ## JavaScript dependencies
 
+Android prototype: Jetpack Media3 ExoPlayer and MediaSession 1.8.0 are used
+under Apache-2.0. Their source and notices are maintained in
+[AndroidX Media](https://github.com/androidx/media). AndroidX, Tauri Android,
+Kotlin and Android build dependencies are resolved by the generated Gradle
+project. The Apache-2.0 text is included in THIRD_PARTY_LICENSES.txt; the native
+dependency notice inventory needs a release review before publication. The Android SDK,
+NDK and Gradle distributions are development tools and are not bundled as app
+executables.
+
 | Package | Version | Licence | Build/test only |
 |---|---|---|---|
 | @babel/code-frame | 7.29.7 | MIT | Yes |
@@ -51,6 +60,8 @@ Generated from the resolved lockfiles. This inventory does not grant rights to a
 | @esbuild/win32-arm64 | 0.28.2 | MIT | Yes |
 | @esbuild/win32-ia32 | 0.28.2 | MIT | Yes |
 | @esbuild/win32-x64 | 0.28.2 | MIT | Yes |
+| @indic-transliteration/common_maps | 1.0.6 | MIT | No |
+| @indic-transliteration/sanscript | 1.3.3 | MIT | No |
 | @jridgewell/gen-mapping | 0.3.13 | MIT | Yes |
 | @jridgewell/remapping | 2.3.5 | MIT | Yes |
 | @jridgewell/resolve-uri | 3.1.2 | MIT | Yes |
@@ -125,6 +136,7 @@ Generated from the resolved lockfiles. This inventory does not grant rights to a
 | csstype | 3.2.3 | MIT | Yes |
 | debug | 4.4.3 | MIT | Yes |
 | deep-eql | 5.0.2 | MIT | Yes |
+| dotenv | 18.0.8 | BSD-2-Clause | Yes |
 | electron-to-chromium | 1.5.459 | ISC | Yes |
 | es-module-lexer | 1.7.0 | MIT | Yes |
 | esbuild | 0.28.2 | MIT | Yes |
@@ -169,6 +181,7 @@ Generated from the resolved lockfiles. This inventory does not grant rights to a
 | tinypool | 1.1.1 | MIT | Yes |
 | tinyrainbow | 2.0.0 | MIT | Yes |
 | tinyspy | 4.0.6 | MIT | Yes |
+| toml | 4.3.0 | MIT | No |
 | typescript | 5.9.3 | Apache-2.0 | Yes |
 | undici-types | 7.24.6 | MIT | Yes |
 | update-browserslist-db | 1.3.4 | MIT | Yes |

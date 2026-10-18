@@ -21,3 +21,9 @@ test-results/
 # OS files
 .DS_Store
 Thumbs.db
+
+docs/
+
+# Generated Android tool schemas (the Android project sources remain tracked)
+/src-tauri/gen/schemas/android-schema.json
+/src-tauri/gen/schemas/mobile-schema.json

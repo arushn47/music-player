@@ -51,12 +51,17 @@ async function launch(seed = false) {
       ...process.env,
       LUMAIRE_DATA_DIR: data,
       LUMAIRE_TEST_PICKER: fixtures,
+      WEBVIEW2_USER_DATA_FOLDER: path.join(data, "webview"),
       ...(seed ? { LUMAIRE_TEST_FIXTURES: fixtures } : {}),
       WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`,
     },
   });
   app.on("error", (e) => {
     console.error(e);
+  });
+  let exited = false;
+  app.once("exit", () => {
+    exited = true;
   });
   app.stderr.on("data", (chunk) => {
     report.nativeLog = ((report.nativeLog || "") + chunk.toString()).slice(
@@ -65,8 +70,14 @@ async function launch(seed = false) {
   });
   let endpoint;
   for (let i = 0; i < 120; i++) {
+    assert(
+      !exited,
+      `Lumaire exited before WebView2 was ready. ${report.nativeLog || ""}`,
+    );
     try {
-      const response = await fetch(`${endpointUrl}/json/version`);
+      const response = await fetch(`${endpointUrl}/json/version`, {
+        signal: AbortSignal.timeout(1500),
+      });
       if (response.ok) {
         endpoint = await response.json();
         break;
@@ -132,7 +143,7 @@ async function mediaState() {
   const result = await cdp.send("Runtime.callFunctionOn", {
     objectId: objects.objects.objectId,
     functionDeclaration:
-      "function(){return Array.from(this).map(a=>({time:a.currentTime,duration:a.duration,paused:a.paused,volume:a.volume,muted:a.muted,ready:a.readyState,error:a.error?.code??null}));}",
+      "function(){return Array.from(this).map(a=>({src:a.currentSrc,time:a.currentTime,duration:a.duration,paused:a.paused,volume:a.volume,muted:a.muted,ready:a.readyState,error:a.error?.code??null}));}",
     returnByValue: true,
   });
   await cdp.send("Runtime.releaseObject", {
@@ -190,14 +201,18 @@ try {
     },
   );
   await check(
-    "native duplicate import preserves one asset and stays paused",
+    "native duplicate import preserves one asset without changing playback or queue",
     async () => {
+      const before = await invoke("load_library"),
+        playback = await state();
       pick("audio", first.fileName);
       await page
         .getByRole("button", { name: "Add music", exact: true })
         .click();
-      await waitState("paused");
+      await page.getByRole("heading", { name: "Local." }).waitFor();
+      assert.equal(await state(), playback);
       const s = await invoke("load_library");
+      assert.deepEqual(s.session?.queue ?? [], before.session?.queue ?? []);
       assert.equal(s.tracks.length, original.tracks.length);
       assert.equal(
         s.tracks.find((t) => t.fileName === first.fileName).id,
@@ -226,6 +241,43 @@ try {
     const s = await invoke("load_library");
     assert.equal(s.session.settings.volume, 0.24);
   });
+  await check(
+    "embedded artwork renders from the native cache and is reused",
+    async () => {
+      const illustrated = original.tracks.find(
+        (track) => track.format === "FLAC",
+      );
+      assert(
+        illustrated?.artworkUrl?.startsWith("local:"),
+        "Embedded artwork fixture was not read",
+      );
+      const cached = await invoke("cached_artwork", {
+        url: illustrated.artworkUrl,
+      });
+      assert(existsSync(cached));
+      const { mtimeMs } = (await import("node:fs")).statSync(cached);
+      assert.equal(
+        await invoke("cached_artwork", { url: illustrated.artworkUrl }),
+        cached,
+      );
+      assert.equal((await import("node:fs")).statSync(cached).mtimeMs, mtimeMs);
+      const row = page
+        .locator(".track-row")
+        .filter({
+          has: page.getByRole("button", {
+            name: `Play ${illustrated.title}`,
+            exact: true,
+          }),
+        })
+        .filter({ hasText: "FLAC" });
+      await row.locator("img").waitFor();
+      await page.waitForFunction(() =>
+        [...document.querySelectorAll(".track-row img")].some(
+          (image) => image.complete && image.naturalWidth === 32,
+        ),
+      );
+    },
+  );
   for (const format of ["MP3", "FLAC"]) {
     const codec = original.tracks.find((t) => t.format === format);
     if (!codec) {
@@ -267,6 +319,7 @@ try {
       .getByRole("button", { name: "Library", exact: false })
       .first()
       .click();
+    await page.getByRole("button", { name: "Open Local", exact: true }).click();
   });
   await check(
     "playlist create, add, rename and deliberate repeated entry",
@@ -277,6 +330,9 @@ try {
       await page
         .getByRole("button", { name: "Library", exact: false })
         .first()
+        .click();
+      await page
+        .getByRole("button", { name: "Open Local", exact: true })
         .click();
       await page
         .getByRole("group", { name: `Actions for ${first.title}` })
@@ -292,12 +348,16 @@ try {
         })
         .locator("details");
       await menu.locator("summary").click();
-      await menu
-        .getByRole("button", { name: "Add to Evening collection", exact: true })
-        .click();
-      await menu
-        .getByRole("button", { name: "Add to Evening collection", exact: true })
-        .click();
+      for (let i = 0; i < 2; i++) {
+        await menu
+          .getByRole("button", { name: "Save to playlist", exact: true })
+          .click();
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: "Evening collection", exact: true })
+          .click();
+        await page.getByRole("dialog").waitFor({ state: "hidden" });
+      }
       await menu.locator("summary").click();
       await page
         .getByRole("button", { name: /Evening collection/ })
@@ -318,7 +378,9 @@ try {
         .click();
       pick("lyrics", "Morning light.lrc");
       await page
-        .getByRole("button", { name: "Attach original lyrics", exact: true })
+        .getByRole("button", {
+          name: /^(Attach original lyrics|Attach lyrics manually instead|Attach lyrics manually)$/,
+        })
         .click();
       await page.getByText("காலை ஒளி", { exact: true }).waitFor();
       pick("lyrics", "Morning light.latin.txt");
@@ -363,6 +425,7 @@ try {
       .getByRole("button", { name: "Library", exact: false })
       .first()
       .click();
+    await page.getByRole("button", { name: "Open Local", exact: true }).click();
     await page
       .getByRole("button", { name: `Play ${first.title}`, exact: true })
       .click();
@@ -448,6 +511,7 @@ try {
     .getByRole("button", { name: "Library", exact: false })
     .first()
     .click();
+  await page.getByRole("button", { name: "Open Local", exact: true }).click();
   await page.screenshot({ path: path.join(results, "desktop-library.png") });
   await page.getByRole("button", { name: "Lyric room", exact: false }).click();
   await page.screenshot({ path: path.join(results, "desktop-lyrics.png") });
@@ -489,6 +553,9 @@ try {
         const s = await invoke("load_library");
         assert(s.tracks.find((t) => t.id === first.id).missing);
         await waitState("error");
+        await page
+          .getByRole("button", { name: "Open Local", exact: true })
+          .click();
         pick("audio", "Relocated morning.wav");
         const menu = page
           .locator(".track-row")
@@ -532,6 +599,246 @@ try {
     );
     await page.screenshot({ path: path.join(results, "desktop-narrow.png") });
   });
+  await check(
+    "online track save, deduplication and actual app restart",
+    async () => {
+      const remote = {
+        id: "youtube:abcdefghijk",
+        title: "Remote persistence fixture",
+        artist: "Fixture artist",
+        album: "",
+        duration: 173,
+        fileName: "Remote persistence fixture",
+        missing: false,
+        format: "YouTube",
+        source: {
+          providerId: "youtube",
+          sourceId: "abcdefghijk",
+          pageUrl: "ignored",
+          license: "YouTube Terms of Service",
+          licenseUrl: "https://www.youtube.com/t/terms",
+          attribution: "Fixture",
+        },
+      };
+      await invoke("save_online_track", { track: remote });
+      await invoke("save_online_track", { track: remote });
+      await close();
+      await launch(false);
+      const snapshot = await invoke("load_library");
+      const saved = snapshot.tracks.filter((t) => t.id === remote.id);
+      assert.equal(saved.length, 1);
+      assert.equal(saved[0].missing, false);
+      assert.equal(saved[0].source.sourceId, "abcdefghijk");
+      await page
+        .getByRole("button", { name: "Open Saved online", exact: true })
+        .click();
+      const row = page.locator(".track-row").filter({ hasText: remote.title });
+      assert.equal(await row.count(), 1);
+      assert((await row.innerText()).includes("Saved online"));
+      await row.locator("summary").click();
+      assert.equal(
+        await row.getByRole("button", { name: "Relink file" }).count(),
+        0,
+      );
+    },
+  );
+  if (process.env.LUMAIRE_LIVE_LYRICS === "1") {
+    await check(
+      "live native Snowman lyrics with the old synthetic album",
+      async () => {
+        const lyrics = await invoke("fetch_lyrics", {
+          title: "Snowman",
+          artist: "Sia",
+          album: "YouTube",
+          duration: 173,
+        });
+        assert.equal(lyrics.kind, "synced");
+        assert(/\[\d+:\d+/.test(lyrics.lrc));
+        // Verify content without writing copyrighted lyrics to logs/reports.
+      },
+    );
+  }
+  if (process.env.LUMAIRE_LIVE_COMMONS === "1") {
+    await check(
+      "licensed Commons download survives native restart and plays with renderer networking offline",
+      async () => {
+        const candidates = await invoke("search_commons_audio", {
+          query: "3-parts Invention No. 8",
+        });
+        assert(candidates.length, "No licensed Commons audio was returned");
+        const chosen =
+          candidates.find(
+            (track) => track.duration > 5 && track.duration < 300,
+          ) || candidates[0];
+        await invoke("save_online_track", { track: chosen });
+        const downloaded = await invoke("download_track", { id: chosen.id });
+        assert(downloaded.offline);
+        const localFile = await invoke("media_path", { id: chosen.id });
+        assert(existsSync(localFile));
+        await close();
+        await launch(false);
+        await page
+          .getByRole("button", { name: "Open Downloads", exact: true })
+          .click();
+        await cdp.send("Network.enable");
+        await cdp.send("Network.emulateNetworkConditions", {
+          offline: true,
+          latency: 0,
+          downloadThroughput: 0,
+          uploadThroughput: 0,
+        });
+        try {
+          await page
+            .getByRole("button", {
+              name: `Play ${downloaded.title}`,
+              exact: true,
+            })
+            .click();
+          await waitState("playing");
+          await waitClock();
+          assert(
+            (await mediaState()).some(
+              (audio) =>
+                audio.src.includes("asset.localhost") &&
+                audio.time > 0 &&
+                audio.error === null,
+            ),
+          );
+          await page
+            .getByRole("button", { name: "Pause", exact: true })
+            .click();
+        } finally {
+          await cdp.send("Network.emulateNetworkConditions", {
+            offline: false,
+            latency: 0,
+            downloadThroughput: -1,
+            uploadThroughput: -1,
+          });
+        }
+        await page.screenshot({
+          path: path.join(results, "native-offline-download.png"),
+        });
+        await page
+          .locator("summary")
+          .filter({ hasText: "•••" })
+          .first()
+          .click();
+        await page
+          .getByRole("button", { name: "Delete offline copy", exact: true })
+          .click();
+        await page.getByRole("dialog").getByRole("textbox").fill("DELETE");
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: "Confirm", exact: true })
+          .click();
+        await page.waitForFunction(() => !document.querySelector(".track-row"));
+        assert(!existsSync(localFile));
+        const online = (await invoke("load_library")).tracks.find(
+          (track) => track.id === chosen.id,
+        );
+        assert(online?.source && !online.offline);
+      },
+    );
+  }
+  await check(
+    "native reference removal updates collections and persists without deleting external files",
+    async () => {
+      await page
+        .getByRole("navigation", { name: "Main navigation" })
+        .getByRole("button", { name: /^Library/ })
+        .click();
+      await page
+        .getByRole("button", { name: "Open Local", exact: true })
+        .click();
+      const selected = (await invoke("load_library")).tracks.find(
+        (track) => track.id === first.id,
+      );
+      const external = path.join(fixtures, first.fileName);
+      assert(existsSync(external));
+      const row = page.locator(".track-row").filter({
+        has: page.getByRole("button", {
+          name: `Play ${selected.title}`,
+          exact: true,
+        }),
+      });
+      await row.locator("summary").click();
+      await row
+        .getByRole("button", { name: "Remove from library", exact: true })
+        .click();
+      await row.waitFor({ state: "detached" });
+      const snapshot = await invoke("load_library");
+      assert(!snapshot.tracks.some((track) => track.id === first.id));
+      assert(
+        !snapshot.session.playlists.some((playlist) =>
+          playlist.items.some((entry) => entry.trackId === first.id),
+        ),
+      );
+      assert(!snapshot.session.favorites.includes(first.id));
+      assert(!snapshot.session.lyrics[first.id]);
+      assert(existsSync(external));
+      await close();
+      await launch(false);
+      assert(
+        !(await invoke("load_library")).tracks.some(
+          (track) => track.id === first.id,
+        ),
+      );
+      assert(existsSync(external));
+    },
+  );
+  await check(
+    "private Gemini key survives native restart and song changes without entering library exports",
+    async () => {
+      const synthetic = "lumaire-fixture-key-private-only";
+      assert.equal(await invoke("gemini_key_status"), false);
+      await invoke("save_gemini_key", { key: synthetic });
+      assert.equal(await invoke("gemini_key_status"), true);
+      const protectedFile = path.join(data, "private", "gemini.dpapi");
+      assert(existsSync(protectedFile));
+      assert(!readFileSync(protectedFile).includes(Buffer.from(synthetic)));
+      await close();
+      await launch(false);
+      assert.equal(await invoke("gemini_key_status"), true);
+      await page
+        .getByRole("button", { name: "Open Local", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: `Play ${second.title}`, exact: true })
+        .click();
+      await waitState("playing");
+      await page.getByRole("button", { name: "Pause", exact: true }).click();
+      await page
+        .getByRole("button", { name: "Lyric room", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "Lyrics settings", exact: true })
+        .click();
+      await page.getByText("Key saved", { exact: true }).waitFor();
+      assert.equal(
+        await page.getByLabel("Gemini API key", { exact: true }).inputValue(),
+        "",
+      );
+      const snapshot = await invoke("load_library");
+      assert(!JSON.stringify(snapshot).includes(synthetic));
+      pick("export", "private-export.json");
+      await invoke("export_library", { session: snapshot.session });
+      assert(
+        !readFileSync(
+          path.join(fixtures, "private-export.json"),
+          "utf8",
+        ).includes(synthetic),
+      );
+      await page.screenshot({
+        path: path.join(results, "native-private-lyrics-settings.png"),
+      });
+      await page
+        .getByRole("button", { name: "Remove key", exact: true })
+        .click();
+      await page.getByText("No key saved", { exact: true }).waitFor();
+      assert(!existsSync(protectedFile));
+      assert.equal(await invoke("gemini_key_status"), false);
+    },
+  );
   report.completedAt = new Date().toISOString();
   report.passed = report.checks.every((c) => c.passed);
   console.log(`Passed ${report.checks.length} desktop checks.`);

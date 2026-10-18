@@ -1,5 +1,11 @@
 # Lumaire implementation verification
 
+**Current update (18 October 2026):** Phase 4 is underway. See the
+[task-by-task status and current validation](phase-4/status.md) and
+[implementation plan](phase-4/implementation-plan.md). The Phase 3 narrative
+below is a historical baseline; its statements about absent YouTube/metadata
+support and test counts no longer describe the current working tree.
+
 17 October 2026, Asia/Kolkata. Updated 18 October 2026 after **Phase 3 music source integration** completion.
 
 Current completed checks: TypeScript/Vite production build; nine Vitest domain/controller tests; browser UI startup without uncaught renderer errors. **Wikimedia Commons music discovery and streaming integration implemented and verified.**
@@ -129,3 +135,15 @@ REA static identity evidence: `ev_918432e64ff6d7f0c44bb47b78b83922dac4265c838ad3
 Outstanding validation: native compile/start; WAV/MP3/FLAC media decode and clock; transport controls and rapid switches; SQLite cold restart; duplicate/playlist/backup round trips; missing-file recovery; native three-layer lyric display; narrow layout and keyboard focus; **Wikimedia Commons streaming end-to-end test with real audio**.
 
 Separate release limits: human audible output/device testing; one-hour continuity and percentile performance targets; fluent lyric review; Windows screen-reader and 200% zoom; real OS dialog workflows; public packaging/signing/distribution review.
+
+Phase 4 implementation and current verification are tracked in
+[Phase 4 status](phase-4/status.md) and [desktop implementation](phase-4/desktop-implementation.md).
+These supersede the earlier feature-gap inventory above. Phase 4 completion
+verification passed 59 frontend, 35 Rust, 18 browser and 21 real native tests,
+including native restart, artwork, removal and licensed offline playback. The
+user deferred only live Gemini verification until API-key configuration.
+
+The later [private lyrics settings](phase-4/private-lyrics-settings.md) follow-up
+adds Windows-protected persistent keys and reader preferences. Verification uses
+synthetic credentials only: 62 frontend, 36 Rust, 19 browser and 20 native checks
+passed, including key persistence, song changes and backup exclusion.

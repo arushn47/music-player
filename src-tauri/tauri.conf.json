@@ -21,7 +21,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost; media-src 'self' asset: http://asset.localhost blob: https://upload.wikimedia.org; connect-src ipc: http://ipc.localhost https://commons.wikimedia.org; object-src 'none'; frame-src 'none'; base-uri 'self'",
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost https://i.ytimg.com https://i.scdn.co https://upload.wikimedia.org https://coverartarchive.org https://archive.org https://*.archive.org; media-src 'self' asset: http://asset.localhost blob: https://upload.wikimedia.org https://*.googlevideo.com; connect-src ipc: http://ipc.localhost https://commons.wikimedia.org; object-src 'none'; frame-src 'none'; base-uri 'self'",
       "assetProtocol": { "enable": true, "scope": [] }
     }
   },

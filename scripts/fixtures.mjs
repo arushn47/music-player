@@ -2,6 +2,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { deflateSync } from "node:zlib";
 const root = path.resolve(".test-data/fixtures");
 mkdirSync(root, { recursive: true });
 function wav(name, seconds, hz) {
@@ -32,6 +33,40 @@ function wav(name, seconds, hz) {
 }
 wav("Lumaire - Morning light.wav", 36, 330);
 wav("Lumaire - Quiet orbit.wav", 8, 440);
+// A small original raster fixture, embedded by the test encoder below.
+function chunk(kind, bytes) {
+  const label = Buffer.from(kind),
+    input = Buffer.concat([label, bytes]);
+  let crc = 0xffffffff;
+  for (const byte of input) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++)
+      crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+  }
+  const length = Buffer.alloc(4),
+    checksum = Buffer.alloc(4);
+  length.writeUInt32BE(bytes.length);
+  checksum.writeUInt32BE((crc ^ 0xffffffff) >>> 0);
+  return Buffer.concat([length, input, checksum]);
+}
+const header = Buffer.alloc(13);
+header.writeUInt32BE(32);
+header.writeUInt32BE(32, 4);
+header[8] = 8;
+header[9] = 2;
+const pixels = Buffer.alloc(32 * 97);
+for (let y = 0; y < 32; y++)
+  for (let x = 0; x < 32; x++)
+    pixels.set([120 + x * 3, 130 + y * 3, 90], y * 97 + 1 + x * 3);
+writeFileSync(
+  path.join(root, "artwork.png"),
+  Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk("IHDR", header),
+    chunk("IDAT", deflateSync(pixels)),
+    chunk("IEND", Buffer.alloc(0)),
+  ]),
+);
 // Use an already installed encoder for test fixtures only; it is never bundled or needed by the player.
 for (const [extension, args] of [
   ["mp3", ["-c:a", "libmp3lame", "-b:a", "128k"]],
@@ -46,6 +81,16 @@ for (const [extension, args] of [
       "-y",
       "-i",
       path.join(root, "Lumaire - Morning light.wav"),
+      "-i",
+      path.join(root, "artwork.png"),
+      "-map",
+      "0:a",
+      "-map",
+      "1:v",
+      "-c:v",
+      "copy",
+      "-disposition:v:0",
+      "attached_pic",
       ...args,
       path.join(root, `Lumaire - Codec check.${extension}`),
     ],

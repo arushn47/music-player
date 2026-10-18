@@ -7,7 +7,7 @@ rust-version = "1.90"
 
 [lib]
 name = "lumaire_lib"
-crate-type = ["rlib"]
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "=2.7.3", features = [] }
@@ -24,12 +24,19 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rusqlite = { version = "0.37", features = ["bundled"] }
 lofty = "0.22"
-rfd = { version = "0.15", default-features = false }
 uuid = { version = "1", features = ["v4"] }
 walkdir = "2"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
-tokio = { version = "1", features = ["rt"] }
+tokio = { version = "1", features = ["rt", "sync", "time"] }
 log = "0.4"
+base64 = "0.22"
+regex = "1"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+rfd = { version = "0.15", default-features = false }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Security_Cryptography", "Win32_Foundation"] }
 
 [profile.dev]
 debug = 0

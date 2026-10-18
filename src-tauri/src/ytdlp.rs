@@ -1,7 +1,7 @@
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
-use std::process::{Command, Stdio};
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -11,6 +11,9 @@ pub struct YtdlpSearchResult {
     pub duration: Option<f64>,
     pub thumbnail: Option<String>,
     pub channel: Option<String>,
+    pub track: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -21,6 +24,9 @@ pub struct YtdlpStreamInfo {
     pub title: Option<String>,
     pub container: Option<String>,
     pub codec: Option<String>,
+    pub track: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -33,6 +39,10 @@ struct YtdlpJson {
     ext: Option<String>,
     acodec: Option<String>,
     channel: Option<String>,
+    track: Option<String>,
+    artist: Option<String>,
+    artists: Option<Vec<String>>,
+    album: Option<String>,
 }
 
 fn find_ytdlp() -> Result<PathBuf, String> {
@@ -40,7 +50,7 @@ fn find_ytdlp() -> Result<PathBuf, String> {
     let local_path = std::env::current_exe()
         .ok()
         .and_then(|exe| exe.parent().map(|p| p.join("yt-dlp.exe")));
-    
+
     if let Some(path) = local_path {
         if path.exists() {
             debug!("[yt-dlp] Found bundled binary at {:?}", path);
@@ -70,11 +80,9 @@ fn find_ytdlp() -> Result<PathBuf, String> {
 
 fn run_ytdlp(args: &[&str]) -> Result<String, String> {
     let program = find_ytdlp()?;
-    
+
     let mut cmd = Command::new(&program);
-    cmd.args(args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+    cmd.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
 
     #[cfg(target_os = "windows")]
     {
@@ -93,7 +101,10 @@ fn run_ytdlp(args: &[&str]) -> Result<String, String> {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         error!("[yt-dlp] Command failed: {}", stderr);
-        return Err(format!("yt-dlp error: {}", stderr.lines().take(3).collect::<Vec<_>>().join(" ")));
+        return Err(format!(
+            "yt-dlp error: {}",
+            stderr.lines().take(3).collect::<Vec<_>>().join(" ")
+        ));
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
@@ -104,57 +115,203 @@ fn parse_ndjson_entries(stdout: &str) -> Vec<YtdlpJson> {
         .lines()
         .filter(|line| !line.trim().is_empty())
         .filter_map(|line| {
-            serde_json::from_str::<YtdlpJson>(line).map_err(|e| {
-                debug!("[yt-dlp] Failed to parse line: {}", e);
-                e
-            }).ok()
+            serde_json::from_str::<YtdlpJson>(line)
+                .map_err(|e| {
+                    debug!("[yt-dlp] Failed to parse line: {}", e);
+                    e
+                })
+                .ok()
         })
         .collect()
 }
 
+/// Heuristic filter to identify likely music content vs random YouTube videos.
+/// Helps avoid tutorials, podcasts, vlogs, gameplay, etc. being classified as songs.
+fn is_likely_music(result: &YtdlpSearchResult) -> bool {
+    let title = result.title.to_lowercase();
+    let channel = result.channel.as_deref().unwrap_or_default().to_lowercase();
+    let words: Vec<_> = title
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .collect();
+    let excluded = [
+        "podcast",
+        "interview",
+        "tutorial",
+        "review",
+        "unboxing",
+        "vlog",
+        "gameplay",
+        "walkthrough",
+        "reaction",
+        "explained",
+        "documentary",
+        "news",
+        "trailer",
+        "lecture",
+        "lesson",
+        "course",
+        "episode",
+    ];
+    if excluded.iter().any(|w| words.contains(w)) || title.contains("how to ") {
+        return false;
+    }
+    if result
+        .duration
+        .is_some_and(|d| !d.is_finite() || !(30.0..=1200.0).contains(&d))
+    {
+        return false;
+    }
+    // Generic channel words (official/music) and substrings (ep/visual) aren't
+    // evidence of a song. Positive evidence is required, including when duration
+    // is absent. Unknown content is omitted, never silently promoted to music.
+    if result
+        .track
+        .as_ref()
+        .is_some_and(|track| !track.trim().is_empty())
+        && result
+            .artist
+            .as_ref()
+            .is_some_and(|artist| !artist.trim().is_empty())
+    {
+        return true;
+    }
+    [
+        "official audio",
+        "official music video",
+        "lyric video",
+        "official lyric",
+        "visualizer",
+    ]
+    .iter()
+    .any(|label| title.contains(label))
+        || words.contains(&"lyrics")
+        || channel.ends_with(" - topic")
+        || channel.ends_with("vevo")
+        || (title.contains(" - ")
+            && (title.contains("official video") || channel.ends_with(" records")))
+}
+
 #[tauri::command]
-pub fn ytdlp_search(query: String, max_results: Option<u32>) -> Result<Vec<YtdlpSearchResult>, String> {
-    let limit = max_results.unwrap_or(10);
+pub async fn ytdlp_search(
+    query: String,
+    max_results: Option<u32>,
+) -> Result<Vec<YtdlpSearchResult>, String> {
+    tauri::async_runtime::spawn_blocking(move || search(query, max_results))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+fn search(query: String, max_results: Option<u32>) -> Result<Vec<YtdlpSearchResult>, String> {
+    let limit = max_results.unwrap_or(10).clamp(1, 50);
     debug!("[yt-dlp] Searching: {} (limit: {})", query, limit);
 
     let search_url = format!("ytsearch{}:{}", limit, query);
     let stdout = run_ytdlp(&[
+        "--ignore-config",
+        "--skip-download",
         "--dump-json",
         "--flat-playlist",
         "--no-warnings",
         &search_url,
     ])?;
 
-    let results: Vec<YtdlpSearchResult> = parse_ndjson_entries(&stdout)
+    let all_results: Vec<YtdlpSearchResult> = parse_ndjson_entries(&stdout)
         .into_iter()
         .filter_map(|entry| {
             entry.id.map(|id| YtdlpSearchResult {
-                id,
+                id: id.clone(),
                 title: entry.title.unwrap_or_else(|| "Unknown".to_string()),
                 duration: entry.duration,
-                thumbnail: entry.thumbnail,
+                thumbnail: entry
+                    .thumbnail
+                    .or_else(|| Some(format!("https://i.ytimg.com/vi/{id}/hqdefault.jpg"))),
                 channel: entry.channel,
+                track: entry.track,
+                artist: entry
+                    .artist
+                    .or_else(|| entry.artists.map(|artists| artists.join(", "))),
+                album: entry.album,
             })
         })
         .collect();
 
-    debug!("[yt-dlp] Found {} results", results.len());
+    // Apply music classification filter
+    let results: Vec<YtdlpSearchResult> = all_results
+        .into_iter()
+        .filter(|result| {
+            let is_music = is_likely_music(result);
+            if !is_music {
+                debug!(
+                    "[yt-dlp] Filtered out non-music: '{}' by '{}'",
+                    result.title,
+                    result.channel.as_deref().unwrap_or("Unknown")
+                );
+            }
+            is_music
+        })
+        .collect();
+
+    debug!(
+        "[yt-dlp] Found {} results ({} after filtering)",
+        results.len(),
+        results.len()
+    );
     Ok(results)
 }
 
 #[tauri::command]
-pub fn ytdlp_get_stream(video_id: String) -> Result<YtdlpStreamInfo, String> {
-    let url = if video_id.starts_with("http") {
-        video_id
-    } else {
-        format!("https://www.youtube.com/watch?v={}", video_id)
-    };
-    
+pub async fn ytdlp_get_stream(video_id: String) -> Result<YtdlpStreamInfo, String> {
+    if video_id.len() != 11
+        || !video_id
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
+    {
+        return Err("Invalid YouTube source ID.".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || resolve(video_id))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+fn resolve(video_id: String) -> Result<YtdlpStreamInfo, String> {
+    resolve_audio(video_id, "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio")
+}
+
+pub async fn download_audio(video_id: String) -> Result<YtdlpStreamInfo, String> {
+    if video_id.len() != 11
+        || !video_id
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
+    {
+        return Err("Invalid YouTube source ID.".into());
+    }
+    // Store a native-playable audio container without conversion or video tracks.
+    tokio::time::timeout(
+        std::time::Duration::from_secs(60),
+        tauri::async_runtime::spawn_blocking(move || resolve_audio(video_id, "bestaudio[ext=m4a]")),
+    )
+    .await
+    .map_err(|_| "YouTube audio lookup timed out. Try again when online.".to_string())?
+    .map_err(|e| e.to_string())?
+}
+
+fn resolve_audio(video_id: String, format: &str) -> Result<YtdlpStreamInfo, String> {
+    let url = format!("https://www.youtube.com/watch?v={}", video_id);
+
     debug!("[yt-dlp] Getting stream for: {}", url);
 
     let stdout = run_ytdlp(&[
+        "--ignore-config",
+        "--skip-download",
         "-f",
-        "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
+        format,
+        "--socket-timeout",
+        "10",
+        "--retries",
+        "2",
+        "--extractor-retries",
+        "2",
         "--dump-json",
         "--no-playlist",
         "--no-warnings",
@@ -183,10 +340,57 @@ pub fn ytdlp_get_stream(video_id: String) -> Result<YtdlpStreamInfo, String> {
         title: info.title,
         container: info.ext,
         codec: info.acodec,
+        track: info.track,
+        artist: info
+            .artist
+            .or_else(|| info.artists.map(|artists| artists.join(", "))),
+        album: info.album,
     })
 }
 
 #[tauri::command]
 pub fn ytdlp_check_available() -> bool {
     find_ytdlp().is_ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn entry(title: &str, channel: &str) -> YtdlpSearchResult {
+        YtdlpSearchResult {
+            id: "abcdefghijk".into(),
+            title: title.into(),
+            duration: Some(173.0),
+            thumbnail: None,
+            channel: Some(channel.into()),
+            track: None,
+            artist: None,
+            album: None,
+        }
+    }
+    #[test]
+    fn generic_official_channels_and_substrings_are_not_music_evidence() {
+        assert!(!is_likely_music(&entry(
+            "Deep cleaning my kitchen",
+            "Official Channel"
+        )));
+        assert!(!is_likely_music(&entry(
+            "New visual design",
+            "Music Talk Official"
+        )));
+        assert!(!is_likely_music(&entry(
+            "How to play Snowman (Official Audio)",
+            "SiaVEVO"
+        )));
+        assert!(!is_likely_music(&entry("Snowman reaction", "Sia - Topic")));
+    }
+    #[test]
+    fn recognizes_topic_vevo_and_explicit_music_labels() {
+        assert!(is_likely_music(&entry("Snowman", "Sia - Topic")));
+        assert!(is_likely_music(&entry("Sia - Snowman", "SiaVEVO")));
+        assert!(is_likely_music(&entry(
+            "Sia - Snowman (Official Audio)",
+            "Sia"
+        )));
+    }
 }
