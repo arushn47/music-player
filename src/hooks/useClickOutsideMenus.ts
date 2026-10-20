@@ -45,14 +45,41 @@ export function initClickOutsideMenus(doc: Document = document): () => void {
     }
   };
 
+    const handleToggle = (e: Event) => {
+    const target = e.target as HTMLElement | null;
+    const menu = target?.closest ? target.closest<HTMLDetailsElement>("details.track-menu") : null;
+    if (!menu || !menu.open) return;
+
+    const openMenus = doc.querySelectorAll<HTMLDetailsElement>(
+      "details.track-menu[open]",
+    );
+    openMenus.forEach((other) => {
+      if (other !== menu) {
+        other.open = false;
+      }
+    });
+
+    if (typeof window !== "undefined" && menu.getBoundingClientRect) {
+      const rect = menu.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 290 && rect.top > 220) {
+        menu.classList.add("open-up");
+      } else {
+        menu.classList.remove("open-up");
+      }
+    }
+  };
+
   doc.addEventListener("pointerdown", handlePointerDown);
   doc.addEventListener("click", handleClick);
   doc.addEventListener("keydown", handleKeyDown);
+  doc.addEventListener("toggle", handleToggle, true);
 
   return () => {
     doc.removeEventListener("pointerdown", handlePointerDown);
     doc.removeEventListener("click", handleClick);
     doc.removeEventListener("keydown", handleKeyDown);
+    doc.removeEventListener("toggle", handleToggle, true);
   };
 }
 

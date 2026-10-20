@@ -3,6 +3,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { Upload, X } from "lucide-react";
 import type { LyricDocument, Preferences, Track } from "../../domain/types";
 import { mobile } from "../../adapters/native";
+import {
+  GEMINI_KEY_CHANGED,
+  GEMINI_PROCESS_RETRY,
+  type LyricProcessingState,
+} from "../../adapters/lyric-processing";
 
 export function LyricsSettings({
   settings,
@@ -13,7 +18,7 @@ export function LyricsSettings({
   onUpdateOffset,
   attach,
   onClose,
-  applyTranslation,
+  processingState,
   regenerate,
   clearCache,
   cachedCount,
@@ -24,9 +29,11 @@ export function LyricsSettings({
   track?: Track;
   lyricSynced?: boolean;
   onUpdateOffset?: (offset: number) => void;
-  attach?: (kind: "original" | "romanisation" | "translation") => Promise<void> | void;
+  attach?: (
+    kind: "original" | "romanisation" | "translation",
+  ) => Promise<void> | void;
   onClose?: () => void;
-  applyTranslation: (id: string, values: Record<string, string>) => void;
+  processingState: LyricProcessingState;
   regenerate: () => void;
   clearCache: () => void;
   cachedCount: number;
@@ -35,9 +42,19 @@ export function LyricsSettings({
     [loading, setLoading] = useState(true);
   const [key, setKey] = useState(""),
     [saving, setSaving] = useState(false);
-  const [pending, setPending] = useState(false),
-    [error, setError] = useState("");
+  const pending = processingState.status === "processing";
+  const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const [modelDraft, setModelDraft] = useState(settings.geminiModel);
+  useEffect(() => setModelDraft(settings.geminiModel), [settings.geminiModel]);
+  function commitModel() {
+    const value = modelDraft.trim();
+    if (/^[A-Za-z0-9._-]{1,100}$/.test(value)) {
+      setting("geminiModel", value);
+    } else {
+      setError("Enter a valid Gemini model name.");
+    }
+  }
   useEffect(() => {
     if (mobile) {
       setLoading(false);
@@ -71,6 +88,7 @@ export function LyricsSettings({
       | "translation"
       | "autoOpenLyrics"
       | "estimatedScroll",
+
     disabled = false,
   ) => (
     <label className={`lyric-setting-toggle ${disabled ? "is-disabled" : ""}`}>
@@ -96,6 +114,7 @@ export function LyricsSettings({
       await invoke("save_gemini_key", { key: key.trim() });
       setKey("");
       setSaved(true);
+      window.dispatchEvent(new Event(GEMINI_KEY_CHANGED));
       setStatus("Key saved privately on this device.");
     } catch {
       setError(
@@ -105,35 +124,29 @@ export function LyricsSettings({
       setSaving(false);
     }
   }
-  async function translate() {
-    if (!doc || pending || !saved || key.trim()) return;
-    const original = doc;
-    setPending(true);
-    setError("");
-    setStatus("Translating this song…");
-    try {
-      const values = await invoke<Record<string, string>>("translate_lyrics", {
-        lines: original.lines.map(({ id, text }) => ({ id, text })),
-        model: settings.geminiModel,
-      });
-      applyTranslation(original.id, values);
-      setStatus("Requested translation saved for that song.");
-    } catch (error) {
-      setError(String(error));
-      setStatus("");
-    } finally {
-      setPending(false);
-    }
-  }
   return (
     <>
       <header className="lyric-settings-header">
         <div className="lyric-settings-title-wrap">
           <strong>Lyrics settings</strong>
-          <span role="status" className={`key-pill ${saved ? "key-saved" : ""}`}>
+          <span
+            role="status"
+            className={`key-pill ${saved ? "key-saved" : ""}`}
+          >
             {loading ? "Checking key…" : saved ? "Key saved" : "No key saved"}
           </span>
         </div>
+        {onClose && (
+          <button
+            type="button"
+            className="icon-button lyric-settings-close-btn"
+            onClick={onClose}
+            aria-label="Close lyrics settings"
+            title="Close"
+          >
+            <X size={15} />
+          </button>
+        )}
       </header>
       {doc && (
         <div className="lyric-settings-card timing-card">
@@ -253,21 +266,42 @@ export function LyricsSettings({
           <button
             aria-label="Decrease lyric text size"
             disabled={settings.lyricSize <= 18}
-            onClick={() =>
-              setting("lyricSize", Math.max(18, settings.lyricSize - 2))
-            }
+            onClick={() => {
+              const FONT_STEPS = [
+                18, 20, 22, 24, 26, 28, 30, 32, 34, 38, 42, 46,
+              ];
+              const prev = [...FONT_STEPS]
+                .reverse()
+                .find((s) => s < settings.lyricSize);
+              setting(
+                "lyricSize",
+                prev ?? Math.max(18, settings.lyricSize - 2),
+              );
+            }}
           >
             A−
           </button>
-          <output aria-label="Lyric text size">
+          <button
+            type="button"
+            className="lyric-font-output-btn"
+            title="Click to reset to 100%"
+            onClick={() => setting("lyricSize", 28)}
+          >
             {Math.round((settings.lyricSize / 28) * 100)}%
-          </output>
+          </button>
           <button
             aria-label="Increase lyric text size"
             disabled={settings.lyricSize >= 46}
-            onClick={() =>
-              setting("lyricSize", Math.min(46, settings.lyricSize + 2))
-            }
+            onClick={() => {
+              const FONT_STEPS = [
+                18, 20, 22, 24, 26, 28, 30, 32, 34, 38, 42, 46,
+              ];
+              const next = FONT_STEPS.find((s) => s > settings.lyricSize);
+              setting(
+                "lyricSize",
+                next ?? Math.min(46, settings.lyricSize + 2),
+              );
+            }}
           >
             A+
           </button>
@@ -288,7 +322,10 @@ export function LyricsSettings({
         >
           <div className="card-top-row">
             <div className="key-title-group">
-              <label htmlFor="gemini-private-key" className="card-section-title">
+              <label
+                htmlFor="gemini-private-key"
+                className="card-section-title"
+              >
                 Gemini API key
               </label>
               <span className="key-optional-tag">Optional</span>
@@ -324,6 +361,7 @@ export function LyricsSettings({
                   void invoke("delete_gemini_key")
                     .then(() => {
                       setSaved(false);
+                      window.dispatchEvent(new Event(GEMINI_KEY_CHANGED));
                       setKey("");
                       setStatus("Saved key removed from this device.");
                     })
@@ -369,20 +407,38 @@ export function LyricsSettings({
           </div>
 
           <small className="key-security-note">
-            Encrypted on this device using OS keychain. Used only for your
-            direct lyric requests to Gemini.
+            Encrypted on this device using OS keychain. Used only for your lyric
+            requests to Gemini. When automatic processing is enabled, each
+            selected song’s lyrics are sent for pronunciation and English
+            meaning.
           </small>
         </form>
       )}
       <details className="lyric-model">
-        <summary>Translation model</summary>
+        <summary>Gemini processing</summary>
+        <label className="switch-row">
+          Automatically process each song
+          <input
+            type="checkbox"
+            aria-label="Automatically process each song"
+            checked={settings.autoGemini}
+            onChange={(event) => setting("autoGemini", event.target.checked)}
+          />
+        </label>
         <label>
           Gemini model
           <input
             aria-label="Gemini model"
-            value={settings.geminiModel}
+            value={modelDraft}
             maxLength={100}
-            onChange={(event) => setting("geminiModel", event.target.value)}
+            onChange={(event) => setModelDraft(event.target.value)}
+            onBlur={commitModel}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                event.currentTarget.blur();
+              }
+            }}
           />
         </label>
       </details>
@@ -399,17 +455,19 @@ export function LyricsSettings({
           disabled={
             !doc?.lines.length || !saved || !!key.trim() || saving || pending
           }
-          onClick={() => void translate()}
+          onClick={() => {
+            setting("autoGemini", true);
+            window.dispatchEvent(new Event(GEMINI_PROCESS_RETRY));
+          }}
         >
           {pending
-            ? "Translating…"
-            : doc && Object.keys(doc.translation).length
-              ? "Translate again"
-              : "Translate this song"}
+            ? "Processing pronunciation & meaning…"
+            : "Refresh pronunciation & translation"}
         </button>
         <small>
-          Translation sends this song’s lyrics to Gemini only when requested.
-          Saved results are reused.
+          With a saved key, each song is processed automatically. Completed
+          results are reused; refresh sends another request. Provider quotas
+          still apply.
         </small>
         <button
           className="text-button"
@@ -426,6 +484,22 @@ export function LyricsSettings({
       {status && (
         <p className="lyric-settings-status" role="status">
           {status}
+        </p>
+      )}
+      {processingState.status !== "idle" && (
+        <p
+          className={
+            processingState.status === "error"
+              ? "lyric-settings-error"
+              : "lyric-settings-status"
+          }
+          role="status"
+        >
+          {pending
+            ? "Generating pronunciation and English meaning…"
+            : processingState.status === "error"
+              ? processingState.message
+              : "Pronunciation and translation saved for this song."}
         </p>
       )}
       {error && (

@@ -31,6 +31,42 @@ describe("saved library and listening session stay independent", () => {
     expect(restored.queueTracks[remote.id].title).toBe(remote.title);
     expect(libraryCollections([], restored.playlists)).toEqual([]);
   });
+  it.each(["itunes:123456789", "itunes:18446744073709551615", "saavn:QAbmbZ7O"])("restores catalogue provenance %s without changing the queued audio source or credits", (metadataSourceId) => {
+    const catalogued = { ...remote, metadataSourceId };
+    const playing = playSelection(defaults(), catalogued, false);
+    const restored = restoreSession(JSON.parse(JSON.stringify(playing)), []);
+    expect(restored.queue).toEqual(playing.queue);
+    expect(restored.queueTracks[remote.id]).toMatchObject(catalogued);
+  });
+  it.each([
+    undefined,
+    null,
+    "",
+    "itunes:0",
+    "itunes:01",
+    "itunes:-1",
+    "itunes:1.5",
+    "itunes:123\n",
+    "itunes:123456789012345678901",
+    "itunes:18446744073709551616",
+    "saavn:QAbmbZ7",
+    "saavn:QAbmbZ7OO",
+    "saavn:QAbmbZ7/",
+    "saavn:QAbmbZ7O\n",
+    "saavn:../../../",
+    "saavn:",
+    "youtube:123",
+    123,
+    { id: "itunes:123" },
+  ])("drops malformed or absent catalogue provenance %j without losing legacy playback", (metadataSourceId) => {
+    const playing = playSelection(defaults(), remote, false);
+    const untrusted = JSON.parse(JSON.stringify(playing));
+    untrusted.queueTracks[remote.id].metadataSourceId = metadataSourceId;
+    const restored = restoreSession(untrusted, []);
+    expect(restored.queue).toEqual(playing.queue);
+    expect(restored.queueTracks[remote.id]).toMatchObject(remote);
+    expect(restored.queueTracks[remote.id]).not.toHaveProperty("metadataSourceId");
+  });
   it("replaces a directly selected song instead of accumulating listening history in Up next", () => {
     const previous = item("old"),
       requested = { ...item("requested"), requested: true },
@@ -61,7 +97,7 @@ describe("saved library and listening session stay independent", () => {
       "second",
     ]);
     s.settings.shuffle = true;
-    expect(advance(s, 1, false, () => 0.99)).toBe(s.queue[1].id);
+    expect(advance(s, 1)).toBe(s.queue[1].id);
   });
   it("puts explicit requests ahead of collection continuation without changing the collection", () => {
     const current = item("current"),
@@ -77,7 +113,7 @@ describe("saved library and listening session stay independent", () => {
     ]);
     const reordered = reorderUpcoming(s, s.queue[1].id, 1);
     reordered.settings.shuffle = true;
-    expect(advance(reordered, 1, false, () => 0.99)).toBe(continuation.id);
+    expect(advance(reordered, 1)).toBe(continuation.id);
     expect(reorderUpcoming(s, s.currentId!, 1)).toBe(s);
   });
   it("discards expired temporary metadata and prevents unsaved playlist/favorite membership", () => {

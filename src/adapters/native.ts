@@ -51,9 +51,54 @@ export interface CanonicalMetadata {
   artworkUrl?: string | null;
 }
 
+export interface CatalogTrack {
+  id: string;
+  title: string;
+  artist: string;
+  artistId?: string | null;
+  artists: CatalogArtistCredit[];
+  album: string;
+  albumId?: string | null;
+  duration: number;
+  artworkUrl?: string | null;
+}
+
+export interface CatalogArtistCredit {
+  name: string;
+  id?: string | null;
+}
+
+export interface CatalogArtist {
+  id: string;
+  name: string;
+  artworkUrl?: string | null;
+}
+
+export interface CatalogAlbum {
+  id: string;
+  title: string;
+  artist: string;
+  artists: CatalogArtistCredit[];
+  artworkUrl?: string | null;
+  year?: number | null;
+  trackCount?: number | null;
+}
+
+export interface CatalogEntities {
+  artists: CatalogArtist[];
+  albums: CatalogAlbum[];
+  warning: string | null;
+}
+
 export interface ResolvedMedia {
   url: string;
   mimeType: string;
+}
+
+export interface EntityArtwork {
+  url: string;
+  sourceUrl: string;
+  credit: string;
 }
 
 export interface LibraryPort {
@@ -75,13 +120,20 @@ export interface LibraryPort {
   searchCommons(query: string): Promise<RemoteTrack[]>;
   resolveCommons(sourceId: string): Promise<ResolvedMedia>;
   ytdlpCheckAvailable(): Promise<boolean>;
-  ytdlpSearch(query: string, maxResults?: number): Promise<YtdlpSearchResult[]>;
+  ytdlpInstallEngine(): Promise<void>;
+  ytdlpSearch(query: string, maxResults?: number, catalog?: boolean): Promise<YtdlpSearchResult[]>;
   ytdlpGetStream(videoId: string): Promise<YtdlpStreamInfo>;
+  searchCatalog(query: string, limit?: number): Promise<CatalogTrack[]>;
+  searchCatalogEntities(query: string): Promise<CatalogEntities>;
+  lookupCatalog(id: string): Promise<CatalogTrack>;
+  lookupArtist(id: string): Promise<{ info: CatalogArtist; topTracks: CatalogTrack[]; albums: CatalogAlbum[]; similarArtists: CatalogArtist[] }>;
+  lookupAlbum(id: string): Promise<{ info: CatalogAlbum; tracks: CatalogTrack[]; partial: boolean }>;
   lookupMetadata(
     title: string,
     artist: string,
     duration: number,
   ): Promise<CanonicalMetadata | null>;
+  entityArtwork(kind: "artist" | "album", name: string, artist: string, trackTitle: string): Promise<EntityArtwork | null>;
 
 }
 export const desktop = isTauri();
@@ -91,6 +143,30 @@ const needDesktop = async <T>(): Promise<T> => {
     "Open the Lumaire desktop app to choose files and use the SQLite library. Run npm run desktop.",
   );
 };
+const metadataRequests = new Map<string, Promise<CanonicalMetadata | null>>();
+const artistRequests = new Map<string, Promise<Awaited<ReturnType<LibraryPort["lookupArtist"]>>>>();
+function lookupArtist(id: string): ReturnType<LibraryPort["lookupArtist"]> {
+  let request = artistRequests.get(id);
+  if (!request) {
+    if (artistRequests.size >= 256) artistRequests.delete(artistRequests.keys().next().value!);
+    request = invoke<Awaited<ReturnType<LibraryPort["lookupArtist"]>>>("lookup_artist", { id })
+      .catch(error => { artistRequests.delete(id); throw error; });
+    artistRequests.set(id, request);
+  }
+  return request;
+}
+function lookupMetadata(title: string, artist: string, duration: number): Promise<CanonicalMetadata | null> {
+  const key = JSON.stringify([title, artist, duration]);
+  let request = metadataRequests.get(key);
+  if (!request) {
+    if (metadataRequests.size >= 256) metadataRequests.delete(metadataRequests.keys().next().value!);
+    request = invoke<CanonicalMetadata | null>("lookup_metadata", { title, artist, duration })
+      .then(value => { if (!value) metadataRequests.delete(key); return value; })
+      .catch(error => { metadataRequests.delete(key); throw error; });
+    metadataRequests.set(key, request);
+  }
+  return request;
+}
 export const library: LibraryPort = desktop
   ? {
       load: () => invoke("load_library"),
@@ -115,15 +191,24 @@ export const library: LibraryPort = desktop
       ytdlpCheckAvailable: () => mobile
         ? invoke<{ available: boolean }>("android_source", { operation: "probe" }).then((r) => r.available)
         : invoke("ytdlp_check_available"),
-      ytdlpSearch: (query, maxResults) =>
+      ytdlpInstallEngine: () => mobile
+        ? Promise.reject(new Error("Android already includes its streaming engine."))
+        : invoke("install_youtube_engine"),
+      ytdlpSearch: (query, maxResults, catalog = false) =>
         mobile
           ? invoke<{ results: YtdlpSearchResult[] }>("android_source", { operation: "search", query, maxResults }).then((r) => r.results)
-          : invoke("ytdlp_search", { query, maxResults }),
+          : invoke("ytdlp_search", { query, maxResults, catalog }),
       ytdlpGetStream: (videoId) => mobile
         ? invoke<YtdlpStreamInfo & { url: string }>("android_source", { operation: "resolve", videoId }).then((r) => ({ ...r, streamUrl: r.url }))
         : invoke("ytdlp_get_stream", { videoId }),
-      lookupMetadata: (title, artist, duration) =>
-        invoke("lookup_metadata", { title, artist, duration }),
+      lookupMetadata,
+      searchCatalog: (query, limit) => invoke("search_catalog", { query, limit }),
+      lookupCatalog: (id) => invoke("lookup_catalog", { id }),
+      lookupArtist,
+      searchCatalogEntities: (query) => invoke("search_catalog_entities", { query }),
+      lookupAlbum: (id) => invoke("lookup_album", { id }),
+      entityArtwork: (kind, name, artist, trackTitle) =>
+        invoke("lookup_entity_artwork", { kind, name, artist, trackTitle }),
     }
   : {
       load: async () => ({ tracks: [], session: null }),
@@ -142,7 +227,14 @@ export const library: LibraryPort = desktop
       searchCommons: async () => [],
       resolveCommons: needDesktop,
       ytdlpCheckAvailable: async () => false,
+      ytdlpInstallEngine: needDesktop,
       ytdlpSearch: async () => [],
       ytdlpGetStream: needDesktop,
       lookupMetadata: async () => null,
+      searchCatalog: async () => [],
+      lookupCatalog: needDesktop,
+      lookupArtist: needDesktop,
+      searchCatalogEntities: needDesktop,
+      lookupAlbum: needDesktop,
+      entityArtwork: async () => null,
     };

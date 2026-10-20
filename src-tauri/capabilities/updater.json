@@ -1,0 +1,7 @@
+{
+  "identifier": "windows-updater",
+  "description": "Manual signed Windows software updates for the main window.",
+  "windows": ["main"],
+  "platforms": ["windows"],
+  "permissions": ["updater:default"]
+}

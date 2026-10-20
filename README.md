@@ -1,54 +1,97 @@
+<div align="center">
+
+<img src="public/lumaire.svg" alt="Lumaire" width="80" height="80" />
+
 # Lumaire
 
-A Windows desktop music player built with React, TypeScript, Vite, Tauri 2, Rust and SQLite. The existing design/research package remains unchanged in [docs/phase-1](docs/phase-1/README.md). The current implementation follows its **local-first P0 scope**; the later user instruction authorizes implementation beyond the historical documentation-only phase.
+**Your music. Your words. A little closer.**
 
-## Run locally
+A local-first music player for Windows and Android, with a dedicated lyric room and a quiet, customizable interface.
+
+[Downloads](https://github.com/arushn47/music-player/releases) · [Features](#features) · [Build from source](#build-from-source) · [Report an issue](https://github.com/arushn47/music-player/issues)
+
+</div>
+
+## Download
+
+Download installers from **[this repository's GitHub Releases](https://github.com/arushn47/music-player/releases)**. Each release should identify its source tag, included platforms, changes, known issues and SHA-256 checksums. If no release is listed, no public download is available there yet.
+
+| Platform | Download to choose | Requirements |
+| --- | --- | --- |
+| Windows | Windows x64 setup `.exe` | 64-bit Windows with Microsoft WebView2; the installer can download WebView2 if needed |
+| Android | Signed ARM64 `.apk` | Android 8.0 or later, ARM64 device |
+
+Only the listed platforms are currently packaged. An APK is installed directly on Android; it is not a Windows installer. Linux, macOS, iOS and other Android architectures are not currently distributed.
+
+### Install and verify
+
+**Windows:** run the setup EXE. Current installers do not have an Authenticode publisher certificate, so Windows may show an unknown-publisher warning. Check the repository, release notes and checksum before deciding whether to install; do not disable system protection globally.
+
+**Android:** open the APK and allow installation from your chosen browser/file manager when Android asks. Future APKs must use the same package name and signing certificate to update the app without uninstalling it. A conflict with an old development build can also come from a work/private profile; uninstalling app copies deletes their private data.
+
+To verify a downloaded file in PowerShell:
 
 ```powershell
-npm install
+Get-FileHash .\Lumaire-1.0.4-Android-arm64.apk -Algorithm SHA256
+```
+
+Compare the result with that release's `SHA256SUMS.txt`. A checksum detects a changed download; it does not by itself prove that software is safe.
+
+### Release status
+
+Lumaire is under active development. The existing 1.0.4 preview APK was installed and launched on a Motorola Edge 50 Pro; broad mobile feature testing remains incomplete. The existing preview EXE/APK files predate the Windows updater implementation.
+
+Manual Windows updates through **Settings → About** are implemented in source. GitHub-hosted signing/publication and a complete installed-app upgrade still require verification. Android uses manual APK installation; it does not use the Windows updater.
+
+## Features
+
+- **Your library:** local audio files, favorites, playlists and a playback queue.
+- **Discover:** catalog search with Lumaire artist and album pages. Metadata availability does not guarantee a playable source.
+- **Lyric room:** synchronized lyrics, romanization and optional translation, with language labels and controls for how lyrics are displayed.
+- **Listening tracker:** listening history and summaries of tracks, artists and albums.
+- **Appearance:** light/dark themes and configurable accents.
+- **Local storage:** library data and settings are stored on your device; no Lumaire account is required.
+
+Audio formats and playback availability depend on the platform, codecs, provider access and installed optional components. Online discovery, streaming and lyric services require a connection. Local files remain usable offline.
+
+## Privacy and online services
+
+Lumaire has no required Lumaire account or analytics service. Local library data and listening history are stored on the device. Online services receive information needed for the feature you use—for example search terms, track metadata or lyric text. Optional Gemini lyric processing sends text to Google's service and requires a user-supplied key. Provider terms, quotas and availability apply.
+
+Use Settings to review online sources and lyric processing. Never include API keys, listening databases, personal file paths or private signing keys in public bug reports.
+
+Lumaire is an independent project and is not affiliated with Apple, Google, YouTube, JioSaavn or other catalog providers. Music, artwork and lyrics belong to their respective rightsholders. Source availability and permission to use a recording are separate questions.
+
+## Build from source
+
+The frontend uses React, TypeScript and Vite. Native functionality uses Tauri 2, Rust and SQLite.
+
+For Windows, install Node.js, stable Rust, MSVC Build Tools, Windows SDK and Microsoft WebView2, then:
+
+```powershell
+git clone https://github.com/arushn47/music-player.git
+cd music-player
+npm ci
 npm run desktop
 ```
 
-The launcher uses the existing Rust installation and a project-local Cargo cache. It recognizes this machine's `D:\Rust` installation without changing system PATH or the default toolchain. You can also set `RUSTUP_HOME` and `RUSTUP_TOOLCHAIN` explicitly. MSVC build tools, Windows SDK and WebView2 are required. No paid dependency, backend, account or API key is needed.
-
-`npm run dev` opens only the shared UI; file selection and the persistent library require the native desktop app. `npm run desktop:build` builds a standalone, unsigned Windows executable without downloading an installer framework or installing anything on the system.
-
-## Use
-
-- **Add music / Add folder:** import local files. The same canonical path preserves one library asset; separate copies remain separate. Import never starts playback automatically.
-- **Discover:** search Wikimedia Commons for freely licensed audio (Creative Commons & public domain). Each track displays its license and attribution. Click to play, add to queue, or view the source page. Requires internet connectivity.
-- **Library:** search title/artist/album, favorite tracks, play next, add to queue, add to a playlist or explicitly relink a moved recording. Files are never deleted. Online and local tracks coexist.
-- **Queue:** play any entry, move entries up/down, remove, clear and undo. Repeated entries retain their own item identities. Shuffle and repeat are in the persistent transport.
-- **Lyric room:** attach UTF-8 LRC/TXT, then supplied Latin romanisation and English meaning. Confirm line mappings before attachment. Timed variants need identical timestamps; plain variants need one row per original occurrence. Offsets never rewrite source timestamps or IDs. Positive timing offsets show lines later. Scroll away, then resume following. Instrumental recordings have a separate marked state.
-- **Settings:** export/import versioned library metadata and settings, clear history or supplied lyric cache, review enabled sources, and review local source behavior and shortcuts. Export excludes audio, lyric text, history and absolute paths. Imported entries cannot grant access to files; new entries require Relink. Import replaces the saved queue/playlists/settings after explicit confirmation.
-
-Playback restores paused. The SQLite database normally lives in the OS app-data directory for `app.lumaire.player`. Library operations run on a native background thread. The renderer cannot execute shell commands, SQL or arbitrary file reads. Selected canonical audio paths are granted individually to Tauri's scoped media protocol; whole audio files are not loaded as base64. Online track URLs are resolved just-in-time and never persisted.
-
-## Music Sources
-
-**Local files:** Full offline playback of your own audio collection. Supports MP3, WAV, FLAC, OGG, M4A, AAC, and Opus formats (codec availability depends on your system).
-
-**Wikimedia Commons:** Search and stream freely licensed audio directly from Commons. Each recording has its own license (Creative Commons or public domain) with specific attribution requirements. View the source page to confirm license terms. Streaming requires internet connectivity. No account or API key needed.
-
-## Verify
-
 ```powershell
-npm run build
-npm test
-npm run fixtures
-npm run desktop -- --no-watch
-# In another terminal, while the Vite dev server is available:
-npm run test:e2e
+npm run build           # Production frontend
+npm test                # Frontend/domain regression tests
+npm run desktop:installer  # Local Windows NSIS installer
 ```
 
-The desktop tests launch an isolated debug app, use its actual WebView2 and native SQLite/file commands, and write results/screenshots under `test-results/`. OS picker responses are deterministic debug-only fixtures; they are not a test of Windows' file-dialog accessibility. The debug test environment is compiled out of release builds. Fixture audio and lyric text are original synthetic test content. If an existing FFmpeg is available, it encodes MP3/FLAC fixtures for tests only; FFmpeg is not a player dependency and is not bundled.
+The Tauri wrapper uses the installed CLI and a project-local Cargo cache. Windows release signing is enabled only with the explicit release overlay. See [Windows release publishing](docs/windows-release-publishing.md) for signed CI releases and the distinction between installer and updater artifacts.
 
-Native verification status and remaining limits are recorded in [docs/implementation-status.md](docs/implementation-status.md). Media clock/decoder tests cannot establish human-perceived audible quality, one-hour continuity, screen-reader conformance or language quality.
+For Android, install Android Studio, its Java runtime, Android SDK and NDK, then run `npm run android:doctor`. `npm run android:build` builds a development ARM64 APK; it is not the public release APK. Keep Android signing material private and reuse the existing release key for updates.
 
-## Boundaries
+## Feedback and project information
 
-Wikimedia Commons integration provides access to freely licensed audio. Other online catalogues, yt-dlp integration, scraped lyrics, automatic transliteration/translation, model downloads, scrobbling, DSP and public distribution are outside current scope. Provider permissions and software/media licences remain separate. No Nuclear or TuneScript code, branding or media has been copied. The installed Nuclear identity was checked with REA and the pre-existing research was reused; this is an independent implementation.
+Use [GitHub Issues](https://github.com/arushn47/music-player/issues) for bugs and feature requests. Include your app version, platform, steps to reproduce and a redacted error message. Platform-specific failures are easier to fix when a report identifies whether it concerns local files, streaming or lyrics.
 
-Each Commons track has its own license and attribution requirements. The application displays license information but users must verify terms on the source page. No guarantee of catalog completeness, availability, or indefinite free access. Streaming URLs may expire; re-selection resolves a fresh URL.
+- [Release history and downloads](https://github.com/arushn47/music-player/releases)
+- [Windows build workflow](.github/workflows/windows-release.yml)
+- [Current implementation and verification status](docs/CURRENT-STATUS.md)
+- [Third-party notices](THIRD_PARTY_NOTICES.md) and [license texts](THIRD_PARTY_LICENSES.txt)
 
-Resolved JavaScript versions and supplied upstream notices are in `package-lock.json`, `THIRD_PARTY_NOTICES.md` and `THIRD_PARTY_LICENSES.txt`. Rust versions are recorded in `src-tauri/Cargo.lock`; an exact Rust inventory is added once the native build resolves. The original-core distribution licence remains the owner's decision from the existing documentation; no public release is performed by these local builds.
+Dependency licenses apply to their respective components. This repository does not yet declare a distribution license for Lumaire's original code; no license badge or blanket open-source claim is made here.

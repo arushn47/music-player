@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { Track } from "../domain/types";
 import type { Playback } from "./controller";
 
 /** Poll the service's real media clock; never estimate elapsed playback time. */
@@ -13,7 +14,11 @@ export class AndroidPlaybackController {
   private preciseClock = false;
   private failedLoad = false;
 
-  constructor() {
+  constructor(
+    private readonly metadata: (
+      id: string,
+    ) => Pick<Track, "title" | "artist"> | undefined = () => undefined,
+  ) {
     document.addEventListener("visibilitychange", () => {
       this.schedule();
       if (!document.hidden) void this.poll();
@@ -102,7 +107,15 @@ export class AndroidPlaybackController {
       }
     }
     if (generation !== this.generation) return;
-    await this.command("load", { id, autoplay, position });
+    const metadata = this.metadata(id);
+    await this.command("load", {
+      id,
+      autoplay,
+      position,
+      ...(metadata && {
+        displayMetadata: { title: metadata.title, artist: metadata.artist },
+      }),
+    });
   }
   play() {
     return this.command("play");

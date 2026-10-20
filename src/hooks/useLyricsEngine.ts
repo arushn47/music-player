@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { lookupLyrics, type LookupState } from "../adapters/lrclib";
 import { library } from "../adapters/native";
+import { desktop, mobile } from "../adapters/native";
+import { invoke } from "@tauri-apps/api/core";
+import {
+  GEMINI_KEY_CHANGED,
+  GEMINI_PROCESS_RETRY,
+  mergeProcessedLyrics,
+  processLyrics,
+  type LyricProcessingState,
+  type ProcessedLyrics,
+} from "../adapters/lyric-processing";
 import type { LineAlignmentVariant } from "../components/modals";
 import { clearFetchedLyrics } from "../domain/lyric-display";
 import {
@@ -51,10 +61,126 @@ export function useLyricsEngine({
   const [lyricRetry, setLyricRetry] = useState(0);
   const [variant, setVariant] = useState<LineAlignmentVariant | null>(null);
   const [follow, setFollow] = useState(true);
+  const [keySaved, setKeySaved] = useState(false);
+  const [processingState, setProcessingState] = useState<LyricProcessingState>({
+    status: "idle",
+  });
+  const [processRetry, setProcessRetry] = useState(0);
+  const attempted = useRef(new Map<string, Promise<ProcessedLyrics>>());
+  const forceProcess = useRef(false);
   const activeRef = useRef<HTMLButtonElement | null>(null);
 
+  useEffect(() => {
+    if (!desktop || !ready || !track || !doc?.lines.length || doc.languageSource) return;
+    const original = doc;
+    const trackId = track.id;
+    void invoke<{ lineLanguages: Record<string, string[]>; englishOnly: boolean }>("detect_lyric_languages", {
+      lines: doc.lines.map(({ id, text }) => ({ id, text })),
+    }).then((languages) => update((s) => {
+      const current = s.lyrics[trackId];
+      if (!current || current.id !== original.id || current.raw !== original.raw || current.languageSource) return s;
+      return { ...s, lyrics: { ...s.lyrics, [trackId]: { ...current, ...languages, languageSource: "local" } } };
+    })).catch(() => update((s) => {
+      const current = s.lyrics[trackId];
+      if (!current || current.id !== original.id || current.raw !== original.raw || current.languageSource) return s;
+      return { ...s, lyrics: { ...s.lyrics, [trackId]: { ...current, lineLanguages: {}, englishOnly: false, languageSource: "local" } } };
+    }));
+  }, [ready, track?.id, doc?.id, doc?.raw]);
+
+  useEffect(() => {
+    if (!desktop || mobile) return;
+    let active = true;
+    const refreshKey = () => {
+      attempted.current.clear();
+      void invoke<boolean>("gemini_key_status")
+        .then((saved) => {
+          if (active) {
+            setKeySaved(saved);
+            setProcessRetry((value) => value + 1);
+          }
+        })
+        .catch(() => {
+          if (active) setKeySaved(false);
+        });
+    };
+    const retry = () => {
+      attempted.current.clear();
+      forceProcess.current = true;
+      setProcessRetry((value) => value + 1);
+    };
+    refreshKey();
+    window.addEventListener(GEMINI_KEY_CHANGED, refreshKey);
+    window.addEventListener(GEMINI_PROCESS_RETRY, retry);
+    return () => {
+      active = false;
+      window.removeEventListener(GEMINI_KEY_CHANGED, refreshKey);
+      window.removeEventListener(GEMINI_PROCESS_RETRY, retry);
+    };
+  }, []);
+
+  useEffect(() => {
+    setProcessingState({ status: "idle" });
+    if (doc?.englishOnly) {
+      setProcessingState({ status: "complete" });
+      return;
+    }
+    if (
+      !ready ||
+      !track ||
+      !doc?.lines.length ||
+      (desktop && !doc.languageSource) ||
+      !keySaved ||
+      !session.settings.autoGemini
+    )
+      return;
+    const model = session.settings.geminiModel;
+    if (doc.processedModel === model && doc.languageSource === "gemini" && !forceProcess.current) {
+      setProcessingState({ status: "complete" });
+      return;
+    }
+    forceProcess.current = false;
+    const requestKey = JSON.stringify([track.id, doc.id, model]);
+    const request = attempted.current.get(requestKey) ?? processLyrics(doc, model);
+    attempted.current.set(requestKey, request);
+    const trackId = track.id;
+    let active = true;
+    setProcessingState({ status: "processing" });
+    void request
+      .then((values) => {
+        update((s) => {
+          const current = s.lyrics[trackId];
+          if (!current) return s;
+          const merged = mergeProcessedLyrics(current, doc, values, model);
+          return merged === current
+            ? s
+            : { ...s, lyrics: { ...s.lyrics, [trackId]: merged } };
+        });
+        if (active) setProcessingState({ status: "complete" });
+      })
+      .catch((error) => {
+        if (active)
+          setProcessingState({ status: "error", message: formatError(error) });
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    ready,
+    track?.id,
+    doc?.id,
+    doc?.raw,
+    doc?.languageSource,
+    doc?.englishOnly,
+    keySaved,
+    session.settings.autoGemini,
+    session.settings.geminiModel,
+    processRetry,
+  ]);
+
   const lyricDuration =
-    playback.duration > 0 ? playback.duration : track?.duration || 0;
+    playback.trackId === track?.id && playback.duration > 0
+      ? playback.duration
+      : track?.duration || 0;
   const lyricSynced = doc ? synchronizedLyrics(doc, lyricDuration) : false;
   const active =
     doc && lyricSynced ? activeLine(doc, playback.time * 1000) : null;
@@ -77,7 +203,14 @@ export function useLyricsEngine({
 
   // Background romanization
   useEffect(() => {
-    if (!doc || !track || !session.settings.romanisation) return;
+    if (
+      !doc ||
+      !track ||
+      !session.settings.romanisation ||
+      doc.romanisationSource === "gemini" ||
+      doc.romanisationSource === "imported"
+    )
+      return;
     let cancelled = false;
     const id = track.id;
     const original = doc.id;
@@ -86,13 +219,20 @@ export function useLyricsEngine({
         if (cancelled || !Object.keys(romanisation).length) return;
         update((currentSession) => {
           const current = currentSession.lyrics[id];
-          return current?.id === original
+          return current?.id === original &&
+            current.romanisationSource !== "gemini" &&
+            current.romanisationSource !== "imported"
             ? {
                 ...currentSession,
                 lyrics: {
                   ...currentSession.lyrics,
                   [id]: {
                     ...current,
+                    romanisationSource: "local",
+                    localRomanisation: {
+                      ...current.localRomanisation,
+                      ...romanisation,
+                    },
                     romanisation: {
                       ...current.romanisation,
                       ...Object.fromEntries(
@@ -113,7 +253,13 @@ export function useLyricsEngine({
     return () => {
       cancelled = true;
     };
-  }, [doc?.id, doc?.raw, track?.id, session.settings.romanisation]);
+  }, [
+    doc?.id,
+    doc?.raw,
+    track?.id,
+    session.settings.romanisation,
+    doc?.romanisationSource,
+  ]);
 
   // Auto-lookup effect: fires whenever current track changes
   useEffect(() => {
@@ -214,7 +360,16 @@ export function useLyricsEngine({
       const mapped = alignVariant(doc, variant.doc);
       update((s) => ({
         ...s,
-        lyrics: { ...s.lyrics, [track.id]: { ...doc, [variant.kind]: mapped } },
+        lyrics: {
+          ...s.lyrics,
+          [track.id]: {
+            ...doc,
+            [variant.kind]: mapped,
+            ...(variant.kind === "romanisation"
+              ? { romanisationSource: "imported" as const }
+              : { translationSource: "imported" as const }),
+          },
+        },
       }));
       setVariant(null);
       notify("Supplied text attached to the original line IDs");
@@ -262,6 +417,7 @@ export function useLyricsEngine({
       const romanisation = await romanizeDocument({
         ...doc,
         romanisation: {},
+        romanisationSource: "local",
       });
       update((currentSession) =>
         currentSession.lyrics[id]?.id === original
@@ -272,6 +428,8 @@ export function useLyricsEngine({
                 [id]: {
                   ...currentSession.lyrics[id],
                   romanisation,
+                  romanisationSource: "local",
+                  localRomanisation: romanisation,
                 },
               },
             }
@@ -280,24 +438,6 @@ export function useLyricsEngine({
       notify(
         "Romanization refreshed locally. Original lyrics and timing are preserved.",
       );
-    });
-  }
-
-  function applyTranslation(id: string, values: Record<string, string>) {
-    update((currentSession) => {
-      const original = track && currentSession.lyrics[track.id];
-      return track && original?.id === id
-        ? {
-            ...currentSession,
-            lyrics: {
-              ...currentSession.lyrics,
-              [track.id]: {
-                ...original,
-                translation: values,
-              },
-            },
-          }
-        : currentSession;
     });
   }
 
@@ -319,6 +459,7 @@ export function useLyricsEngine({
 
   return {
     lyricLookup,
+    processingState,
     variant,
     setVariant,
     follow,
@@ -333,7 +474,6 @@ export function useLyricsEngine({
     markInstrumental,
     clearCache,
     regenerate,
-    applyTranslation,
     updateOffset,
     retryLookup,
   };

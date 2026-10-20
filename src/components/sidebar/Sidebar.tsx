@@ -8,6 +8,7 @@ import {
   Library,
   ListMusic,
   Plus,
+  Settings,
   Settings2,
 } from "lucide-react";
 import { IconButton } from "../common/IconButton";
@@ -35,9 +36,10 @@ export function Sidebar({
   onToggleQueue,
 }: SidebarProps) {
   return (
-    <aside className="sidebar">
-      <a
-        className="brand"
+    <>
+      <aside className="sidebar desktop-sidebar">
+        <a
+          className="brand"
         href="#"
         title="Lumaire · Home"
         onClick={(e) => {
@@ -46,7 +48,25 @@ export function Sidebar({
         }}
       >
         <span className="brand-icon">
-          <img src="/lumaire.svg" alt="" aria-hidden="true" />
+          <svg
+            viewBox="0 0 128 128"
+            width="30"
+            height="30"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <rect width="128" height="128" rx="28" fill="currentColor" opacity="0.14" />
+            <path
+              d="M31 74V61a33 33 0 0 1 66 0v13"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="8"
+              strokeLinecap="round"
+            />
+            <rect x="27" y="64" width="18" height="31" rx="8" fill="currentColor" />
+            <rect x="83" y="64" width="18" height="31" rx="8" fill="currentColor" />
+            <circle cx="64" cy="91" r="5" fill="currentColor" />
+          </svg>
         </span>
         <span className="brand-text">
           Lumaire<span className="brand-dot">.</span>
@@ -154,5 +174,65 @@ export function Sidebar({
         </button>
       </div>
     </aside>
+    <header className="mobile-header">
+        <a
+          className="brand"
+          href="#"
+          title="Lumaire · Home"
+          onClick={(e) => {
+            e.preventDefault();
+            setView("library");
+          }}
+        >
+          <span className="brand-icon">
+            <svg
+              viewBox="0 0 128 128"
+              width="26"
+              height="26"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <rect width="128" height="128" rx="28" fill="currentColor" opacity="0.14" />
+              <path
+                d="M31 74V61a33 33 0 0 1 66 0v13"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="8"
+                strokeLinecap="round"
+              />
+              <rect x="27" y="64" width="18" height="31" rx="8" fill="currentColor" />
+              <rect x="83" y="64" width="18" height="31" rx="8" fill="currentColor" />
+              <circle cx="64" cy="91" r="5" fill="currentColor" />
+            </svg>
+          </span>
+          <span className="brand-text">
+            Lumaire<span className="brand-dot">.</span>
+          </span>
+        </a>
+
+        <div className="mobile-header-actions">
+          {onToggleQueue && (
+            <button
+              type="button"
+              className={`mobile-header-btn ${queueOpen ? "selected" : ""}`}
+              onClick={onToggleQueue}
+              aria-label={queueOpen ? "Hide queue" : "Show queue"}
+              title={queueOpen ? "Hide queue" : "Show queue"}
+            >
+              <ListMusic size={20} />
+            </button>
+          )}
+          <button
+            type="button"
+            className={`mobile-header-btn ${view === "settings" ? "selected" : ""}`}
+            onClick={() => setView("settings")}
+            aria-label="App settings"
+            title="App settings"
+          >
+            <Settings size={20} />
+          </button>
+        </div>
+      </header>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 {
   "name": "lumaire",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.4",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -13,6 +13,7 @@
     "tauri": "node scripts/tauri.mjs",
     "desktop": "node scripts/tauri.mjs dev",
     "desktop:build": "node scripts/tauri.mjs build --no-bundle",
+    "desktop:installer": "node scripts/tauri.mjs build --bundles nsis",
     "android:doctor": "node scripts/android.mjs doctor",
     "android:init": "node scripts/android.mjs init",
     "android:build": "node scripts/android.mjs build --debug --target aarch64",
@@ -23,6 +24,7 @@
   "dependencies": {
     "@indic-transliteration/sanscript": "1.3.3",
     "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-updater": "^2.14.0",
     "lucide-react": "^0.468.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

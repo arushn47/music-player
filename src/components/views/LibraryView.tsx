@@ -15,8 +15,12 @@ import type { Playlist, Session, Track } from "../../domain/types";
 import type { Playback } from "../../player/controller";
 import { Artwork, IconButton } from "../common";
 import { Collections } from "./Collections";
+import { ArtistLinks } from "../common/ArtistLinks";
+import { AlbumLink } from "../common/AlbumLink";
 
 export interface LibraryViewProps {
+  onNavigateArtist?: (id: string) => void;
+  onNavigateAlbum?: (id: string) => void;
   view: string;
   heading: string;
   playlist?: Playlist;
@@ -54,6 +58,7 @@ const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 
 export function LibraryView({
+  onNavigateArtist, onNavigateAlbum,
   view,
   heading,
   playlist,
@@ -148,10 +153,12 @@ export function LibraryView({
           />
           {query && (
             <button
+              type="button"
+              className="search-clear-button"
               aria-label="Clear search"
               onClick={() => onSetQuery("")}
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           )}
         </label>
@@ -263,28 +270,25 @@ export function LibraryView({
                     </>
                   )}
                 </button>
-                <button
-                  className="track-meta"
-                  onClick={() => onPlayTrackInList(t, index)}
-                >
+                <div className="track-meta">
                   <Artwork
                     url={t.artworkUrl}
                     className={`color-${index % 5}`}
                   />
                   <span>
-                    <strong dir="auto">{t.title}</strong>
+                    <button className="track-title-button" aria-label={`Listen to ${t.title}`} onClick={() => onPlayTrackInList(t, index)}><strong dir="auto">{t.title}</strong></button>
                     <small dir="auto">
-                      {t.artist}
+                      <ArtistLinks artistString={t.artist} onNavigateArtist={onNavigateArtist} />
                       {` · ${t.offline ? "Downloaded · Offline" : t.source ? "Saved online" : "Local file"} · ${t.format}`}
                       {t.missing ? " · File missing" : ""}
                     </small>
                   </span>
-                </button>
+                </div>
                 <span
                   className="album ellipsis"
                   title={t.album?.trim() || "Unknown"}
                 >
-                  {t.album?.trim() || "Unknown"}
+                  <AlbumLink title={t.album} artist={t.artist} onNavigateAlbum={onNavigateAlbum} />
                 </span>
                 <span className="duration">
                   {t.duration ? clock(t.duration) : "—"}

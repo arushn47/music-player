@@ -14,8 +14,17 @@ page.on("pageerror", (error) => errors.push(error.message));
 await page.route("https://i.ytimg.com/**", (route) =>
   route.fulfill({ status: 404, body: "missing image fixture" }),
 );
+const cover = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+await page.route('https://upload.wikimedia.org/fixture-portrait.png', route => route.fulfill({ contentType: 'image/png', body: cover }));
+await page.route('https://is1-ssl.mzstatic.com/fixture-album.png', route => route.fulfill({ contentType: 'image/png', body: cover }));
 await page.addInitScript(
   ({ audio }) => {
+    const catalog = [
+      { id: 'itunes:1001', title: 'Saved song', artist: 'Fixture Artist', album: '', duration: 173, artworkUrl: null },
+      { id: 'itunes:1002', title: 'Temporary song', artist: 'Fixture Artist', album: '', duration: 36, artworkUrl: null },
+      { id: 'itunes:1003', title: 'Temporary other', artist: 'Fixture Artist', album: '', duration: 36, artworkUrl: null },
+      { id: 'saavn:QAbmbZ7O', title: 'Catalog song', artist: 'Fixture Artist', album: 'Catalog album', duration: 170, artworkUrl: 'https://is1-ssl.mzstatic.com/fixture-album.png' },
+    ];
     const source = (id) => ({
       providerId: "youtube",
       sourceId: id,
@@ -87,17 +96,31 @@ await page.addInitScript(
         window.__calls.push({ cmd, args });
         switch (cmd) {
           case "get_listening_history":
-            return { generation: Number(sessionStorage.historyGeneration || 0), records: Object.values(JSON.parse(sessionStorage.listening || "{}")).filter(r => r.listenedMs >= 10000) };
+            return {
+              generation: Number(sessionStorage.historyGeneration || 0),
+              records: Object.values(
+                JSON.parse(sessionStorage.listening || "{}"),
+              ).filter((r) => r.listenedMs >= 10000),
+            };
           case "checkpoint_listening": {
-            if (args.generation !== Number(sessionStorage.historyGeneration || 0)) return false;
+            if (
+              args.generation !== Number(sessionStorage.historyGeneration || 0)
+            )
+              return false;
             const records = JSON.parse(sessionStorage.listening || "{}");
-            if (!records[args.record.id] || records[args.record.id].listenedMs <= args.record.listenedMs) records[args.record.id] = args.record;
+            if (
+              !records[args.record.id] ||
+              records[args.record.id].listenedMs <= args.record.listenedMs
+            )
+              records[args.record.id] = args.record;
             sessionStorage.listening = JSON.stringify(records);
             return true;
           }
           case "clear_listening_history":
             sessionStorage.listening = "{}";
-            sessionStorage.historyGeneration = String(Number(sessionStorage.historyGeneration || 0) + 1);
+            sessionStorage.historyGeneration = String(
+              Number(sessionStorage.historyGeneration || 0) + 1,
+            );
             return Number(sessionStorage.historyGeneration);
           case "load_library":
             return {
@@ -109,6 +132,12 @@ await page.addInitScript(
             return;
           case "cached_artwork":
             throw new Error("No cached image fixture");
+          case "lookup_entity_artwork":
+            return args.name.startsWith('Unknown') ? null : {
+              url: args.kind === 'artist' ? 'https://upload.wikimedia.org/fixture-portrait.png' : 'https://is1-ssl.mzstatic.com/fixture-album.png',
+              sourceUrl: args.kind === 'artist' ? 'https://commons.wikimedia.org/wiki/File:Fixture_portrait.png' : '',
+              credit: 'Fixture photographer · CC BY-SA 4.0',
+            };
           case "import_audio": {
             const track = {
               id: "local-fixture",
@@ -205,6 +234,20 @@ await page.addInitScript(
             return Object.fromEntries(
               args.lines.map((line) => [line.id, `Meaning for ${line.id}`]),
             );
+          case "process_lyrics":
+            if ("key" in args || sessionStorage.privateKeySaved !== "yes")
+              throw new Error("Processing must use the backend's saved key");
+            return {
+              romanisation: Object.fromEntries(
+                args.lines.map((line) => [
+                  line.id,
+                  `Pronunciation for ${line.id}`,
+                ]),
+              ),
+              translation: Object.fromEntries(
+                args.lines.map((line) => [line.id, `Meaning for ${line.id}`]),
+              ),
+            };
           case "gemini_key_status":
             return sessionStorage.privateKeySaved === "yes";
           case "save_gemini_key":
@@ -216,6 +259,9 @@ await page.addInitScript(
           case "ytdlp_check_available":
             return true;
           case "ytdlp_get_stream":
+            if (args.videoId === 'catalogtest') return {
+              streamUrl: audio, track: 'Playback uploader title', artist: 'Incorrect stream artist', album: 'Source album',
+            };
             if (args.videoId === "structured1")
               return {
                 streamUrl: audio,
@@ -224,7 +270,19 @@ await page.addInitScript(
                 album: "Source album",
               };
             return { streamUrl: audio };
+          case 'search_catalog':
+            await new Promise(resolve => setTimeout(resolve, 300));
+            return catalog.filter(track => track.title === (args.query === 'Catalogue check' ? 'Catalog song' : args.query));
+          case 'lookup_catalog': {
+            const track = catalog.find(track => track.id === args.id);
+            if (!track) throw new Error('Missing exact catalog fixture');
+            return track;
+          }
           case "lookup_metadata":
+            if (args.title === 'Catalog song') {
+              await new Promise(resolve => setTimeout(resolve, 200));
+              return { title: 'Catalog song', artist: 'Fixture Artist', album: 'Catalog album', duration: 170, artworkUrl: 'https://is1-ssl.mzstatic.com/fixture-album.png' };
+            }
             if (args.title === "Radhimaa" && args.artist === "Sai Abhyankkar")
               return {
                 title: "Radhimaa",
@@ -242,19 +300,20 @@ await page.addInitScript(
                 album: "Karuppu",
                 duration: 250,
                 sourceId: "itunes:42",
-                artworkUrl: null,
+                artworkUrl: "https://is1-ssl.mzstatic.com/fixture-album.png",
               };
             }
             return null;
           case "ytdlp_search":
-            await new Promise(resolve => setTimeout(resolve, 300));
-            if (args.query.startsWith("Temporary"))
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            if (args.query.includes('Catalog song')) return [{ id: 'catalogtest', title: 'Fixture Artist - Catalog song (Official Audio)', channel: 'Fixture uploader', duration: 173, thumbnail: 'https://i.ytimg.com/vi/catalogtest/hqdefault.jpg' }];
+            if (args.query.includes("Temporary"))
               return [
                 {
                   id: args.query.includes("other")
                     ? "temptrack02"
                     : "temptrack01",
-                  title: `Fixture Artist - ${args.query} (Official Audio)`,
+                  title: `Fixture Artist - ${args.query.includes('other') ? 'Temporary other' : 'Temporary song'} (Official Audio)`,
                   channel: "Fixture Artist",
                   duration: 36,
                 },
@@ -388,7 +447,7 @@ try {
     async () => {
       await page.getByRole("button", { name: "Discover", exact: true }).click();
       await page
-        .getByRole("textbox", { name: "Search YouTube", exact: true })
+        .getByRole("textbox", { name: "Search music", exact: true })
         .fill("Saved song");
       await page.getByRole("button", { name: "Search", exact: true }).click();
       const result = page
@@ -399,15 +458,17 @@ try {
       );
       await result.locator(".cover svg").waitFor();
       await page.getByRole("button", { name: "Search", exact: true }).click();
-      await page.getByRole("heading", { name: "Searching...", exact: true }).waitFor();
+      await page
+        .getByRole("heading", { name: "Searching...", exact: true })
+        .waitFor();
       assert.equal(await page.locator(".discover-page .track-row").count(), 0);
       await result.locator(".cover svg").waitFor();
       await page.locator("main").evaluate((main) => {
         main.scrollTop = 300;
       });
-      const discoverScroll = await page.locator("main").evaluate(
-        (main) => main.scrollTop,
-      );
+      const discoverScroll = await page
+        .locator("main")
+        .evaluate((main) => main.scrollTop);
       await page
         .getByRole("navigation", { name: "Main navigation" })
         .getByRole("button", { name: /^Library/ })
@@ -415,7 +476,7 @@ try {
       await page.getByRole("button", { name: "Discover", exact: true }).click();
       assert.equal(
         await page
-          .getByRole("textbox", { name: "Search YouTube", exact: true })
+          .getByRole("textbox", { name: "Search music", exact: true })
           .inputValue(),
         "Saved song",
       );
@@ -448,6 +509,10 @@ try {
       assert.equal(saved.args.track.album, "");
       assert.equal(saved.args.track.artist, "Fixture Artist");
       assert.equal(saved.args.track.duration, 173);
+      assert.equal(saved.args.track.metadataSourceId, 'itunes:1001');
+      assert.deepEqual(calls.filter(call => call.cmd === 'ytdlp_search').map(call => call.args.query).sort(), [
+        '"Fixture Artist" "Saved song"', 'Fixture Artist Saved song',
+      ].sort());
       await page.waitForTimeout(300);
       assert.deepEqual(
         await page.evaluate(() => JSON.parse(sessionStorage.session).queue),
@@ -736,12 +801,12 @@ try {
     },
   );
   await check(
-    "romanization is local and translation reuses a private backend key without library exposure",
+    "romanization works locally and saving a private key automatically processes both layers without library exposure",
     async () => {
       await page.locator(".lyric-roman").first().waitFor();
       assert.equal(
         (await page.evaluate(() => window.__calls)).filter(
-          (call) => call.cmd === "translate_lyrics",
+          (call) => call.cmd === "process_lyrics",
         ).length,
         0,
       );
@@ -753,9 +818,6 @@ try {
         .fill("fake-key-only-for-this-test");
       await page.getByRole("button", { name: "Save key", exact: true }).click();
       await page.getByText("Key saved", { exact: true }).waitFor();
-      await page
-        .getByRole("button", { name: "Translate this song", exact: true })
-        .click();
       await page.locator(".lyric-translation").first().waitFor();
       await page.waitForTimeout(300);
       assert(
@@ -767,7 +829,7 @@ try {
     },
   );
   await check(
-    "TuneScript-style preferences and saved-key status survive song changes and reload without automatic AI requests",
+    "TuneScript-style preferences and saved-key status survive song changes and reload while cached AI results are reused",
     async () => {
       await page
         .getByRole("navigation", { name: "Main navigation" })
@@ -783,6 +845,7 @@ try {
         .getByRole("button", { name: "Lyric room", exact: true })
         .click();
       await page.locator(".lyric-roman").first().waitFor();
+      await page.locator(".lyric-translation").first().waitFor();
       await page
         .getByRole("button", { name: "Lyrics settings", exact: true })
         .click();
@@ -875,7 +938,7 @@ try {
       );
       assert.equal(
         (await page.evaluate(() => window.__calls)).filter(
-          (call) => call.cmd === "translate_lyrics",
+          (call) => call.cmd === "process_lyrics",
         ).length,
         0,
       );
@@ -1041,12 +1104,12 @@ try {
       await page.getByRole("button", { name: "Discover", exact: true }).click();
       const search = async (title) => {
         await page
-          .getByRole("textbox", { name: "Search YouTube", exact: true })
+          .getByRole("textbox", { name: "Search music", exact: true })
           .fill(title);
         await page.getByRole("button", { name: "Search", exact: true }).click();
         return page
           .locator(".track-row")
-          .filter({ hasText: `Fixture Artist - ${title}` });
+          .filter({ hasText: title });
       };
       await page.waitForTimeout(300);
       const before = await page.evaluate(
@@ -1072,7 +1135,7 @@ try {
       await result
         .getByRole("button", { name: "Play next", exact: true })
         .click();
-      await page.waitForTimeout(400);
+      await page.waitForFunction(() => JSON.parse(sessionStorage.session).queue.some(entry => entry.trackId === 'youtube:temptrack02'));
       const session = await page.evaluate(() =>
         JSON.parse(sessionStorage.session),
       );
@@ -1184,12 +1247,12 @@ try {
     async () => {
       await page.getByRole("button", { name: "Discover", exact: true }).click();
       await page
-        .getByRole("textbox", { name: "Search YouTube", exact: true })
+        .getByRole("textbox", { name: "Search music", exact: true })
         .fill("Temporary song");
       await page.getByRole("button", { name: "Search", exact: true }).click();
       const result = page
         .locator(".track-row")
-        .filter({ hasText: "Fixture Artist - Temporary song" });
+        .filter({ hasText: "Temporary song" });
       await result.locator(".track-play").click();
       await page
         .locator(".now-playing strong")
@@ -1209,10 +1272,15 @@ try {
           (t) => t.id === "youtube:temptrack01",
         ),
       );
+      if (!(await menu.evaluate((element) => element.open)))
+        await menu.locator("summary").click();
       await menu
         .getByRole("button", { name: "Save to playlist", exact: true })
         .click();
-      await page.getByRole("dialog").getByRole("button", { name: "New playlist", exact: true }).click();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "New playlist", exact: true })
+        .click();
       await page
         .getByRole("textbox", { name: "Playlist title", exact: true })
         .fill("Road trip");
@@ -1220,8 +1288,14 @@ try {
         .getByRole("button", { name: "Create and save", exact: true })
         .click();
       // The extracted modal remains open to allow saving into more playlists.
-      await page.getByRole("dialog").getByRole("button", { name: /Road trip/ }).waitFor();
-      await page.getByRole("dialog").getByRole("button", { name: "Close dialog", exact: true }).click();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: /Road trip/ })
+        .waitFor();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "Close dialog", exact: true })
+        .click();
       await page.getByRole("dialog").waitFor({ state: "hidden" });
       await page.waitForTimeout(400);
       const saved = await page.evaluate(() => ({
@@ -1245,7 +1319,9 @@ try {
   await check(
     "explicit YouTube Download persists offline audio routing across restart and copy deletion retains the playlist",
     async () => {
-      await page.locator(".current-track-menu summary").click();
+      const actions = page.locator(".current-track-menu");
+      if (!(await actions.evaluate((element) => element.open)))
+        await actions.locator("summary").click();
       await page
         .getByRole("button", {
           name: "Download current track for offline",
@@ -1305,6 +1381,100 @@ try {
       );
     },
   );
+  await check('discovery verifies names, albums and cover art before playing a source', async () => {
+    await page.getByRole('button', { name: 'Discover', exact: true }).click();
+    const before = await page.evaluate(() => window.__calls.filter(call => ['ytdlp_get_stream', 'ytdlp_search', 'lookup_metadata'].includes(call.cmd)).length);
+    await page.getByRole('textbox', { name: 'Search music', exact: true }).fill('Catalogue check');
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    const row = page.locator('.discover-page .track-row').filter({ hasText: 'Catalog song' });
+    await row.getByText('Catalog album', { exact: true }).waitFor();
+    assert.equal(await row.locator('strong').innerText(), 'Catalog song');
+    const discover = page.locator('.discover-page');
+    assert.deepEqual(await Promise.all([
+      discover.getByRole('button', { name: /view.*catalogue/i }).count(),
+      discover.getByRole('link', { name: /view.*catalogue/i }).count(),
+      discover.locator('a[href*="music.apple.com"], a[href*="jiosaavn.com"]').count(),
+    ]), [0, 0, 0], 'Discover must keep playback actions inside Lumaire');
+    assert.equal(await row.locator('small').innerText(), 'Fixture Artist');
+    await row.locator('img').waitFor();
+    assert.match(await row.locator('img').getAttribute('src'), /fixture-album/);
+    assert.equal(await page.evaluate(() => window.__calls.filter(call => ['ytdlp_get_stream', 'ytdlp_search', 'lookup_metadata'].includes(call.cmd)).length), before);
+    await page.waitForTimeout(500);
+    assert.equal(await row.locator('.duration').innerText(), '2:50');
+    assert.equal(await row.locator('strong').innerText(), 'Catalog song');
+  });
+  await check('selection resolves quoted and plain sources while catalog results and canonical credits remain stable', async () => {
+    const row = page.locator('.discover-page .track-row').filter({ hasText: 'Catalog song' });
+    const metadata = row.locator('.track-meta strong, .track-meta small, .album, .duration');
+    const stable = await metadata.allTextContents();
+    const before = await page.evaluate(() => window.__calls.length);
+    await row.locator('.track-play').click();
+    await page.waitForFunction(() => window.__calls.some(call => call.cmd === 'ytdlp_get_stream' && call.args.videoId === 'catalogtest'));
+    await page.locator('.now-playing strong').filter({ hasText: 'Catalog song' }).waitFor();
+    await page.waitForTimeout(500);
+    assert.deepEqual(await metadata.allTextContents(), stable);
+    assert.equal(await page.locator('.now-playing-artist').innerText(), 'Fixture Artist');
+    const state = await page.evaluate(before => ({
+      calls: window.__calls.slice(before), session: JSON.parse(sessionStorage.session), tracks: JSON.parse(sessionStorage.tracks),
+    }), before);
+    assert.deepEqual(state.calls.filter(call => call.cmd === 'ytdlp_search').map(call => call.args.query).sort(), [
+      '"Fixture Artist" "Catalog song"', 'Fixture Artist Catalog song',
+    ].sort());
+    assert(!state.calls.some(call => call.cmd === 'lookup_metadata'));
+    assert(!state.tracks.some(track => track.id === 'youtube:catalogtest'));
+    const canonical = state.session.queueTracks['youtube:catalogtest'];
+    assert.equal(canonical.metadataSourceId, 'saavn:QAbmbZ7O');
+    assert.equal(canonical.title, 'Catalog song');
+    assert.equal(canonical.artist, 'Fixture Artist');
+    assert.equal(canonical.album, 'Catalog album');
+    assert.equal(canonical.duration, 170);
+    assert.match(canonical.artworkUrl, /fixture-album/);
+    assert.equal(canonical.source.sourceId, 'catalogtest');
+  });
+  await check('explicit metadata refresh keeps the catalog ID and restart skips automatic identity searches', async () => {
+    const menu = page.locator('.current-track-menu');
+    await menu.locator('summary').click();
+    await menu.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: /^Library/ }).click();
+    await page.getByRole('button', { name: 'Open Saved online', exact: true }).click();
+    const row = page.locator('.track-row').filter({ hasText: 'Catalog song' });
+    await row.locator('summary').click();
+    const before = await page.evaluate(() => window.__calls.length);
+    await row.getByRole('button', { name: 'Refresh metadata', exact: true }).click();
+    await page.waitForFunction(() => window.__calls.some(call => call.cmd === 'lookup_catalog' && call.args.id === 'saavn:QAbmbZ7O'));
+    await page.waitForTimeout(400);
+    const refreshed = await page.evaluate(before => window.__calls.slice(before), before);
+    assert.deepEqual(refreshed.filter(call => call.cmd === 'lookup_catalog').map(call => call.args), [{ id: 'saavn:QAbmbZ7O' }]);
+    assert(!refreshed.some(call => ['lookup_metadata', 'search_catalog', 'ytdlp_search'].includes(call.cmd)));
+    await page.reload();
+    await page.locator('.now-playing strong').filter({ hasText: 'Catalog song' }).waitFor();
+    await page.waitForTimeout(500);
+    const restored = await page.evaluate(() => ({ calls: window.__calls, track: JSON.parse(sessionStorage.tracks).find(track => track.id === 'youtube:catalogtest') }));
+    assert.equal(restored.track.metadataSourceId, 'saavn:QAbmbZ7O');
+    assert.equal(restored.track.duration, 170);
+    assert.equal(restored.track.artist, 'Fixture Artist');
+    assert.equal(restored.track.album, 'Catalog album');
+    assert(!restored.calls.some(call => call.cmd === 'lookup_catalog' || (call.cmd === 'lookup_metadata' && call.args.title === 'Catalog song')));
+  });
+  await check('Tracker requests distinct artist portraits and album covers with photo credits', async () => {
+    await page.evaluate(() => {
+      const now = Date.now(), date = new Date(now);
+      const day = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+      sessionStorage.listening = JSON.stringify({ 'entity-art-fixture': {
+        id: 'entity-art-fixture', trackId: 'youtube:catalogtest', title: 'Catalog song', artist: 'Fixture Artist', album: 'Catalog album',
+        artworkUrl: 'https://i.ytimg.com/vi/catalogtest/hqdefault.jpg', providerId: 'youtube', sourceId: 'catalogtest',
+        startedAt: now-1200000, updatedAt: now, listenedMs: 1200000, days: { [day]: 1200000 },
+      }});
+    });
+    await page.getByRole('button', { name: 'Tracker', exact: true }).click();
+    await page.getByRole('button', { name: 'Refresh listening activity', exact: true }).click();
+    const artists = page.getByRole('region', { name: 'Top artists', exact: true });
+    const albums = page.getByRole('region', { name: 'Top albums', exact: true });
+    await artists.locator('img[src*="fixture-portrait"]').first().waitFor();
+    await albums.locator('img[src*="fixture-album"]').first().waitFor();
+    assert.match(await artists.getByRole('link', { name: 'Photo credits for Fixture Artist' }).getAttribute('href'), /commons.wikimedia.org/);
+    await page.screenshot({ path: 'test-results/tracker-entity-artwork.png' });
+  });
   await check("no uncaught renderer exceptions", async () =>
     assert.deepEqual(errors, []),
   );
@@ -1324,6 +1494,15 @@ try {
       2,
     ),
   );
+} catch (error) {
+  mkdirSync('test-results', { recursive: true });
+  const state = await page.evaluate(() => ({
+    tracks: JSON.parse(sessionStorage.tracks || '[]'),
+    calls: window.__calls.filter(call => ['search_catalog', 'lookup_catalog', 'ytdlp_search', 'ytdlp_get_stream', 'lookup_metadata', 'save_online_track'].includes(call.cmd)).slice(-40),
+  }));
+  writeFileSync('test-results/phase4-ui-report.json', JSON.stringify({ passed: false, checks, error: String(error), errors, state }, null, 2));
+  await page.screenshot({ path: 'test-results/phase4-ui-failure.png' });
+  throw error;
 } finally {
   await browser.close();
 }

@@ -1,48 +1,118 @@
 :root {
+  /* Accent tokens set by theme.ts via --accent-rgb */
+  --accent-rgb: 196, 220, 163; /* Default: Lumaire Sage */
+}
+
+/* Dark Mode (Default) */
+:root,
+:root[data-theme="dark"] {
   color-scheme: dark;
 
-  /* Lumaire Core Identity Palette */
-  --bg: #131711;
-  --bg-sidebar: #0f130d;
-  --bg-topbar: rgba(19, 23, 17, 0.82);
-  --bg-transport: rgba(21, 26, 19, 0.86);
-  --bg-queue: rgba(16, 20, 14, 0.9);
-  --bg-panel: rgba(26, 33, 22, 0.65);
-  --bg-panel-hover: rgba(34, 43, 29, 0.78);
-  --bg-popover: rgba(24, 31, 21, 0.94);
-  --bg-dialog: rgba(22, 28, 19, 0.96);
-  --bg-active-row: rgba(196, 220, 163, 0.09);
+  /* Neutral dark backgrounds */
+  --bg: #121212;
+  --bg-sidebar: #0a0a0a;
+  --bg-topbar: rgba(18, 18, 18, 0.82);
+  --bg-transport: rgba(20, 20, 20, 0.86);
+  --bg-queue: rgba(15, 15, 15, 0.9);
+  --bg-panel: rgba(30, 30, 30, 0.65);
+  --bg-panel-hover: rgba(40, 40, 40, 0.78);
+  --bg-popover: rgba(25, 25, 25, 0.94);
+  --bg-dialog: rgba(22, 22, 22, 0.96);
+  --bg-active-row: rgba(var(--accent-rgb), 0.09);
 
   /* Typography Colors */
-  --text: #edf2e8;
-  --text-secondary: #b6c4ad;
-  --muted: #8d9c84;
-  --text-dim: #6d7b65;
+  --text: #f0f0f0;
+  --text-secondary: #b8b8b8;
+  --muted: #909090;
+  --text-dim: #707070;
 
-  /* Accent & Interactive Colors */
-  --accent: #c4dca3;
-  --accent-hover: #d7ebb8;
-  --accent-active: #afd088;
-  --accent-subtle: rgba(196, 220, 163, 0.16);
-  --accent-glow: rgba(196, 220, 163, 0.28);
-  --accent-text: #141f0c;
+  /* Accent set by theme.ts */
+  --accent-subtle: rgba(var(--accent-rgb), 0.16);
+  --accent-glow: rgba(var(--accent-rgb), 0.28);
 
   /* Borders & Glass Highlights */
   --line: rgba(255, 255, 255, 0.07);
   --line-subtle: rgba(255, 255, 255, 0.04);
   --line-strong: rgba(255, 255, 255, 0.13);
-  --line-accent: rgba(196, 220, 163, 0.35);
+  --line-strong-hover: rgba(255, 255, 255, 0.22);
+  --line-accent: rgba(var(--accent-rgb), 0.35);
   --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.09);
   --glass-highlight-subtle: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
-  /* Apple-inspired Elevation & Ambient Shadows */
+  /* Button Backgrounds */
+  --bg-subtle-button: rgba(255, 255, 255, 0.05);
+  --bg-subtle-button-hover: rgba(255, 255, 255, 0.09);
+  --text-strong: #ffffff;
+}
+
+/* Light Mode */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Light Backgrounds - Warm sage-tinted surfaces */
+  --bg: #f7f6ee;
+  --bg-sidebar: #f2f1e8;
+  --bg-topbar: rgba(247, 246, 238, 0.92);
+  --bg-transport: rgba(249, 248, 240, 0.94);
+  --bg-queue: rgba(248, 247, 239, 0.94);
+  --bg-panel: rgba(252, 251, 245, 0.85);
+  --bg-panel-hover: rgba(255, 254, 250, 0.95);
+  --bg-popover: rgba(255, 254, 250, 0.98);
+  --bg-dialog: rgba(255, 254, 250, 0.99);
+  --bg-active-row: rgba(var(--accent-rgb), 0.12);
+
+  /* Typography Colors */
+  --text: #1a1d16;
+  --text-secondary: #4a5144;
+  --muted: #6b7363;
+  --text-dim: #8a9280;
+
+  /* Accent subtle for light */
+  --accent-subtle: rgba(var(--accent-rgb), 0.14);
+  --accent-glow: rgba(var(--accent-rgb), 0.22);
+
+  /* Borders & Glass Highlights */
+  --line: rgba(0, 0, 0, 0.08);
+  --line-subtle: rgba(0, 0, 0, 0.04);
+  --line-strong: rgba(0, 0, 0, 0.12);
+  --line-strong-hover: rgba(0, 0, 0, 0.18);
+  --line-accent: rgba(var(--accent-rgb), 0.35);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --glass-highlight-subtle: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+  /* Button Backgrounds */
+  --bg-subtle-button: rgba(0, 0, 0, 0.04);
+  --bg-subtle-button-hover: rgba(0, 0, 0, 0.08);
+  --text-strong: #0a0c08;
+}
+
+/* Shared elevation shadows and layout tokens */
+:root {
+  /* Shadows - lighter in light mode */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px -4px rgba(0, 0, 0, 0.16), 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-popover: 0 12px 32px -4px rgba(0, 0, 0, 0.20), 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-accent: 0 4px 16px rgba(var(--accent-rgb), 0.28);
+}
+
+/* Dark mode shadow overrides */
+:root[data-theme="dark"] {
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.18);
   --shadow-md: 0 6px 18px -2px rgba(0, 0, 0, 0.38), 0 2px 6px rgba(0, 0, 0, 0.22);
   --shadow-lg: 0 14px 34px -4px rgba(0, 0, 0, 0.52), 0 4px 12px rgba(0, 0, 0, 0.3);
   --shadow-popover: 0 22px 50px -8px rgba(0, 0, 0, 0.72), 0 8px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  --shadow-accent: 0 4px 16px rgba(196, 220, 163, 0.28);
+  --shadow-transport: 0 -4px 24px rgba(0, 0, 0, 0.35);
+}
 
+/* Light mode shadow for transport */
+:root[data-theme="light"] {
+  --shadow-transport: 0 -2px 12px rgba(0, 0, 0, 0.08);
+}
+
+:root {
   /* Corner Radii */
   --radius-xs: 4px;
   --radius-sm: 7px;

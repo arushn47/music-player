@@ -1,33 +1,38 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { flushListening } from "../player/listening-service";
+import { PlaybackController } from "../player/controller";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   library,
   desktop,
   mobile,
-  type YtdlpSearchResult,
+  type CatalogTrack,
 } from "../adapters/native";
 import { withoutTrack } from "../domain/collections";
 import {
   metadataQueries,
   needsMetadata,
   repairYoutubeTrack,
-  youtubeTrack,
 } from "../domain/online-track";
-import { enqueue } from "../domain/queue";
+import { canonicalArtistNames, canonicalTrack, resolveCatalogSource } from "../domain/catalog-track";
+import { enqueue, setShuffle } from "../domain/queue";
 import { restoreSession } from "../domain/session";
-import { defaults, item, type Session, type Track } from "../domain/types";
+import { defaults, item, type EngineInstallState, type Session, type Track } from "../domain/types";
 import {
   player,
   offlineTracks,
+  playbackTracks,
   resolvedMusic,
   musicResolved,
+  prepareCatalogCandidate,
 } from "../player/service";
 
 const formatError = (e: unknown) =>
   e instanceof Error ? e.message : String(e);
 
 export function useLibraryManager() {
+  const [pendingTrack, setPendingTrack] = useState<Track | null>(null);
+  const pendingCatalog = useRef<CatalogTrack | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [session, setSession] = useState<Session>(defaults);
   const [ready, setReady] = useState(false);
@@ -36,8 +41,13 @@ export function useLibraryManager() {
   const [error, setError] = useState("");
   const [downloads, setDownloads] = useState<Record<string, string>>({});
   const [ytdlpAvailable, setYtdlpAvailable] = useState(false);
+  const [engineState, setEngineState] = useState<EngineInstallState>("checking");
+  const [engineError, setEngineError] = useState("");
+  const engineInstallPromise = useRef<Promise<void> | null>(null);
+  const engineCheckGeneration = useRef(0);
 
   const messageTimeoutRef = useRef<number | null>(null);
+  const catalogSources = useRef(new Map<string, Promise<Track>>());
   const metadataInFlight = useRef(new Set<string>());
   const sessionRef = useRef(session);
   const tracksRef = useRef(tracks);
@@ -48,6 +58,9 @@ export function useLibraryManager() {
 
   sessionRef.current = session;
   tracksRef.current = tracks;
+  playbackTracks.clear();
+  Object.values(session.queueTracks).forEach(t => playbackTracks.set(t.id, t));
+  tracks.forEach(t => playbackTracks.set(t.id, t));
 
   offlineTracks.clear();
   tracks
@@ -59,7 +72,12 @@ export function useLibraryManager() {
   const setting = <K extends keyof Session["settings"]>(
     key: K,
     value: Session["settings"][K],
-  ) => update((s) => ({ ...s, settings: { ...s.settings, [key]: value } }));
+  ) =>
+    update((s) =>
+      key === "shuffle"
+        ? setShuffle(s, value === true)
+        : { ...s, settings: { ...s.settings, [key]: value } },
+    );
 
   const notify = (text: string) => {
     setMessage(text);
@@ -157,6 +175,7 @@ export function useLibraryManager() {
       const credits = selected && resolvedMusic.get(selected.id);
       if (
         selected &&
+        needsMetadata(selected) &&
         credits &&
         (selected.title !== credits.title ||
           selected.artist !== credits.artist ||
@@ -184,6 +203,8 @@ export function useLibraryManager() {
         snapshot.tracks
           .filter((track) => track.offline)
           .forEach((track) => offlineTracks.add(track.id));
+        snapshot.tracks.forEach(t => playbackTracks.set(t.id, t));
+        Object.values(restored.queueTracks).forEach(t => playbackTracks.set(t.id, t));
         setSession(restored);
         sessionRef.current = restored;
         readyRef.current = true;
@@ -198,10 +219,9 @@ export function useLibraryManager() {
         setError(`The library could not be opened. ${formatError(e)}`),
       );
 
-    library
-      .ytdlpCheckAvailable()
-      .then(setYtdlpAvailable)
-      .catch(() => setYtdlpAvailable(false));
+    const checkEngine = () => void refreshYoutubeEngine();
+    checkEngine();
+    window.addEventListener("focus", checkEngine);
 
     const timer = setInterval(persist, 2000);
     const onHidden = () => {
@@ -212,6 +232,7 @@ export function useLibraryManager() {
       musicResolved.removeEventListener("resolved", onMusicResolved);
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("focus", checkEngine);
     };
   }, []);
 
@@ -220,12 +241,26 @@ export function useLibraryManager() {
   useEffect(() => {
     if (!ready) return;
     const entry = session.queue.find((item) => item.id === session.currentId);
-    const selected = entry && (tracks.find((track) => track.id === entry.trackId)
-      || session.queueTracks[entry.trackId]);
+    const selected =
+      entry &&
+      (tracks.find((track) => track.id === entry.trackId) ||
+        session.queueTracks[entry.trackId]);
     if (selected && needsMetadata(selected)) void enrichOnline(selected);
   }, [ready, session.currentId]);
 
-  // Debounced persistence on session change
+  // Reconcile legacy online credits in the background; local file tags stay user-owned.
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+    void (async () => {
+      for (const track of tracksRef.current) {
+        if (cancelled) return;
+        if (track.source?.providerId === "youtube") await enrichOnline(track);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [ready]);
+
   useEffect(() => {
     if (ready) {
       if (persistTimer.current) clearTimeout(persistTimer.current);
@@ -237,47 +272,55 @@ export function useLibraryManager() {
     if (metadataInFlight.current.has(base.id)) return;
     metadataInFlight.current.add(base.id);
     try {
-      const sourceAtStart = resolvedMusic.get(base.id);
-      let metadata = null;
-      for (const query of metadataQueries(sourceAtStart ? {
-        ...base, title: sourceAtStart.title, artist: sourceAtStart.artist,
-      } : base)) {
-        try {
-          metadata = await library.lookupMetadata(
-            query.title,
-            query.artist,
-            base.duration,
-          );
-          if (metadata) break;
-        } catch (e) {
-          console.warn("Catalog metadata unavailable:", e);
-          break;
+      let enriched: Track;
+      let canonical: CatalogTrack | null = null;
+      if (base.metadataSourceId) {
+        canonical = await library.lookupCatalog(base.metadataSourceId);
+        enriched = { ...base, title: canonical.title, artist: canonical.artist,
+          album: canonical.album, duration: canonical.duration, artworkUrl: canonical.artworkUrl };
+      } else {
+        let source = resolvedMusic.get(base.id);
+        let metadata = null;
+        for (const query of metadataQueries(source ? { ...base, title: source.title, artist: source.artist } : base)) {
+          try {
+            metadata = await library.lookupMetadata(query.title, query.artist, base.duration);
+            if (metadata) break;
+          } catch (e) {
+            console.warn("Catalog metadata unavailable:", e);
+            break;
+          }
         }
-      }
-      // Stream credits can arrive while the first catalogue request is pending.
-      const source = resolvedMusic.get(base.id);
-      if (source && source !== sourceAtStart) {
-        try {
-          metadata = await library.lookupMetadata(source.title, source.artist, base.duration);
-        } catch (e) {
-          metadata = null;
-          console.warn("Catalog metadata unavailable:", e);
+        const latestSource = resolvedMusic.get(base.id);
+        if (!metadata && latestSource && latestSource !== source) {
+          try {
+            metadata = await library.lookupMetadata(latestSource.title, latestSource.artist, base.duration);
+          } catch (e) {
+            console.warn("Catalog metadata unavailable:", e);
+          }
         }
+        source = latestSource;
+        if (!source && !metadata) {
+          if (explicit) notify("No verified metadata is available right now.");
+          return;
+        }
+        enriched = { ...base,
+          title: metadata?.title || source?.title || base.title,
+          artist: metadata?.artist || source?.artist || base.artist,
+          album: metadata?.album || source?.album || base.album,
+          artworkUrl: metadata?.artworkUrl || base.artworkUrl,
+          metadataSourceId: metadata?.sourceId?.startsWith("itunes:") ? metadata.sourceId : undefined,
+        };
       }
-      if (!source && !metadata) {
-        if (explicit)
-          notify(
-            "No verified metadata is available right now. The saved source information is still available.",
-          );
-        return;
+      if (enriched.metadataSourceId) {
+        canonical ??= await library.lookupCatalog(enriched.metadataSourceId);
+        enriched = { ...enriched, title: canonical.title, album: canonical.album,
+          artist: await canonicalArtistNames(canonical, async id => (await library.lookupArtist(id)).info),
+          artworkUrl: canonical.artworkUrl || enriched.artworkUrl };
       }
-      let enriched: Track = {
-        ...base,
-        title: source?.title || metadata?.title || base.title,
-        artist: source?.artist || metadata?.artist || base.artist,
-        album: source?.album || metadata?.album || base.album,
-        artworkUrl: metadata?.artworkUrl || base.artworkUrl,
-      };
+      const latest = tracksRef.current.find(t => t.id === base.id) || sessionRef.current.queueTracks[base.id];
+      if (latest?.metadataSourceId && latest.metadataSourceId !== base.metadataSourceId) return;
+      if (latest) enriched = { ...enriched, offline: latest.offline };
+      playbackTracks.set(enriched.id, enriched);
       if (tracksRef.current.some((t) => t.id === base.id)) {
         enriched = await library.saveOnline(enriched, true);
         setTracks((all) =>
@@ -337,21 +380,25 @@ export function useLibraryManager() {
     return saved;
   }
 
-  async function saveCommons(t: Track, play = false, onPlay?: (t: Track) => void) {
+  async function saveCommons(
+    t: Track,
+    play = false,
+    onPlay?: (t: Track) => void,
+  ) {
     await action(async () => {
       if (play && onPlay) {
         onPlay(tracksRef.current.find((saved) => saved.id === t.id) || t);
       } else {
         await saveOnline(t);
       }
-      notify(`${play ? "Playing" : "Saved"} ${t.title}`);
+      notify(`${play ? "Loading" : "Saved"} ${t.title}`);
     });
   }
 
   async function downloadTrack(t: Track) {
     setDownloads((prev) => ({ ...prev, [t.id]: "downloading" }));
     try {
-      if (!tracksRef.current.some((track) => track.id === t.id))
+      if (t.metadataSourceId || !tracksRef.current.some((track) => track.id === t.id))
         await saveOnline(t);
       const saved = await library.download(t.id);
       tracksRef.current = [
@@ -388,7 +435,9 @@ export function useLibraryManager() {
           const saved = await library.deleteDownload(t.id);
           offlineTracks.delete(t.id);
           setTracks((currentTracks) =>
-            currentTracks.map((track) => (track.id === saved.id ? saved : track)),
+            currentTracks.map((track) =>
+              track.id === saved.id ? saved : track,
+            ),
           );
           if (
             sessionRef.current.queue.find(
@@ -402,12 +451,17 @@ export function useLibraryManager() {
     );
   }
 
-  async function relink(t: Track, currentTrackId: string | undefined, playbackTime: number) {
+  async function relink(
+    t: Track,
+    currentTrackId: string | undefined,
+    playbackTime: number,
+  ) {
     await action(async () => {
       const replacement = await library.relink(t.id);
       if (replacement) {
         setTracks((ts) => ts.map((x) => (x.id === t.id ? replacement : x)));
-        if (currentTrackId === t.id) void player.load(t.id, false, playbackTime);
+        if (currentTrackId === t.id)
+          void player.load(t.id, false, playbackTime);
         notify("File relinked. Playback stays paused.");
       }
     });
@@ -463,9 +517,10 @@ export function useLibraryManager() {
         !sessionRef.current.playlists.some((p) => p.id === playlistId)
       )
         return;
-      const saved =
-        tracksRef.current.find((entry) => entry.id === t.id) ||
-        (await saveOnline(sessionRef.current.queueTracks[t.id] || t));
+      const saved = t.metadataSourceId
+        ? await saveOnline(t)
+        : tracksRef.current.find((entry) => entry.id === t.id) ||
+          await saveOnline(sessionRef.current.queueTracks[t.id] || t);
       update((s) => ({
         ...s,
         playlists: newName
@@ -483,16 +538,57 @@ export function useLibraryManager() {
     });
   }
 
+  async function resolveDiscovery(result: CatalogTrack): Promise<Track> {
+    const known = [...tracksRef.current, ...Object.values(sessionRef.current.queueTracks)]
+      .find(t => t.metadataSourceId === result.id);
+    if (known) return { ...known, title: result.title, artist: known.artist || result.artist,
+      album: result.album, duration: result.duration, artworkUrl: result.artworkUrl };
+    let pending = catalogSources.current.get(result.id);
+    if (!pending) {
+      if (catalogSources.current.size >= 128) catalogSources.current.delete(catalogSources.current.keys().next().value!);
+      pending = resolveCatalogSource(result, library.ytdlpSearch, { verify: prepareCatalogCandidate }).then(source => {
+        const existing = tracksRef.current.find(t => t.id === `youtube:${source.id}`);
+        return canonicalTrack(result, source, existing);
+      }).catch(error => { catalogSources.current.delete(result.id); throw error; });
+      catalogSources.current.set(result.id, pending);
+    }
+    return pending;
+  }
+
   async function saveDiscovery(
-    result: YtdlpSearchResult,
+    result: CatalogTrack,
     mode: "play" | "save" | "next" | "queue",
     onPlayTrack: (t: Track) => void,
   ) {
+    if (mode === "play" && player instanceof PlaybackController) {
+      if (player.state.trackId === result.id && player.state.status === "loading") return;
+      const pending: Track = { id: result.id, title: result.title, artist: result.artist, album: result.album,
+        duration: result.duration, artworkUrl: result.artworkUrl, metadataSourceId: result.id,
+        fileName: "", format: "catalog", missing: false };
+      setPendingTrack(pending);
+      pendingCatalog.current = result;
+      setError("");
+      const token = player.beginLoading(result.id);
+      try {
+        const selected = await resolveDiscovery(result);
+        if (player.state.playbackId !== token) return;
+        onPlayTrack(selected);
+      } catch (error) {
+        if (player.state.playbackId === token) {
+          const message = formatError(error);
+          player.failLoading(token, message);
+          setError(message);
+        }
+      }
+      return;
+    }
     await action(async () => {
-      const base = youtubeTrack(result);
-      const existing = tracksRef.current.find((t) => t.id === base.id);
-      const selected =
-        existing || sessionRef.current.queueTracks[base.id] || base;
+      const selected = await resolveDiscovery(result);
+      const existing = tracksRef.current.find(t => t.id === selected.id);
+      if (existing && mode !== "save") {
+        await saveOnline(selected);
+      }
+      playbackTracks.set(selected.id, selected);
       if (mode === "save") await saveOnline(selected);
       else if (mode === "play") onPlayTrack(selected);
       else {
@@ -510,14 +606,59 @@ export function useLibraryManager() {
         );
       }
       notify(
-        `${mode === "play" ? "Playing" : mode === "save" ? "Saved" : mode === "next" ? "Playing next:" : "Queued"} ${selected.title} - online connection required`,
+        `${mode === "play" ? "Loading" : mode === "save" ? "Saved" : mode === "next" ? "Playing next:" : "Queued"} ${selected.title} - online connection required`,
       );
-      if (mode === "save" && (!existing || !selected.album))
-        void enrichOnline(selected);
+
     });
   }
 
+  const refreshYoutubeEngine = useCallback(async () => {
+    if (engineInstallPromise.current) return;
+    const generation = ++engineCheckGeneration.current;
+    setEngineState(state => state === "installed" || state === "error" ? state : "checking");
+    try {
+      const available = await library.ytdlpCheckAvailable();
+      if (generation !== engineCheckGeneration.current || engineInstallPromise.current) return;
+      setYtdlpAvailable(available);
+      setEngineState(state => available ? "installed" : state === "error" ? "error" : "missing");
+      if (available) setEngineError("");
+    } catch (error) {
+      if (generation !== engineCheckGeneration.current || engineInstallPromise.current) return;
+      setYtdlpAvailable(false);
+      setEngineState("error");
+      setEngineError(`Could not check the engine. ${formatError(error)}`);
+    }
+  }, []);
+
+  function installYoutubeEngine(): Promise<void> {
+    if (engineInstallPromise.current) return engineInstallPromise.current;
+    ++engineCheckGeneration.current;
+    setEngineState("installing");
+    setEngineError("");
+    const pending = (async () => {
+      try {
+        await library.ytdlpInstallEngine();
+        const available = await library.ytdlpCheckAvailable();
+        if (!available) throw new Error("The engine installed but could not be located. Please retry.");
+        setYtdlpAvailable(true);
+        setEngineState("installed");
+        notify("YouTube engine installed and ready. No restart needed.");
+      } catch (error) {
+        setEngineState("error");
+        setEngineError(formatError(error));
+      } finally {
+        engineInstallPromise.current = null;
+      }
+    })();
+    engineInstallPromise.current = pending;
+    return pending;
+  }
+
   return {
+    pendingTrack,
+    retryPendingPlayback: (onPlayTrack: (t: Track) => void) => {
+      if (pendingCatalog.current) void saveDiscovery(pendingCatalog.current, "play", onPlayTrack);
+    },
     tracks,
     setTracks,
     session,
@@ -530,6 +671,10 @@ export function useLibraryManager() {
     setError,
     downloads,
     ytdlpAvailable,
+    engineState,
+    engineError,
+    installYoutubeEngine,
+    refreshYoutubeEngine,
     sessionRef,
     tracksRef,
     readyRef,
@@ -552,5 +697,6 @@ export function useLibraryManager() {
     addOnlineToPlaylist,
     enrichOnline,
     saveDiscovery,
+    resolveDiscovery,
   };
 }

@@ -88,6 +88,69 @@ pub fn cleanup_incomplete(directory: &std::path::Path) {
 mod tests {
     use super::*;
     #[test]
+    fn completion_keeps_latest_catalogue_metadata_and_revalidated_commons_credits() {
+        let mut db = rusqlite::Connection::open_in_memory().unwrap();
+        crate::initialize(&mut db).unwrap();
+        let mut downloaded: Track = serde_json::from_value(serde_json::json!({
+            "id":"wikimedia-commons:42", "title":"Old title", "artist":"Old artist", "album":"", "duration":1,
+            "fileName":"original.wav", "format":"WAV", "missing":false,
+            "source":{"providerId":"wikimedia-commons", "sourceId":"42", "pageUrl":"untrusted",
+                "license":"Old license", "licenseUrl":"https://example.org/old", "attribution":"Old credit"}
+        })).unwrap();
+        crate::save_remote(&db, downloaded.clone()).unwrap();
+        let mut latest = downloaded.clone();
+        latest.title = "Catalogue title".into();
+        latest.artist = "Catalogue artist".into();
+        latest.album = "Catalogue album".into();
+        latest.duration = 180.0;
+        latest.artwork_url = Some("https://upload.wikimedia.org/catalogue.jpg".into());
+        latest.metadata_source_id = Some("itunes:123".into());
+        crate::save_remote(&db, latest.clone()).unwrap();
+        let checked = downloaded.source.as_mut().unwrap();
+        checked.license = "CC-BY-SA 4.0".into();
+        checked.license_url = "https://creativecommons.org/licenses/by-sa/4.0/".into();
+        checked.attribution = "Revalidated creator".into();
+        let saved = finish_download(&db, &downloaded, "managed.wav").unwrap();
+        assert_eq!(saved.id, latest.id);
+        assert_eq!(saved.title, latest.title);
+        assert_eq!(saved.artist, latest.artist);
+        assert_eq!(saved.album, latest.album);
+        assert_eq!(saved.duration, latest.duration);
+        assert_eq!(saved.artwork_url, latest.artwork_url);
+        assert_eq!(saved.metadata_source_id, latest.metadata_source_id);
+        assert!(saved.offline && !saved.missing);
+        let source = saved.source.unwrap();
+        assert_eq!(source.source_id, "42");
+        assert_eq!(source.page_url, "https://commons.wikimedia.org/?curid=42");
+        assert_eq!(source.license, "CC-BY-SA 4.0");
+        assert_eq!(
+            source.license_url,
+            "https://creativecommons.org/licenses/by-sa/4.0/"
+        );
+        assert_eq!(source.attribution, "Revalidated creator");
+        let (path, metadata): (String, String) = db
+            .query_row(
+                "SELECT path,metadata FROM tracks WHERE id=?1",
+                [&latest.id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(path, "managed.wav");
+        assert!(metadata.contains("Revalidated creator") && metadata.contains("Catalogue title"));
+        let mut different_source = downloaded.clone();
+        different_source.source.as_mut().unwrap().source_id = "43".into();
+        assert!(finish_download(&db, &different_source, "different.wav").is_err());
+        db.execute("DELETE FROM tracks WHERE id=?1", [&latest.id])
+            .unwrap();
+        assert!(finish_download(&db, &downloaded, "removed.wav").is_err());
+        assert_eq!(
+            db.query_row("SELECT COUNT(*) FROM tracks", [], |row| row
+                .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+    }
+    #[test]
     fn download_locations_are_provider_scoped_including_redirects() {
         for (url, youtube, expected) in [
             (
@@ -296,35 +359,60 @@ pub async fn download_track(app: tauri::AppHandle, id: String) -> Result<Track> 
     transfer_audio(response, &partial.0, &cancel).await?;
     fs::rename(&partial.0, &destination).map_err(err)?;
     let mut complete = Partial(destination.clone());
-    track.offline = true;
-    track.missing = false;
     let saved_path = destination.to_string_lossy().into_owned();
     let saved = work(app, move |app, db| {
         allow(app, &destination)?;
-        let exists: bool = db
-            .query_row(
-                "SELECT EXISTS(SELECT 1 FROM tracks WHERE id=?1)",
-                [&track.id],
-                |row| row.get(0),
-            )
-            .map_err(err)?;
-        if !exists {
-            return Err("The track was removed while downloading.".into());
-        }
-        db.execute(
-            "UPDATE tracks SET path=?1,metadata=?2 WHERE id=?3",
-            params![
-                saved_path,
-                serde_json::to_string(&track).map_err(err)?,
-                track.id
-            ],
-        )
-        .map_err(err)?;
-        Ok(track)
+        finish_download(db, &track, &saved_path)
     })
     .await?;
     complete.0.clear(); // ownership transferred to the persisted library
     Ok(saved)
+}
+
+fn finish_download(
+    db: &rusqlite::Connection,
+    downloaded: &Track,
+    saved_path: &str,
+) -> Result<Track> {
+    let latest: Option<String> = db
+        .query_row(
+            "SELECT metadata FROM tracks WHERE id=?1",
+            [&downloaded.id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(err)?;
+    let mut track: Track =
+        serde_json::from_str(&latest.ok_or("The track was removed while downloading.")?)
+            .map_err(err)?;
+    let checked = downloaded
+        .source
+        .as_ref()
+        .ok_or("The audio source changed while downloading.")?;
+    let source = track
+        .source
+        .as_mut()
+        .filter(|source| {
+            source.provider_id == checked.provider_id && source.source_id == checked.source_id
+        })
+        .ok_or("The audio source changed while downloading.")?;
+    if checked.provider_id == "wikimedia-commons" {
+        source.license = checked.license.clone();
+        source.license_url = checked.license_url.clone();
+        source.attribution = checked.attribution.clone();
+    }
+    track.offline = true;
+    track.missing = false;
+    db.execute(
+        "UPDATE tracks SET path=?1,metadata=?2 WHERE id=?3",
+        params![
+            saved_path,
+            serde_json::to_string(&track).map_err(err)?,
+            track.id
+        ],
+    )
+    .map_err(err)?;
+    Ok(track)
 }
 
 #[tauri::command]

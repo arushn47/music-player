@@ -1,6 +1,19 @@
-import { library, mobile } from "../adapters/native";
+import { library, mobile, type YtdlpSearchResult, type YtdlpStreamInfo } from "../adapters/native";
 import { PlaybackController } from "./controller";
 import { AndroidPlaybackController } from "./android";
+import type { Track } from "../domain/types";
+import { resolveCatalogSource } from "../domain/catalog-track";
+import { playbackEvent } from "./diagnostics";
+
+const preparedStreams = new Map<string, { stream: YtdlpStreamInfo; expires: number }>();
+const attemptedSources = new Map<string, Set<string>>();
+export async function prepareCatalogCandidate(candidate: YtdlpSearchResult): Promise<Partial<YtdlpSearchResult>> {
+  const prepared = preparedStreams.get(candidate.id);
+  const stream = prepared && prepared.expires > Date.now() ? prepared.stream : await library.ytdlpGetStream(candidate.id);
+  if (preparedStreams.size >= 128) preparedStreams.delete(preparedStreams.keys().next().value!);
+  preparedStreams.set(candidate.id, { stream, expires: Date.now() + 120000 });
+  return { duration: stream.duration || candidate.duration, track: stream.track || candidate.track, artist: stream.artist || candidate.artist };
+}
 
 // Structured music credits from the existing stream resolution request. Never
 // retain its expiring URL, and never turn an uploader name into a performer.
@@ -11,15 +24,36 @@ export const resolvedMusic = new Map<
 
 export const musicResolved = new EventTarget();
 export const offlineTracks = new Set<string>();
+export const playbackTracks = new Map<string, Track>();
 
 export const player = mobile
-  ? new AndroidPlaybackController()
-  : new PlaybackController(async (id) => {
+  ? new AndroidPlaybackController((id) => playbackTracks.get(id))
+  : new PlaybackController(async (id, retry = false) => {
     if (offlineTracks.has(id)) return library.media(id);
     // Check if this is a YouTube track (format: youtube:videoId)
     if (id.startsWith("youtube:")) {
       const videoId = id.slice(id.indexOf(":") + 1);
-      const stream = await library.ytdlpGetStream(videoId);
+      if (!retry || !attemptedSources.has(id)) {
+        if (attemptedSources.size >= 128) attemptedSources.delete(attemptedSources.keys().next().value!);
+        attemptedSources.set(id, new Set([videoId]));
+      }
+      const attempted = attemptedSources.get(id)!;
+      let stream: YtdlpStreamInfo;
+      try {
+        if (retry) throw new Error("The previous audio URL failed to load. Retry playback or choose another recording.");
+        const prepared = preparedStreams.get(videoId);
+        preparedStreams.delete(videoId);
+        stream = prepared && prepared.expires > Date.now() ? prepared.stream : await library.ytdlpGetStream(videoId);
+      } catch (error) {
+        const track = playbackTracks.get(id);
+        if (!track?.metadataSourceId) throw error;
+        const catalog = await library.lookupCatalog(track.metadataSourceId);
+        const candidate = await resolveCatalogSource(catalog, library.ytdlpSearch, { exclude: attempted, verify: prepareCatalogCandidate });
+        attempted.add(candidate.id);
+        stream = preparedStreams.get(candidate.id)!.stream;
+        preparedStreams.delete(candidate.id);
+      }
+      playbackEvent({ trackId: id, stage: "stream-ready", candidateId: [...attempted].at(-1) });
       if (stream.track?.trim() && stream.artist?.trim()) {
         if (resolvedMusic.size >= 128)
           resolvedMusic.delete(resolvedMusic.keys().next().value!);

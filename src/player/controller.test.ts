@@ -30,6 +30,58 @@ class FakeAudio extends EventTarget {
 beforeEach(() => vi.stubGlobal("Audio", FakeAudio));
 afterEach(() => vi.unstubAllGlobals());
 describe("single-owner playback lifecycle", () => {
+  it("stops the old song immediately while a catalog selection resolves and ignores stale failures", async () => {
+    const controller = new PlaybackController(async () => "asset:one");
+    await controller.load("one", true);
+    const audio = controller.audio as unknown as FakeAudio;
+    audio.loaded();
+    expect(audio.paused).toBe(false);
+    const pending = controller.beginLoading("saavn:12345678");
+    expect(audio.paused).toBe(true);
+    expect(audio.src).toBe("");
+    expect(controller.state).toMatchObject({ status: "loading", trackId: "saavn:12345678", time: 0 });
+    await controller.load("two", true);
+    controller.failLoading(pending, "Late error");
+    expect(controller.state.trackId).toBe("two");
+    expect(controller.state.error).toBeNull();
+    controller.stop();
+  });
+  it("does not restart an in-flight load on repeated Play clicks", async () => {
+    let finish!: (url: string) => void;
+    const resolve = vi.fn(() => new Promise<string>(r => { finish = r; }));
+    const controller = new PlaybackController(resolve);
+    const first = controller.load("one", true);
+    await controller.load("one", true);
+    expect(resolve).toHaveBeenCalledTimes(1);
+    finish("asset:one");
+    await first;
+    controller.stop();
+  });
+  it("retries failed remote audio once and reports engine failure without a success state", async () => {
+    const resolve = vi.fn(async (_id: string, retry?: boolean) => retry ? "https://audio.example/second" : "https://audio.example/first");
+    const controller = new PlaybackController(resolve);
+    await controller.load("youtube:abcdefghijk", true);
+    const audio = controller.audio as unknown as FakeAudio;
+    audio.dispatchEvent(new Event("error"));
+    await vi.waitFor(() => expect(resolve).toHaveBeenCalledWith("youtube:abcdefghijk", true));
+    await vi.waitFor(() => expect(audio.src).toContain("second"));
+    audio.dispatchEvent(new Event("error"));
+    expect(controller.state.status).toBe("error");
+    expect(resolve).toHaveBeenCalledTimes(2);
+    controller.stop();
+  });
+  it("times out a stalled load and cancels the timer on stop", async () => {
+    vi.useFakeTimers();
+    try {
+      const controller = new PlaybackController(async () => "asset:stalled");
+      await controller.load("local", true);
+      await vi.advanceTimersByTimeAsync(20000);
+      expect(controller.state.error).toContain("timed out");
+      controller.stop();
+      await vi.advanceTimersByTimeAsync(20000);
+      expect(controller.state.status).toBe("idle");
+    } finally { vi.useRealTimers(); }
+  });
   it("discards a late native resolution after a rapid track switch", async () => {
     let resolveFirst!: (s: string) => void;
     const controller = new PlaybackController((id) =>

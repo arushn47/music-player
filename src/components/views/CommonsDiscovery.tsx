@@ -1,6 +1,7 @@
 import { library } from "../../adapters/native";
 import type { Track } from "../../domain/types";
 import { Artwork } from "../common/Artwork";
+import { ArtistLinks } from "../common/ArtistLinks";
 
 export interface CommonsDiscoveryState {
   query: string;
@@ -10,6 +11,7 @@ export interface CommonsDiscoveryState {
 }
 
 export function CommonsDiscovery({
+  onNavigateArtist,
   save,
   download,
   queue,
@@ -18,6 +20,7 @@ export function CommonsDiscovery({
   state,
   onStateChange,
 }: {
+  onNavigateArtist?: (id: string) => void;
   save: (track: Track, play: boolean) => void;
   download: (track: Track) => void;
   queue: (track: Track, next: boolean) => void;
@@ -93,7 +96,7 @@ export function CommonsDiscovery({
             <Artwork url={track.artworkUrl} />
             <div>
               <strong dir="auto">{track.title}</strong>
-              <p dir="auto">{track.artist}</p>
+              <p dir="auto"><ArtistLinks artistString={track.artist} onNavigateArtist={onNavigateArtist} /></p>
               <small>
                 {track.source?.attribution} ·{" "}
                 <a

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Lumaire",
-  "version": "0.1.0",
+  "version": "1.0.4",
   "identifier": "app.lumaire.player",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -21,9 +21,29 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost https://i.ytimg.com https://i.scdn.co https://upload.wikimedia.org https://coverartarchive.org https://archive.org https://*.archive.org; media-src 'self' asset: http://asset.localhost blob: https://upload.wikimedia.org https://*.googlevideo.com; connect-src ipc: http://ipc.localhost https://commons.wikimedia.org; object-src 'none'; frame-src 'none'; base-uri 'self'",
-      "assetProtocol": { "enable": true, "scope": [] }
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset: http://asset.localhost https://asset.localhost https://i.ytimg.com https://i.scdn.co https://c.saavncdn.com https://lastfm-img.freetls.fastly.net https://upload.wikimedia.org https://thumb.wikimedia.org https://coverartarchive.org https://archive.org https://*.archive.org https://*.mzstatic.com; media-src 'self' asset: http://asset.localhost https://asset.localhost blob: https://upload.wikimedia.org https://*.googlevideo.com; connect-src ipc: http://ipc.localhost https://commons.wikimedia.org; object-src 'none'; frame-src 'none'; base-uri 'self'",
+      "assetProtocol": { "enable": true, "scope": ["$CACHE/**", "$APPDATA/**"] }
     }
   },
-  "bundle": { "active": false }
+  "plugins": {
+    "updater": {
+      "endpoints": ["https://github.com/arushn47/music-player/releases/latest/download/latest.json"],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJBMTVFQUQxMUREODVCMEMKUldRTVc5Z2QwZW9WdWtGZHJwcFppM1BSSms1ZU80NjBEYk1abHh4T3hBRnVLNExjQVZDbWFQQk4K",
+      "windows": { "installMode": "passive" }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Lumaire",
+    "icon": ["icons/icon.ico", "icons/32x32.png", "icons/128x128.png"],
+    "resources": {
+      "../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
+      "../THIRD_PARTY_LICENSES.txt": "THIRD_PARTY_LICENSES.txt"
+    },
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true },
+      "nsis": { "installMode": "currentUser", "installerIcon": "icons/icon.ico" }
+    }
+  }
 }

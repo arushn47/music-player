@@ -10,6 +10,8 @@ export interface Track {
   /** Stable provider identity only. Expiring stream URLs are never persisted. */
   source?: RemoteSource;
   artworkUrl?: string | null;
+  /** Catalogue identity; audio-provider credits cannot replace these details. */
+  metadataSourceId?: string | null;
   /** Backend-owned offline copy, never a renderer-provided filesystem path. */
   offline?: boolean;
 }
@@ -47,6 +49,13 @@ export interface LyricDocument {
   warnings: string[];
   romanisation: Record<string, string>;
   translation: Record<string, string>;
+  romanisationSource?: "local" | "gemini" | "imported";
+  localRomanisation?: Record<string, string>;
+  translationSource?: "gemini" | "imported";
+  processedModel?: string;
+  lineLanguages?: Record<string, string[]>;
+  languageSource?: "local" | "gemini";
+  englishOnly?: boolean;
   instrumental?: boolean;
   timingMode?: "synced" | "unsynced";
   source?: {
@@ -58,6 +67,8 @@ export interface LyricDocument {
   };
 }
 export interface Preferences {
+  themeMode: "dark" | "light";
+  accentColor: string;
   volume: number;
   repeat: "off" | "all" | "one";
   shuffle: boolean;
@@ -70,9 +81,11 @@ export interface Preferences {
   geminiModel: string;
   lyricSize: number;
   historyEnabled: boolean;
+  autoGemini: boolean;
 }
 export interface Session {
   queue: QueueItem[];
+  shuffleOrder: string[];
   /** Remote metadata needed for this listening session, never library membership. */
   queueTracks: Record<string, Track>;
   currentId: string | null;
@@ -89,6 +102,7 @@ export interface Snapshot {
 }
 export const defaults = (): Session => ({
   queue: [],
+  shuffleOrder: [],
   queueTracks: {},
   currentId: null,
   position: 0,
@@ -97,6 +111,8 @@ export const defaults = (): Session => ({
   lyrics: {},
   history: [],
   settings: {
+    themeMode: "dark",
+    accentColor: "#c4dca3",
     volume: 0.75,
     repeat: "off",
     shuffle: false,
@@ -109,9 +125,11 @@ export const defaults = (): Session => ({
     geminiModel: "gemini-3.5-flash-lite",
     lyricSize: 28,
     historyEnabled: true,
+    autoGemini: true,
   },
 });
 export const item = (trackId: string): QueueItem => ({
   id: crypto.randomUUID(),
   trackId,
 });
+export type EngineInstallState = "checking" | "missing" | "installing" | "installed" | "error";

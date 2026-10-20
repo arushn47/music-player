@@ -24,6 +24,40 @@ afterEach(() => {
 });
 
 describe("Android native playback ownership", () => {
+  it("forwards canonical display credits only for the selected load", async () => {
+    vi.mocked(invoke).mockResolvedValue(playing);
+    const metadata = vi.fn((id: string) =>
+      id === "youtube:___________"
+        ? { title: "Sensitive", artist: "KR$NA, Seedhe Maut" }
+        : undefined,
+    );
+    const player = new AndroidPlaybackController(metadata);
+    await player.load("youtube:___________", true, 12);
+    expect(metadata).toHaveBeenCalledWith("youtube:___________");
+    expect(invoke).toHaveBeenLastCalledWith("android_playback", {
+      action: "load",
+      id: "youtube:___________",
+      autoplay: true,
+      position: 12,
+      displayMetadata: { title: "Sensitive", artist: "KR$NA, Seedhe Maut" },
+    });
+    await player.load("another-source", true);
+    expect(invoke).toHaveBeenLastCalledWith("android_playback", {
+      action: "load", id: "another-source", autoplay: true, position: 0,
+    });
+  });
+
+  it("keeps the default constructor compatible and displays native validation errors", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce("Invalid playback display metadata.");
+    const player = new AndroidPlaybackController();
+    await player.load("local-one", true);
+    expect(invoke).toHaveBeenLastCalledWith("android_playback", {
+      action: "load", id: "local-one", autoplay: true, position: 0,
+    });
+    expect(player.state.status).toBe("error");
+    expect(player.state.error).toBe("Invalid playback display metadata.");
+  });
+
   it("keeps a failed online lookup visible while the old native track is still playing", async () => {
     vi.mocked(invoke).mockRejectedValueOnce(new Error("Source unavailable"));
     const player = new AndroidPlaybackController();

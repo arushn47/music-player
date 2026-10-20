@@ -1,4 +1,7 @@
+import { playbackEvent } from "./diagnostics";
+
 export type Playback = {
+  autoplay?: boolean;
   /** Stable media identity for observers; never a resolved stream URL. */
   trackId?: string | null;
   playbackId?: string | null;
@@ -10,7 +13,7 @@ export type Playback = {
   error: string | null;
 };
 
-type Resolver = (id: string) => Promise<string>;
+type Resolver = (id: string, retry?: boolean) => Promise<string>;
 
 export class PlaybackController {
   readonly audio = new Audio();
@@ -18,6 +21,10 @@ export class PlaybackController {
   private endedHandled = false;
   private preciseClock = false;
   private frame: number | null = null;
+  private loadTimer: ReturnType<typeof setTimeout> | null = null;
+  private retried = false;
+  private recovering = false;
+  private sourceGeneration = 0;
   private listeners = new Set<(state: Playback) => void>();
   state: Playback = { status: "idle", time: 0, duration: 0, error: null };
   onEnded: () => void = () => {};
@@ -34,6 +41,8 @@ export class PlaybackController {
       }),
     );
     this.audio.addEventListener("playing", () => {
+      this.clearLoadTimer();
+      playbackEvent({ trackId: this.state.trackId || "", stage: "playing" });
       this.update({ status: "playing", error: null });
       this.startClock();
     });
@@ -56,15 +65,10 @@ export class PlaybackController {
       this.update({ status: "ended", time: this.audio.duration });
       this.onEnded();
     });
-    this.audio.addEventListener("error", () =>
-      this.update({
-        status: "error",
-        error:
-          this.audio.error?.code === 4
-            ? "This audio format or file could not be played. Try MP3 or PCM WAV, or relink the file."
-            : "Playback failed. The queue is saved; retry or choose another track.",
-      }),
-    );
+    this.audio.addEventListener("error", () => {
+      if (this.state.status === "idle") return;
+      void this.recoverSource(this.audio.error?.code === 4 ? "Audio decoding or format failed" : "Audio transport failed");
+    });
     this.audio.addEventListener("seeking", () =>
       this.update({ seekVersion: (this.state.seekVersion ?? 0) + 1, time: this.audio.currentTime }),
     );
@@ -112,14 +116,64 @@ export class PlaybackController {
     this.state = { ...this.state, ...patch };
     this.listeners.forEach((fn) => fn(this.state));
   }
-  async load(id: string, autoplay = false, position = 0) {
-    const generation = ++this.generation;
+  private clearLoadTimer() {
+    if (this.loadTimer !== null) clearTimeout(this.loadTimer);
+    this.loadTimer = null;
+  }
+  private async recoverSource(reason: string) {
+    if (this.recovering) return;
+    this.clearLoadTimer();
+    if (this.retried || !this.state.trackId?.startsWith("youtube:")) {
+      this.update({ status: "error", error: `${reason}. Retry playback, check your connection, or choose another source.` });
+      playbackEvent({ trackId: this.state.trackId || "", stage: "engine-failed", reason });
+      return;
+    }
+    this.retried = true;
+    this.recovering = true;
+    playbackEvent({ trackId: this.state.trackId, stage: "engine-retry", reason });
+    const generation = this.generation;
+    try { await this.attachSource(this.state.trackId, generation, true, this.state.autoplay || false, this.state.time); }
+    finally { if (generation === this.generation) this.recovering = false; }
+  }
+  private async attachSource(id: string, generation: number, retry: boolean, autoplay: boolean, position: number) {
+    const sourceGeneration = ++this.sourceGeneration;
+    this.update({ status: "loading", error: null });
+    try {
+      const url = await this.resolve(id, retry);
+      if (generation !== this.generation || sourceGeneration !== this.sourceGeneration) return;
+      this.audio.onloadedmetadata = () => {
+        if (generation !== this.generation || sourceGeneration !== this.sourceGeneration) return;
+        this.clearLoadTimer();
+        this.audio.currentTime = Math.min(position, Number.isFinite(this.audio.duration) ? this.audio.duration : position);
+        this.update({ status: "paused", duration: this.audio.duration });
+        playbackEvent({ trackId: id, stage: "audio-loaded" });
+        if (autoplay) void this.play();
+      };
+      this.audio.src = url;
+      this.clearLoadTimer();
+      this.loadTimer = setTimeout(() => { void this.recoverSource("Audio loading timed out"); }, 20000);
+      this.audio.load();
+    } catch (error) {
+      if (generation === this.generation && sourceGeneration === this.sourceGeneration) {
+        this.clearLoadTimer();
+        this.update({ status: "error", error: error instanceof Error ? error.message : String(error) });
+        playbackEvent({ trackId: id, stage: "resolution-failed" });
+      }
+    }
+  }
+  beginLoading(id: string, autoplay = false, position = 0) {
+    ++this.generation;
+    this.clearLoadTimer();
+    this.retried = false;
+    this.recovering = false;
+    this.audio.onloadedmetadata = null;
     this.audio.pause();
     this.audio.removeAttribute("src");
     this.audio.load();
     this.endedHandled = false;
     this.update({
       status: "loading",
+      autoplay,
       trackId: id,
       playbackId: crypto.randomUUID(),
       seekVersion: 0,
@@ -127,24 +181,17 @@ export class PlaybackController {
       duration: 0,
       error: null,
     });
-    try {
-      const url = await this.resolve(id);
-      if (generation !== this.generation) return;
-      this.audio.src = url;
-      this.audio.onloadedmetadata = () => {
-        if (generation !== this.generation) return;
-        this.audio.currentTime = Math.min(
-          position,
-          Number.isFinite(this.audio.duration) ? this.audio.duration : position,
-        );
-        this.update({ status: "paused", duration: this.audio.duration });
-        if (autoplay) void this.play();
-      };
-      this.audio.load();
-    } catch (e) {
-      if (generation === this.generation)
-        this.update({ status: "error", error: String(e) });
-    }
+    return this.state.playbackId!;
+  }
+  failLoading(playbackId: string, error: string) {
+    if (this.state.playbackId === playbackId)
+      this.update({ status: "error", error, autoplay: false });
+  }
+  async load(id: string, autoplay = false, position = 0) {
+    if (this.state.trackId === id && this.state.status === "loading") return;
+    this.beginLoading(id, autoplay, position);
+    const generation = this.generation;
+    await this.attachSource(id, generation, false, autoplay, position);
   }
   async play() {
     const generation = this.generation;
@@ -182,6 +229,8 @@ export class PlaybackController {
   }
   stop() {
     ++this.generation;
+    this.clearLoadTimer();
+    this.audio.onloadedmetadata = null;
     this.audio.pause();
     this.audio.removeAttribute("src");
     this.audio.load();

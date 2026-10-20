@@ -44,13 +44,20 @@ export function Banners({
         </div>
       )}
       {message && (
-        <div className="banner notice" role="status">
-          <Check size={16} />
-          <span>{message}</span>
-          <IconButton label="Dismiss notification" onClick={onDismissMessage}>
-            <X size={16} />
-          </IconButton>
-        </div>
+        <aside className="apple-toast" role="status" aria-live="polite">
+          <span className="apple-toast-icon" aria-hidden="true">
+            <Check size={12} strokeWidth={2.5} />
+          </span>
+          <span className="apple-toast-text">{message}</span>
+          <button
+            type="button"
+            className="apple-toast-close"
+            aria-label="Dismiss notification"
+            onClick={onDismissMessage}
+          >
+            <X size={12} strokeWidth={2} />
+          </button>
+        </aside>
       )}
     </>
   );

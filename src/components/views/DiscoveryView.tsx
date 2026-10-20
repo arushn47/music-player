@@ -1,16 +1,15 @@
-import React, { useLayoutEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef } from "react";
 import {
-  ExternalLink,
   Globe,
   Loader2,
   Play,
   Search,
   X,
 } from "lucide-react";
-import { library, type YtdlpSearchResult } from "../../adapters/native";
-import { youtubeTrack } from "../../domain/online-track";
+import { library, type CatalogTrack, type CatalogArtist, type CatalogAlbum } from "../../adapters/native";
 import type { Track } from "../../domain/types";
 import { Artwork, IconButton } from "../common";
+import { CatalogTrackActions, type CatalogActionHandlers } from "../common/CatalogTrackActions";
 import {
   CommonsDiscovery,
   type CommonsDiscoveryState,
@@ -18,7 +17,11 @@ import {
 
 export interface DiscoveryViewState {
   query: string;
-  results: YtdlpSearchResult[];
+  results: CatalogTrack[];
+  artists: CatalogArtist[];
+  albums: CatalogAlbum[];
+  searchedQuery: string;
+  entityError: string;
   searching: boolean;
   error: string;
   scrollTop: number;
@@ -28,13 +31,17 @@ export interface DiscoveryViewState {
 export const initialDiscoveryViewState = (): DiscoveryViewState => ({
   query: "",
   results: [],
+  artists: [],
+  albums: [],
+  searchedQuery: "",
+  entityError: "",
   searching: false,
   error: "",
   scrollTop: 0,
   commons: { query: "", results: [], loading: false, error: "" },
 });
 
-export interface DiscoveryViewProps {
+export interface DiscoveryViewProps extends CatalogActionHandlers {
   state: DiscoveryViewState;
   onStateChange: (
     update: (current: DiscoveryViewState) => DiscoveryViewState,
@@ -44,19 +51,22 @@ export interface DiscoveryViewProps {
   busy: boolean;
   downloads: Record<string, string>;
   onSaveDiscovery: (
-    result: YtdlpSearchResult,
+    result: CatalogTrack,
     mode: "play" | "save" | "next" | "queue",
   ) => void;
   onChoosePlaylist: (track: Track) => void;
   onDownloadTrack: (track: Track) => void;
   onSaveCommons: (track: Track, play: boolean) => void;
   onQueueRemote: (track: Track, next: boolean) => void;
+  onNavigateArtist?: (artistId: string) => void;
+  onNavigateAlbum?: (albumId: string) => void;
 }
 
 const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 
 export function DiscoveryView({
+  savedTracks, favorites, onCatalogAction,
   state,
   onStateChange,
   ytdlpAvailable,
@@ -68,9 +78,16 @@ export function DiscoveryView({
   onDownloadTrack,
   onSaveCommons,
   onQueueRemote,
+  onNavigateArtist,
+  onNavigateAlbum,
 }: DiscoveryViewProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const { query, results, searching, error } = state;
+  const searchGeneration = useRef(0);
+  useEffect(() => () => {
+    searchGeneration.current++;
+    onStateChange(current => ({ ...current, searching: false }));
+  }, []);
+  const { query, results, artists, albums, searchedQuery, entityError, searching, error } = state;
 
   useLayoutEffect(() => {
     const main = rootRef.current?.closest("main");
@@ -87,30 +104,31 @@ export function DiscoveryView({
 
   const handleSearch = () => {
     const trimmed = query.trim();
-    if (!trimmed || !ytdlpAvailable || searching) return;
+    if (!trimmed || searching) return;
+    const generation = ++searchGeneration.current;
     onStateChange((current) => ({
       ...current,
       searching: true,
       results: [],
+      artists: [],
+      albums: [],
+      searchedQuery: trimmed,
+      entityError: "",
       error: "",
     }));
-    library
-      .ytdlpSearch(trimmed, 20)
-      .then((res) => {
+    void Promise.allSettled([
+      library.searchCatalog(trimmed, 20),
+      library.searchCatalogEntities(trimmed),
+    ]).then(([songs, entities]) => {
+        if (generation !== searchGeneration.current) return;
         onStateChange((current) => ({
           ...current,
-          results: res,
+          results: songs.status === "fulfilled" ? songs.value : [],
+          artists: entities.status === "fulfilled" ? entities.value.artists : [],
+          albums: entities.status === "fulfilled" ? entities.value.albums : [],
+          entityError: entities.status === "fulfilled" ? entities.value.warning || "" : String(entities.reason),
           searching: false,
-          error: res.length === 0
-            ? "No results found. Try different keywords."
-            : "",
-        }));
-      })
-      .catch((err) => {
-        onStateChange((current) => ({
-          ...current,
-          error: err instanceof Error ? err.message : String(err),
-          searching: false,
+          error: songs.status === "rejected" ? String(songs.reason) : "",
         }));
       });
   };
@@ -123,16 +141,12 @@ export function DiscoveryView({
       <section className="discover-page">
         <div className="page-heading">
           <div>
-            <p className="eyebrow">SEARCH YOUTUBE FOR MUSIC</p>
+            <p className="eyebrow">SEARCH FOR MUSIC</p>
             <h1>
               Discover new music<span className="heading-dot">.</span>
             </h1>
             <p className="subtitle">
-              {ytdlpAvailable
-                ? "Search YouTube and stream audio using yt-dlp. For personal, non-commercial use."
-                : mobile
-                  ? "Online playback is unavailable in this Android build. Local playback still works."
-                  : "yt-dlp is required. Install yt-dlp and restart the app."}
+              Find songs, artists and albums. Choose a song to find playable audio.
             </p>
           </div>
         </div>
@@ -155,10 +169,10 @@ export function DiscoveryView({
           <label className="search">
             <Search size={17} />
             <input
-              aria-label="Search YouTube"
+              aria-label="Search music"
               placeholder="Search for music, artist, or song"
               value={query}
-              disabled={!ytdlpAvailable || searching}
+              disabled={searching}
               onChange={(e) =>
                 onStateChange((current) => ({
                   ...current,
@@ -174,23 +188,31 @@ export function DiscoveryView({
             />
             {query && (
               <button
+                type="button"
+                className="search-clear-button"
                 aria-label="Clear search"
                 onClick={() => {
+                  searchGeneration.current++;
                   onStateChange((current) => ({
                     ...current,
                     query: "",
+                    searching: false,
                     results: [],
+                    artists: [],
+                    albums: [],
+                    searchedQuery: "",
+                    entityError: "",
                     error: "",
                   }));
                 }}
               >
-                <X size={16} />
+                <X size={15} />
               </button>
             )}
           </label>
           <button
             className="primary"
-            disabled={searching || !query.trim() || !ytdlpAvailable}
+            disabled={searching || !query.trim()}
             onClick={handleSearch}
           >
             {searching ? (
@@ -221,16 +243,40 @@ export function DiscoveryView({
           </div>
         )}
 
-        {!results.length && !searching && !error && ytdlpAvailable && (
+        {!searchedQuery && !searching && !error && (
           <div className="empty">
             <Globe size={36} />
-            <h2>Search YouTube</h2>
+            <h2>Search music</h2>
             <p>
-              Find and stream music from YouTube.
-              <br />
-              Stream URLs expire after a few hours. For personal,
-              non-commercial use only.
+              Search the music catalogue for songs and their original album covers.
             </p>
+          </div>
+        )}
+
+        {!searching && searchedQuery && (
+          <div className="catalog-search-results">
+            {entityError && <p className="subtitle" role="status">{entityError}</p>}
+            <section aria-label="Artists" className="catalog-search-section">
+              <h2>Artists</h2>
+              {artists.length ? <div className="search-artists">
+                {artists.map(artist => <button key={artist.id} className="search-artist" onClick={() => onNavigateArtist?.(artist.id)}>
+                  <Artwork url={artist.artworkUrl} />
+                  <span>{artist.name}</span>
+                </button>)}
+              </div> : <p className="subtitle">No artist results for this search.</p>}
+            </section>
+            <section aria-label="Albums" className="catalog-search-section">
+              <h2>Albums</h2>
+              {albums.length ? <div className="albums-grid">
+                {albums.map(album => <button key={album.id} className="album-card" aria-label={`Open album ${album.title}`} onClick={() => onNavigateAlbum?.(album.id)}>
+                  <Artwork url={album.artworkUrl} className="album-card-cover" />
+                  <div className="album-title" title={album.title}>{album.title}</div>
+                  <div className="album-year" title={`${album.artist}${album.year != null ? ` · ${album.year}` : ""}`}>{album.artist}{album.year != null ? ` · ${album.year}` : ""}</div>
+                </button>)}
+              </div> : <p className="subtitle">No album results for this search.</p>}
+            </section>
+            <h2>Songs</h2>
+            {!results.length && <p className="subtitle">No song results for this search.</p>}
           </div>
         )}
 
@@ -245,18 +291,20 @@ export function DiscoveryView({
           <>
             <div className="track-header">
               <span>#</span>
-              <span>TRACK / CHANNEL</span>
-              <span>SOURCE</span>
+              <span>TRACK / ARTIST</span>
+              <span>ALBUM</span>
               <span>TIME</span>
               <span />
             </div>
             <div className="track-list">
-              {results.map((t, index) => (
+              {results.map((t, index) => {
+                const music = t;
+                return (
                 <div className="track-row" key={t.id}>
                   <button
                     className="track-play"
-                    aria-label={`Play ${t.title}`}
-                    disabled={busy}
+                    aria-label={`Play ${music.title}`}
+                    disabled={busy || !ytdlpAvailable}
                     onClick={() => onSaveDiscovery(t, "play")}
                   >
                     <span className="track-index">
@@ -264,97 +312,75 @@ export function DiscoveryView({
                     </span>
                     <Play className="row-play" size={15} />
                   </button>
-                  <button
+                  <div
                     className="track-meta"
-                    aria-label={`Listen to ${t.title}`}
-                    disabled={busy}
-                    onClick={() => onSaveDiscovery(t, "play")}
                   >
                     <Artwork
-                      url={t.thumbnail}
+                      url={t.artworkUrl}
                       className={`color-${index % 5}`}
                     />
                     <span>
-                      <strong dir="auto">{t.title}</strong>
+                      <button className="track-title-button" aria-label={`Listen to ${music.title}`} disabled={busy || !ytdlpAvailable} onClick={() => onSaveDiscovery(t, "play")}>
+                        <strong dir="auto" title={t.title}>{music.title}</strong>
+                      </button>
                       <small dir="auto">
-                        {t.channel || "Unknown Channel"}
+                        {t.artists && t.artists.length > 0 && onNavigateArtist ? (
+                          <>
+                            {t.artists.map((artist, idx) => (
+                              <span key={idx}>
+                                {idx > 0 && ", "}
+                                {artist.id ? (
+                                  <button
+                                    className="link-button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onNavigateArtist(artist.id!);
+                                    }}
+                                  >
+                                    {artist.name}
+                                  </button>
+                                ) : (
+                                  artist.name
+                                )}
+                              </span>
+                            ))}
+                          </>
+                        ) : (
+                          music.artist
+                        )}
                       </small>
                     </span>
-                  </button>
-                  <span className="album ellipsis" title="YouTube">
-                    YouTube
+                  </div>
+                  <span className="album ellipsis" title={music.album}>
+                    {t.albumId && onNavigateAlbum && music.album ? (
+                      <button
+                        className="link-button"
+                        onClick={() => onNavigateAlbum(t.albumId!)}
+                      >
+                        {music.album}
+                      </button>
+                    ) : (
+                      music.album || "—"
+                    )}
                   </span>
                   <span className="duration">
                     {t.duration ? clock(t.duration) : "—"}
                   </span>
                   <div className="track-actions">
-                    <IconButton
-                      label={`View ${t.title} on YouTube`}
-                      onClick={() =>
-                        window.open(
-                          `https://www.youtube.com/watch?v=${t.id}`,
-                          "_blank",
-                        )
-                      }
-                    >
-                      <ExternalLink size={17} />
-                    </IconButton>
-                    <details className="track-menu">
-                      <summary aria-label={`Actions for ${t.title}`}>
-                        •••
-                      </summary>
-                      <div className="menu-popover">
-                        <button
-                          disabled={busy}
-                          onClick={() => onSaveDiscovery(t, "save")}
-                        >
-                          Save to library
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => onSaveDiscovery(t, "next")}
-                        >
-                          Play next
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => onSaveDiscovery(t, "queue")}
-                        >
-                          Add to queue
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => onChoosePlaylist(youtubeTrack(t))}
-                        >
-                          Save to playlist
-                        </button>
-                        <button
-                          disabled={
-                            downloads[`youtube:${t.id}`] === "downloading"
-                          }
-                          onClick={() =>
-                            onDownloadTrack(youtubeTrack(t))
-                          }
-                        >
-                          {downloads[`youtube:${t.id}`] === "downloading"
-                            ? "Downloading…"
-                            : "Download for offline"}
-                        </button>
-                      </div>
-                    </details>
+                    <CatalogTrackActions track={t} savedTracks={savedTracks} favorites={favorites} onCatalogAction={onCatalogAction} disabled={busy || !ytdlpAvailable} />
                   </div>
                 </div>
-              ))}
+              ); })}
             </div>
             <p className="library-footer">
-              <span className="small-dot" /> Results from YouTube ·{" "}
-              {results.length} tracks · URLs expire after a few hours
+              <span className="small-dot" /> Music catalogue · {results.length} tracks
             </p>
           </>
         )}
       </section>
 
       <CommonsDiscovery
+        onNavigateArtist={onNavigateArtist}
         save={onSaveCommons}
         download={onDownloadTrack}
         queue={onQueueRemote}

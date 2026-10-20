@@ -54,6 +54,12 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
         typeof t.artworkUrl === "string" && t.artworkUrl.startsWith("https://")
           ? t.artworkUrl
           : null,
+      ...(typeof t.metadataSourceId === "string" &&
+      (/^saavn:[A-Za-z0-9_-]{8}$/.test(t.metadataSourceId) ||
+      (/^itunes:[1-9]\d{0,19}$/.test(t.metadataSourceId) &&
+      BigInt(t.metadataSourceId.slice(7)) <= 18446744073709551615n))
+        ? { metadataSourceId: t.metadataSourceId }
+        : {}),
       source: {
         providerId: source.providerId,
         sourceId: source.sourceId,
@@ -91,10 +97,20 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
     if (seen.has(i.id)) i.id = crypto.randomUUID();
     seen.add(i.id);
   }
+  const queueIds = new Set(queue.map((entry) => entry.id));
   const p = v.settings ?? base.settings;
   return {
     ...base,
     queue,
+    shuffleOrder: Array.isArray(v.shuffleOrder)
+      ? [
+          ...new Set(
+            v.shuffleOrder
+              .slice(0, 50000)
+              .filter((id) => typeof id === "string" && queueIds.has(id)),
+          ),
+        ]
+      : [],
     queueTracks,
     currentId: queue.some((i) => i.id === v.currentId)
       ? v.currentId!
@@ -152,6 +168,12 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
           .slice(-500)
       : [],
     settings: {
+      themeMode: p.themeMode === "light" ? "light" : "dark",
+      accentColor:
+        typeof p.accentColor === "string" &&
+        /^#[0-9a-fA-F]{6}$/.test(p.accentColor)
+          ? p.accentColor.toUpperCase()
+          : base.settings.accentColor,
       volume: Number.isFinite(p.volume)
         ? Math.min(1, Math.max(0, p.volume))
         : 0.75,
@@ -172,6 +194,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
         ? Math.max(18, Math.min(46, p.lyricSize))
         : 28,
       historyEnabled: p.historyEnabled !== false,
+      autoGemini: p.autoGemini !== false,
     },
   };
 }

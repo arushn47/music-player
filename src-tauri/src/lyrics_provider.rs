@@ -139,7 +139,10 @@ fn candidate<'a>(
         .filter(|r| {
             lyric_identity::title(&r.track_name) == lyric_identity::title(title)
                 && (lyric_identity::primary_artist(artist).is_empty()
-                    || lyric_identity::artists_match(&r.artist_name, artist))
+                    || lyric_identity::artists_match(&r.artist_name, artist)
+                    || ((r.duration - duration).abs() <= 2.0
+                        && duration > 0.0
+                        && artist_name_extension(&r.artist_name, artist)))
                 && (r.instrumental
                     || r.synced_lyrics
                         .as_ref()
@@ -163,6 +166,37 @@ fn candidate<'a>(
                 .then_with(|| synced(b).cmp(&synced(a)))
                 .then_with(|| native_text(b).cmp(&native_text(a)))
         })
+}
+
+// Accept a complete name token, such as Emiway / Emiway Bantai, only when
+// title and recording duration also agree. Substrings and cover labels fail.
+fn artist_name_extension(left: &str, right: &str) -> bool {
+    let tokens = |name: &str| -> Vec<String> {
+        name.to_lowercase()
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|token| !token.is_empty())
+            .map(str::to_string)
+            .collect()
+    };
+    lyric_identity::credits(left).iter().any(|left| {
+        lyric_identity::credits(right).iter().any(|right| {
+            let a = tokens(left);
+            let b = tokens(right);
+            let (short, long) = if a.len() < b.len() {
+                (&a, &b)
+            } else {
+                (&b, &a)
+            };
+            !short.is_empty()
+                && short != long
+                && short[0].chars().count() >= 4
+                && long.starts_with(short)
+                && long.len() - short.len() <= 2
+                && !long
+                    .iter()
+                    .any(|word| ["cover", "tribute", "karaoke", "remix"].contains(&word.as_str()))
+        })
+    })
 }
 
 pub async fn fetch(
@@ -309,6 +343,7 @@ async fn search_records(base: &str, title: &str, artist: &str) -> Result<Vec<Rec
         // source durations are eligible for synchronized playback.
         if records.iter().any(|r| {
             has_content(r)
+                && synced(r)
                 && lyric_identity::title(&r.track_name) == lyric_identity::title(title)
                 && lyric_identity::artists_match(&r.artist_name, artist)
         }) {
@@ -344,6 +379,41 @@ mod tests {
             synced_lyrics: synced.then(|| "[00:01]test".into()),
             plain_lyrics: Some("test".into()),
         }
+    }
+    #[test]
+    fn artist_extension_requires_complete_name_tokens_title_and_duration() {
+        let records = vec![record("GUESS", "Emiway Bantai", 169.0, true)];
+        assert!(candidate(&records, "GUESS", "Emiway", 169.0).is_some());
+        assert!(candidate(&records, "GUESS", "Emiway", 190.0).is_none());
+        assert!(candidate(&records, "GUESS", "Emi", 169.0).is_none());
+        assert!(candidate(&records, "Other", "Emiway", 169.0).is_none());
+        assert!(!artist_name_extension("Emiway Cover", "Emiway"));
+    }
+
+    #[test]
+    fn guess_short_artist_name_uses_synced_search_result() {
+        let (base, server) = provider_http::tests::server(vec![
+            ("404 Not Found", "{}".into()),
+            ("200 OK", r#"[{"id":6555308,"trackName":"GUESS","artistName":"Emiway Bantai","duration":169,"syncedLyrics":"[00:01]fixture"}]"#.into()),
+            ("200 OK", "[]".into()),
+        ]);
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        assert!(matches!(
+            runtime
+                .block_on(fetch_from(
+                    &base,
+                    "GUESS".into(),
+                    "Emiway".into(),
+                    "".into(),
+                    169.0
+                ))
+                .unwrap(),
+            LyricResult::Synced { .. }
+        ));
+        assert_eq!(server.join().unwrap().len(), 3);
     }
     #[test]
     fn search_rejects_wrong_artists_and_versions_but_accepts_video_intro_difference() {

@@ -1,9 +1,18 @@
+import { ArtistLinks } from "../common/ArtistLinks";
 import React from "react";
-import { ArrowDown, ArrowUp, ListMusic, PanelRightClose, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ListMusic,
+  PanelRightClose,
+  X,
+} from "lucide-react";
 import { Artwork, IconButton } from "../common";
 import type { Session, Track } from "../../domain/types";
+import { playbackQueue } from "../../domain/queue";
 
 export interface QueuePanelProps {
+  onNavigateArtist?: (id: string) => void;
   session: Session;
   listeningTracks: Track[];
   undo: Session["queue"] | null;
@@ -16,6 +25,7 @@ export interface QueuePanelProps {
 }
 
 export function QueuePanel({
+  onNavigateArtist,
   session,
   listeningTracks,
   undo,
@@ -26,10 +36,11 @@ export function QueuePanel({
   onUndoRemoval,
   onClearQueue,
 }: QueuePanelProps) {
-  const currentIndex = session.queue.findIndex(
+  const queue = playbackQueue(session);
+  const currentIndex = queue.findIndex(
     (entry) => entry.id === session.currentId,
   );
-  const upNextCount = session.queue.slice(currentIndex + 1).length;
+  const upNextCount = queue.slice(currentIndex + 1).length;
 
   return (
     <aside className="queue-pane">
@@ -44,9 +55,11 @@ export function QueuePanel({
       <div className="queue-caption">YOUR LISTENING SESSION</div>
       <div className="queue-items">
         {session.queue.length ? (
-          session.queue.map((entry, index) => {
+          queue.map((entry, index) => {
             if (index < currentIndex) return null;
-            const t = listeningTracks.find((track) => track.id === entry.trackId);
+            const t = listeningTracks.find(
+              (track) => track.id === entry.trackId,
+            );
             if (!t) return null;
 
             return (
@@ -54,45 +67,38 @@ export function QueuePanel({
                 key={entry.id}
                 className={`queue-entry ${entry.id === session.currentId ? "current" : ""}`}
               >
-                <button
-                  className="queue-select"
-                  aria-label={`Play queued ${t.title}`}
-                  onClick={() => onSelectQueue(entry.id, true)}
-                >
+                <div className="queue-select">
                   <Artwork
                     url={t.artworkUrl}
                     className={`color-${index % 5}`}
                   />
-                  <span>
-                    <strong dir="auto">{t.title}</strong>
+                  <span className="queue-info">
+                    <button className="track-title-button" aria-label={`Play queued ${t.title}`} onClick={() => onSelectQueue(entry.id, true)}><strong dir="auto">{t.title}</strong></button>
                     <small>
-                      {entry.id === session.currentId
-                        ? "Now playing"
-                        : t.artist}
+                      <ArtistLinks artistString={t.artist} onNavigateArtist={onNavigateArtist} />
+                      {entry.id === session.currentId ? " · Now playing" : ""}
                     </small>
                   </span>
-                </button>
+                </div>
                 <div className="queue-controls">
-                  <IconButton
-                    label={`Move ${t.title} up`}
-                    disabled={
-                      entry.id === session.currentId ||
-                      index <= currentIndex + 1
-                    }
-                    onClick={() => onReorderUpcoming(entry.id, -1)}
-                  >
-                    <ArrowUp size={13} />
-                  </IconButton>
-                  <IconButton
-                    label={`Move ${t.title} down`}
-                    disabled={
-                      entry.id === session.currentId ||
-                      index === session.queue.length - 1
-                    }
-                    onClick={() => onReorderUpcoming(entry.id, 1)}
-                  >
-                    <ArrowDown size={13} />
-                  </IconButton>
+                  {entry.id !== session.currentId && (
+                    <>
+                      <IconButton
+                        label={`Move ${t.title} up`}
+                        disabled={index <= currentIndex + 1}
+                        onClick={() => onReorderUpcoming(entry.id, -1)}
+                      >
+                        <ArrowUp size={13} />
+                      </IconButton>
+                      <IconButton
+                        label={`Move ${t.title} down`}
+                        disabled={index === queue.length - 1}
+                        onClick={() => onReorderUpcoming(entry.id, 1)}
+                      >
+                        <ArrowDown size={13} />
+                      </IconButton>
+                    </>
+                  )}
                   <IconButton
                     label={`Remove queued ${t.title}`}
                     onClick={() => onRemoveQueue(entry.id)}

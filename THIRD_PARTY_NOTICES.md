@@ -2,6 +2,35 @@
 
 Generated from the resolved lockfiles. This inventory does not grant rights to audio, artwork or lyrics. No Nuclear, TuneScript or external media code/assets are included. The original application licensing decision remains with the project owner.
 
+## Offline language detection
+
+The bundled native language detector runs locally without accounts or API calls.
+Full licence texts are included in THIRD_PARTY_LICENSES.txt.
+
+| Package | Version | Licence | Build/test only |
+|---|---|---|---|
+| whatlang | 0.18.0 | MIT | No |
+| allocator-api2 | 0.2.21 | MIT | No |
+
+Sources: https://github.com/greyblake/whatlang-rs and https://github.com/zakarumych/allocator-api2.
+
+## Optional Windows streaming components
+
+Settings > Online Sources can explicitly download the official Windows x64
+yt-dlp 2026.08.19 executable and QuickJS-NG 0.17.0 runtime. Neither is bundled
+in Lumaire's Windows installer or silently fetched at startup. Downloads are
+version-pinned and verified against SHA-256 digests published on their official
+GitHub release pages. No system PATH, registry, or administrator changes are
+needed for these private app components.
+
+The official PyInstaller yt-dlp executable includes GPLv3+ components; see
+[its source, license and dependency notices](https://github.com/yt-dlp/yt-dlp/tree/2026.08.19#license).
+QuickJS-NG uses the MIT license; see
+[its source and license](https://github.com/quickjs-ng/quickjs/tree/v0.17.0).
+These independently downloaded tools do not grant rights to any streamed media.
+The Android runtime described below is unchanged and does not use this Windows
+component installer. Future pinned component versions require an app update.
+
 ## JavaScript dependencies
 
 Android streaming integration: Chaquopy 17.1.0 embeds Python 3.11.17-0;

@@ -6,3 +6,7 @@ export { SettingsView } from "./SettingsView";
 export type { SettingsViewProps } from "./SettingsView";
 export { LibraryView } from "./LibraryView";
 export type { LibraryViewProps } from "./LibraryView";
+export { ArtistView } from "./ArtistView";
+export { AlbumView } from "./AlbumView";
+export { initialDiscoveryViewState, type DiscoveryViewState } from "./DiscoveryView";
+export { SoftwareLicencesSection } from "./SoftwareLicencesSection";

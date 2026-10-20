@@ -24,6 +24,16 @@ describe("online source metadata", () => {
     expect(track.artworkUrl).toBe(result.thumbnail);
     expect(JSON.stringify(track)).not.toContain("streamUrl");
   });
+  it("repairs existing online alias credits even with catalog provenance, without changing local tags", () => {
+    const online = { ...youtubeTrack(result), artist: "Emiway, Guest", metadataSourceId: "itunes:123" };
+    expect(repairYoutubeTrack(online)).toEqual({ ...online, artist: "Emiway Bantai, Guest" });
+    const local = { ...online, source: undefined };
+    expect(repairYoutubeTrack(local)).toBe(local);
+    expect(youtubeTrack({ ...result, artist: "Emiway" }).artist).toBe("Emiway Bantai");
+  });
+  it("does not automatically enrich catalogue tracks with missing artwork", () => {
+    expect(needsMetadata({ ...youtubeTrack(result), metadataSourceId: "itunes:123", artworkUrl: null })).toBe(false);
+  });
   it("removes Topic suffixes when title has no artist prefix", () => {
     expect(
       youtubeTrack({ ...result, title: "Snowman", channel: "Sia - Topic" })

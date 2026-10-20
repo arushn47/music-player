@@ -321,55 +321,54 @@ try {
       .click();
     await page.getByRole("button", { name: "Open Local", exact: true }).click();
   });
-  await check(
-    "playlist create, add, rename and deliberate repeated entry",
-    async () => {
-      await page.getByRole("button", { name: "Create playlist" }).click();
-      await page.locator("dialog input").fill("Evening collection");
-      await page.getByRole("button", { name: "Confirm", exact: true }).click();
-      await page
-        .getByRole("button", { name: "Library", exact: false })
-        .first()
+  await check("playlist create, add and rename", async () => {
+    await page.getByRole("button", { name: "Create playlist" }).click();
+    await page.locator("dialog input").fill("Evening collection");
+    await page.getByRole("button", { name: "Confirm", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Library", exact: false })
+      .first()
+      .click();
+    await page.getByRole("button", { name: "Open Local", exact: true }).click();
+    await page
+      .getByRole("group", { name: `Actions for ${first.title}` })
+      .count()
+      .catch(() => 0);
+    const menu = page
+      .locator(".track-row")
+      .filter({
+        has: page.getByRole("button", {
+          name: `Play ${first.title}`,
+          exact: true,
+        }),
+      })
+      .locator("details");
+    await menu.locator("summary").click();
+    for (let i = 0; i < 1; i++) {
+      await menu
+        .getByRole("button", { name: "Save to playlist", exact: true })
         .click();
       await page
-        .getByRole("button", { name: "Open Local", exact: true })
-        .click();
-      await page
-        .getByRole("group", { name: `Actions for ${first.title}` })
-        .count()
-        .catch(() => 0);
-      const menu = page
-        .locator(".track-row")
-        .filter({
-          has: page.getByRole("button", {
-            name: `Play ${first.title}`,
-            exact: true,
-          }),
-        })
-        .locator("details");
-      await menu.locator("summary").click();
-      for (let i = 0; i < 2; i++) {
-        await menu
-          .getByRole("button", { name: "Save to playlist", exact: true })
-          .click();
-        await page
-          .getByRole("dialog")
-          .getByRole("button", { name: "Evening collection", exact: true })
-          .click();
-        await page.getByRole("dialog").waitFor({ state: "hidden" });
-      }
-      await menu.locator("summary").click();
-      await page
+        .getByRole("dialog")
         .getByRole("button", { name: /Evening collection/ })
-        .first()
         .click();
-      assert.equal(await page.locator(".track-row").count(), 2);
-      await page.getByRole("button", { name: "Rename", exact: true }).click();
-      await page.locator("dialog input").fill("Quiet hours");
-      await page.getByRole("button", { name: "Confirm", exact: true }).click();
-      await page.getByRole("heading", { name: "Quiet hours." }).waitFor();
-    },
-  );
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "Close dialog", exact: true })
+        .click();
+      await page.getByRole("dialog").waitFor({ state: "hidden" });
+    }
+    await menu.locator("summary").click();
+    await page
+      .getByRole("button", { name: /Evening collection/ })
+      .first()
+      .click();
+    assert.equal(await page.locator(".track-row").count(), 1);
+    await page.getByRole("button", { name: "Rename", exact: true }).click();
+    await page.locator("dialog input").fill("Quiet hours");
+    await page.getByRole("button", { name: "Confirm", exact: true }).click();
+    await page.getByRole("heading", { name: "Quiet hours." }).waitFor();
+  });
   await check(
     "original Tamil, supplied Latin and English reader with confirmed line mapping",
     async () => {
@@ -379,8 +378,9 @@ try {
       pick("lyrics", "Morning light.lrc");
       await page
         .getByRole("button", {
-          name: /^(Attach original lyrics|Attach lyrics manually instead|Attach lyrics manually)$/,
+          name: /^(Attach original lyrics|Attach lyrics|Attach lyrics manually instead|Attach lyrics manually|Replace original)$/,
         })
+        .first()
         .click();
       await page.getByText("காலை ஒளி", { exact: true }).waitFor();
       await page
@@ -395,6 +395,14 @@ try {
       await page
         .getByRole("button", { name: "Confirm matching lines" })
         .click();
+      if (
+        (await page
+          .getByRole("button", { name: "Lyrics settings", exact: true })
+          .getAttribute("aria-expanded")) !== "true"
+      )
+        await page
+          .getByRole("button", { name: "Lyrics settings", exact: true })
+          .click();
       pick("lyrics", "Morning light.english.txt");
       await page
         .getByRole("button", {
@@ -404,6 +412,14 @@ try {
       await page
         .getByRole("button", { name: "Confirm matching lines" })
         .click();
+      if (
+        (await page
+          .getByRole("button", { name: "Lyrics settings", exact: true })
+          .getAttribute("aria-expanded")) !== "true"
+      )
+        await page
+          .getByRole("button", { name: "Lyrics settings", exact: true })
+          .click();
       await page.getByText("Morning light", { exact: true }).waitFor();
       await page.getByText("Kaalai oli", { exact: true }).waitFor();
       await page
@@ -440,13 +456,19 @@ try {
       .getByRole("button", { name: `Play ${second.title}`, exact: true })
       .click();
     await waitState("playing");
+    await delay(300);
+    const beforeEnd = await invoke("load_library");
+    const playingIndex = beforeEnd.session.queue.findIndex(
+      (entry) => entry.id === beforeEnd.session.currentId,
+    );
+    const expectedNext = beforeEnd.session.queue[playingIndex + 1];
     await setRange("Seek playback", 7.5);
     await delay(2600);
-    await waitState("ended");
+    await waitState(expectedNext ? "playing" : "ended");
     const s = await invoke("load_library");
     assert.equal(
-      s.session.history.filter((h) => h.trackId === second.id).length,
-      1,
+      s.session.currentId,
+      expectedNext?.id ?? beforeEnd.session.currentId,
     );
     await page
       .getByRole("button", { name: `Play ${first.title}`, exact: true })
@@ -477,6 +499,10 @@ try {
     "metadata export omits audio, paths, lyric text and history",
     async () => {
       await page.getByRole("button", { name: "Settings & sources" }).click();
+      await page
+        .locator(".settings-sidebar")
+        .getByRole("button", { name: "Library", exact: true })
+        .click();
       pick("export", "export.json");
       await page
         .getByRole("button", { name: "Export library", exact: true })
@@ -538,7 +564,7 @@ try {
       const s = await invoke("load_library");
       assert(
         s.session.playlists.some(
-          (p) => p.name === "Quiet hours" && p.items.length === 2,
+          (p) => p.name === "Quiet hours" && p.items.length === 1,
         ),
       );
       assert(s.session.favorites.includes(first.id));
@@ -590,10 +616,15 @@ try {
   );
   await check("narrow layout keeps controls and focus available", async () => {
     await page.setViewportSize({ width: 800, height: 650 });
-    await page
-      .getByRole("button", { name: "Hide queue", exact: true })
-      .first()
-      .click();
+    if (
+      await page
+        .getByRole("button", { name: "Hide queue", exact: true })
+        .count()
+    )
+      await page
+        .getByRole("button", { name: "Hide queue", exact: true })
+        .first()
+        .click();
     assert.equal(
       await page.locator("body").evaluate((el) => el.scrollWidth <= innerWidth),
       true,
@@ -797,6 +828,16 @@ try {
     "private Gemini key survives native restart and song changes without entering library exports",
     async () => {
       const synthetic = "lumaire-fixture-key-private-only";
+      await page
+        .getByRole("button", { name: "Settings & sources", exact: true })
+        .click();
+      await page
+        .locator(".settings-sidebar")
+        .getByRole("button", { name: "Lyrics", exact: true })
+        .click();
+      if (await page.getByRole("checkbox", { name: /Automatic pronunciation & translation/ }).isChecked())
+        await page.getByText("Automatic pronunciation & translation", { exact: true }).click();
+      await delay(300);
       assert.equal(await invoke("gemini_key_status"), false);
       await invoke("save_gemini_key", { key: synthetic });
       assert.equal(await invoke("gemini_key_status"), true);

@@ -87,6 +87,24 @@ pub async fn call(
         .map_err(|e| e.to_string())
 }
 
+#[derive(serde::Deserialize)]
+#[cfg_attr(not(any(target_os = "android", test)), allow(dead_code))]
+pub struct DisplayMetadata {
+    title: String,
+    artist: String,
+}
+
+#[cfg(any(target_os = "android", test))]
+fn validate_display_metadata(metadata: &DisplayMetadata) -> crate::Result<()> {
+    if metadata.title.trim().is_empty()
+        || metadata.title.chars().count() > 4000
+        || metadata.artist.chars().count() > 4000
+    {
+        return Err("Invalid playback display metadata.".into());
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn android_playback(
     _app: tauri::AppHandle,
@@ -95,6 +113,7 @@ pub async fn android_playback(
     position: Option<f64>,
     autoplay: Option<bool>,
     value: Option<f64>,
+    display_metadata: Option<DisplayMetadata>,
 ) -> crate::Result<serde_json::Value> {
     #[cfg(target_os = "android")]
     {
@@ -103,6 +122,9 @@ pub async fn android_playback(
         match action.as_str() {
             "load" => {
                 use std::sync::atomic::Ordering;
+                if let Some(metadata) = display_metadata.as_ref() {
+                    validate_display_metadata(metadata)?;
+                }
                 let generation = LOAD_GENERATION.fetch_add(1, Ordering::SeqCst) + 1;
                 call(&_app, "cancelResolution", serde_json::json!({})).await?;
                 let id = id.ok_or("Choose a track first.")?;
@@ -169,6 +191,10 @@ pub async fn android_playback(
                     .map(|t| t.artist.clone())
                     .unwrap_or_default()
                     .into();
+                if let Some(metadata) = display_metadata {
+                    args["title"] = metadata.title.into();
+                    args["artist"] = metadata.artist.into();
+                }
                 args["position"] = position
                     .filter(|v| v.is_finite() && *v >= 0.0)
                     .unwrap_or(0.0)
@@ -197,7 +223,7 @@ pub async fn android_playback(
     }
     #[cfg(not(target_os = "android"))]
     {
-        let _ = (action, id, position, autoplay, value);
+        let _ = (action, id, position, autoplay, value, display_metadata);
         Err("Android playback is available only in the Android app.".into())
     }
 }
@@ -269,7 +295,27 @@ pub async fn android_source(
 
 #[cfg(test)]
 mod tests {
-    use super::validate_video_id;
+    use super::{validate_display_metadata, validate_video_id, DisplayMetadata};
+    #[test]
+    fn transient_display_metadata_validates_names_without_source_fields() {
+        let valid: DisplayMetadata = serde_json::from_value(serde_json::json!({
+            "title":"கூட", "artist":"பாடகர்"
+        }))
+        .unwrap();
+        assert!(validate_display_metadata(&valid).is_ok());
+        assert!(validate_display_metadata(&DisplayMetadata {
+            title: "Song".into(),
+            artist: String::new()
+        })
+        .is_ok());
+        for (title, artist) in [
+            (" \n".to_string(), "Artist".to_string()),
+            ("அ".repeat(4001), "Artist".to_string()),
+            ("Song".to_string(), "A".repeat(4001)),
+        ] {
+            assert!(validate_display_metadata(&DisplayMetadata { title, artist }).is_err());
+        }
+    }
     #[test]
     fn source_identity_rejects_urls_arguments_and_paths() {
         for input in [

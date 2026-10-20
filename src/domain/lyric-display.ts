@@ -1,4 +1,5 @@
 import type { LyricDocument, LyricLine, Preferences, Session } from "./types";
+import { englishLine, sameLyricText } from "./lyric-languages";
 
 export function lyricLayers(
   doc: LyricDocument,
@@ -16,7 +17,7 @@ export function lyricLayers(
     if (settings.originalFirst) layers.push(layer);
     else layers.unshift(layer);
   }
-  if (settings.translation && doc.translation[line.id])
+  if (settings.translation && doc.translation[line.id] && !englishLine(doc, line.id) && !sameLyricText(line.text, doc.translation[line.id]))
     layers.push({ kind: "translation", text: doc.translation[line.id] });
   return layers;
 }

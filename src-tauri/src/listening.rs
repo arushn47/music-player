@@ -20,6 +20,8 @@ pub struct ListeningRecord {
     pub artwork_url: Option<String>,
     pub provider_id: Option<String>,
     pub source_id: Option<String>,
+    #[serde(default)]
+    pub metadata_source_id: Option<String>,
     pub started_at: i64,
     pub updated_at: i64,
     pub listened_ms: i64,
@@ -150,6 +152,19 @@ fn validate(record: &mut ListeningRecord) -> Result<()> {
         .try_fold(0_i64, |sum, value| sum.checked_add(*value));
     if uuid::Uuid::parse_str(&record.id).is_err()
         || !stable_identity(record)
+        || record.metadata_source_id.as_ref().is_some_and(|id| {
+            !id.strip_prefix("itunes:").is_some_and(|value| {
+                value.len() <= 20
+                    && value
+                        .parse::<u64>()
+                        .is_ok_and(|n| n > 0 && value == n.to_string())
+            }) && !id.strip_prefix("saavn:").is_some_and(|value| {
+                value.len() == 8
+                    && value
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
+            })
+        })
         || !text_valid
         || record.started_at < 0
         || record.updated_at < record.started_at
@@ -289,6 +304,7 @@ mod tests {
             artwork_url: None,
             provider_id: Some("youtube".into()),
             source_id: Some("cL0KKSPjZf8".into()),
+            metadata_source_id: None,
             started_at: 1_760_000_000_000,
             updated_at: 1_760_000_000_000 + time,
             listened_ms: time,
@@ -318,6 +334,47 @@ mod tests {
         assert_eq!(read(&db).unwrap().records.len(), 1);
         assert_eq!(read(&db).unwrap().records[0].listened_ms, 20_000);
         assert_eq!(crate::snapshot(&db).unwrap().tracks.len(), 0);
+    }
+    #[test]
+    fn catalogue_provenance_round_trips_and_legacy_records_remain_readable() {
+        let mut db = db();
+        let mut row = record(12_000);
+        let mut legacy = serde_json::to_value(&row).unwrap();
+        legacy.as_object_mut().unwrap().remove("metadataSourceId");
+        let legacy: ListeningRecord = serde_json::from_value(legacy).unwrap();
+        assert!(legacy.metadata_source_id.is_none());
+        checkpoint(&mut db, 0, legacy).unwrap();
+        for id in ["itunes:18446744073709551615", "saavn:QAbmbZ7O"] {
+            row.metadata_source_id = Some(id.into());
+            checkpoint(&mut db, 0, row.clone()).unwrap();
+            let saved = read(&db).unwrap().records.remove(0);
+            assert_eq!(saved.metadata_source_id, row.metadata_source_id);
+            assert_eq!(saved.track_id, row.track_id);
+            assert_eq!(saved.source_id, row.source_id);
+        }
+        for id in [
+            "itunes:0",
+            "itunes:01",
+            "itunes:-1",
+            "itunes:1.5",
+            "itunes:1\n",
+            "youtube:1",
+            "itunes:18446744073709551616",
+            "itunes:123456789012345678901",
+            "saavn:QAbmbZ7",
+            "saavn:QAbmbZ7OO",
+            "saavn:QAbmbZ7/",
+            "saavn:QAbmbZ7O\n",
+            "saavn:../../../",
+            "saavn:",
+        ] {
+            row.metadata_source_id = Some(id.into());
+            assert!(checkpoint(&mut db, 0, row.clone()).is_err(), "{id}");
+        }
+        assert_eq!(
+            read(&db).unwrap().records[0].metadata_source_id.as_deref(),
+            Some("saavn:QAbmbZ7O")
+        );
     }
     #[test]
     fn threshold_and_clear_generation_block_delayed_writes() {

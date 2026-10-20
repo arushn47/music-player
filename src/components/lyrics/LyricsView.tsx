@@ -6,6 +6,7 @@ import {
   Plus,
   RefreshCw,
   Settings2,
+  Type,
   Upload,
   Wifi,
   WifiOff,
@@ -13,10 +14,22 @@ import {
 } from "lucide-react";
 import type { LookupState } from "../../adapters/lrclib";
 import { lyricLayers, isFetchedLyrics } from "../../domain/lyric-display";
-import type { LyricDocument, Preferences, Session, Track } from "../../domain/types";
+import { lyricLanguageNames } from "../../domain/lyric-languages";
+import type {
+  LyricDocument,
+  Preferences,
+  Session,
+  Track,
+} from "../../domain/types";
 import { LyricsSettings } from "./LyricsSettings";
+import { ArtistLinks } from "../common/ArtistLinks";
+import {
+  GEMINI_PROCESS_RETRY,
+  type LyricProcessingState,
+} from "../../adapters/lyric-processing";
 
 export interface LyricsViewProps {
+  onNavigateArtist?: (id: string) => void;
   track?: Track | null;
   doc?: LyricDocument;
   lyricSynced: boolean;
@@ -30,10 +43,12 @@ export interface LyricsViewProps {
   session: Session;
   setting: <K extends keyof Preferences>(key: K, value: Preferences[K]) => void;
   onUpdateOffset: (offset: number) => void;
-  attach: (kind: "original" | "romanisation" | "translation") => Promise<void> | void;
+  attach: (
+    kind: "original" | "romanisation" | "translation",
+  ) => Promise<void> | void;
   clearCache: () => void;
   regenerate: () => void;
-  applyTranslation: (id: string, values: Record<string, string>) => void;
+  processingState: LyricProcessingState;
   onRetryLookup: () => void;
   onMarkInstrumental: () => void;
   onSeek: (seconds: number) => void;
@@ -43,6 +58,7 @@ const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 
 export function LyricsView({
+  onNavigateArtist,
   track,
   doc,
   lyricSynced,
@@ -59,7 +75,7 @@ export function LyricsView({
   attach,
   clearCache,
   regenerate,
-  applyTranslation,
+  processingState,
   onRetryLookup,
   onMarkInstrumental,
   onSeek,
@@ -100,51 +116,58 @@ export function LyricsView({
           <button
             className="icon-button lyric-settings-trigger"
             aria-label="Lyrics settings"
-            title={lyricsMenuOpen ? "Close settings" : "Lyrics settings"}
+            title="Lyrics settings"
             aria-haspopup="true"
             aria-expanded={lyricsMenuOpen}
             aria-controls="lyrics-settings-menu"
             onClick={() => setLyricsMenuOpen((x) => !x)}
           >
-            {lyricsMenuOpen ? <X size={17} /> : <Settings2 size={17} />}
+            <Type size={17} />
           </button>
           {lyricsMenuOpen && (
-            <div
-              id="lyrics-settings-menu"
-              className="lyric-settings-menu"
-              role="group"
-              aria-label="Lyrics settings"
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setLyricsMenuOpen(false);
-                  e.currentTarget.parentElement
-                    ?.querySelector("button")
-                    ?.focus();
-                }
-              }}
-            >
-              <LyricsSettings
-                settings={session.settings}
-                setting={setting}
-                doc={doc}
-                track={track || undefined}
-                lyricSynced={lyricSynced}
-                onUpdateOffset={onUpdateOffset}
-                attach={attach}
-                onClose={() => setLyricsMenuOpen(false)}
-                cachedCount={
-                  Object.values(session.lyrics).filter(isFetchedLyrics).length
-                }
-                clearCache={clearCache}
-                regenerate={regenerate}
-                applyTranslation={applyTranslation}
+            <>
+              <div
+                className="lyric-settings-backdrop"
+                aria-hidden="true"
+                onClick={() => setLyricsMenuOpen(false)}
               />
-            </div>
+              <div
+                id="lyrics-settings-menu"
+                className="lyric-settings-menu"
+                role="dialog"
+                aria-label="Lyrics settings"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setLyricsMenuOpen(false);
+                    e.currentTarget.parentElement
+                      ?.querySelector("button")
+                      ?.focus();
+                  }
+                }}
+              >
+                <LyricsSettings
+                  settings={session.settings}
+                  setting={setting}
+                  doc={doc}
+                  track={track || undefined}
+                  lyricSynced={lyricSynced}
+                  onUpdateOffset={onUpdateOffset}
+                  attach={attach}
+                  onClose={() => setLyricsMenuOpen(false)}
+                  cachedCount={
+                    Object.values(session.lyrics).filter(isFetchedLyrics).length
+                  }
+                  clearCache={clearCache}
+                  regenerate={regenerate}
+                  processingState={processingState}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>
 
-      <div className="page-heading">
+      <div className="page-heading lyric-room-heading">
         <div>
           <p className="eyebrow">BETWEEN THE LINES</p>
           <h1>
@@ -152,7 +175,7 @@ export function LyricsView({
           </h1>
           <p className="subtitle">
             {track
-              ? `${track.title} · ${track.artist}`
+              ? <>{track.title} · <ArtistLinks artistString={track.artist} onNavigateArtist={onNavigateArtist} /></>
               : "Choose a song to open its words."}
             {doc && (
               <span className="lyric-status-pill">
@@ -181,19 +204,43 @@ export function LyricsView({
               </span>
             )}
           </p>
+          {doc && !doc.instrumental && <p className="subtitle" aria-label="Song languages">
+            Languages: {lyricLanguageNames(doc).join(", ") || (doc.languageSource ? "Not identified" : "Detecting…")}
+          </p>}
         </div>
         {!doc && (
-          <button
-            className="subtle"
-            disabled={!track || busy}
-            onClick={() => void attach("original")}
-          >
-            <Upload size={15} />
-            Attach lyrics
-          </button>
+          <div className="lyric-header-actions">
+            <button
+              className="subtle"
+              disabled={!track || busy}
+              onClick={() => void attach("original")}
+            >
+              <Upload size={15} />
+              Attach lyrics
+            </button>
+          </div>
         )}
       </div>
 
+      {doc &&
+        (processingState.status === "processing" ||
+          processingState.status === "error") && (
+          <div className="listening-notice" role="status">
+            {processingState.status === "processing"
+              ? "Generating pronunciation and English meaning…"
+              : processingState.message}
+            {processingState.status === "error" && (
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(new Event(GEMINI_PROCESS_RETRY))
+                }
+              >
+                Retry Gemini
+              </button>
+            )}
+          </div>
+        )}
       {!doc ? (
         <div className="empty lyric-empty">
           {lyricLookup.status === "loading" ? (
@@ -262,8 +309,7 @@ export function LyricsView({
               <FileText size={36} />
               <h2>The music has words. Bring them here.</h2>
               <p>
-                Lyrics are looked up automatically when you play a
-                track.
+                Lyrics are looked up automatically when you play a track.
                 <br />
                 Or attach an LRC or text file manually.
               </p>
@@ -290,19 +336,14 @@ export function LyricsView({
           <Music2 size={36} />
           <h2>Let the music speak.</h2>
           <p>You marked this recording as instrumental.</p>
-          <button
-            className="subtle"
-            onClick={() => void attach("original")}
-          >
+          <button className="subtle" onClick={() => void attach("original")}>
             Attach lyrics instead
           </button>
         </div>
       ) : (
         <>
           {doc.warnings
-            .filter(
-              (w) => !w.startsWith("The selected lyric recording is "),
-            )
+            .filter((w) => !w.startsWith("The selected lyric recording is "))
             .map((w, i) => (
               <p className="parser-warning" key={i}>
                 {w}
@@ -328,8 +369,7 @@ export function LyricsView({
                   onSeek(
                     Math.max(
                       0,
-                      (line.time! + doc.fileOffset + doc.userOffset) /
-                      1000,
+                      (line.time! + doc.fileOffset + doc.userOffset) / 1000,
                     ),
                   )
                 }

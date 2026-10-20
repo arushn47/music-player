@@ -1,0 +1,126 @@
+name: Windows release
+
+on:
+  push:
+    tags: ['v[0-9]*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing stable version tag to release (for example v1.0.4)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'arushn47/music-player'
+    runs-on: windows-2022
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install locked frontend dependencies
+        run: npm ci
+
+      - name: Validate release configuration and tag
+        run: node scripts/check-windows-release.mjs
+
+      - name: Require signing secrets
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw 'Missing TAURI_SIGNING_PRIVATE_KEY repository secret.'
+          }
+          if ([string]::IsNullOrEmpty($env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD)) {
+            throw 'Missing TAURI_SIGNING_PRIVATE_KEY_PASSWORD repository secret; use a password-protected release key.'
+          }
+
+      - name: Reject existing releases and verify tag checkout
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = process.env.RELEASE_TAG;
+            const { data: ref } = await github.rest.git.getRef({ ...context.repo, ref: `tags/${tag}` });
+            let sha = ref.object.sha;
+            if (ref.object.type === 'tag') {
+              const { data: annotated } = await github.rest.git.getTag({ ...context.repo, tag_sha: sha });
+              sha = annotated.object.sha;
+            }
+            const { stdout } = await exec.getExecOutput('git', ['rev-parse', 'HEAD']);
+            if (stdout.trim() !== sha) throw new Error('Checkout does not match release tag.');
+            try {
+              await github.rest.repos.getReleaseByTag({ ...context.repo, tag });
+              throw new Error('Release already exists. Do not overwrite signed releases; inspect/delete an unpublished failed draft before retrying.');
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Run regression checks
+        run: |
+          node --test scripts/check-windows-release.selfcheck.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      # v0, inspected for Tauri v2 .exe.sig support and tauriScript argument forwarding.
+      - name: Build signed NSIS artifacts and upload draft release
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tauriScript: node scripts/tauri.mjs
+          args: --ci --bundles nsis --target x86_64-pc-windows-msvc --config src-tauri/tauri.release.conf.json -- --locked
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: Lumaire ${{ env.RELEASE_TAG }}
+          releaseBody: 'Windows x64 release. Download the setup EXE to install Lumaire. Existing updater-enabled installations can update through Settings → About.'
+          releaseDraft: true
+          prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: true
+          uploadPlainBinary: false
+
+      - name: Verify uploaded payload, signature and manifest before publishing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $checkDir = Join-Path $env:RUNNER_TEMP 'lumaire-release-check'
+          gh release download $env:RELEASE_TAG --repo arushn47/music-player --dir $checkDir
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to retrieve draft release assets.' }
+          node scripts/check-windows-release.mjs --artifacts $checkDir
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Publish verified release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit $env:RELEASE_TAG --repo arushn47/music-player --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed; inspect the draft.' }

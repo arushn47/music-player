@@ -17,10 +17,13 @@ fn allowed(url: &reqwest::Url) -> bool {
                 "i.ytimg.com"
                     | "i.scdn.co"
                     | "upload.wikimedia.org"
+                    | "thumb.wikimedia.org"
                     | "coverartarchive.org"
                     | "lastfm-img.freetls.fastly.net"
+                    | "c.saavncdn.com"
                     | "archive.org"
             ) || host.ends_with(".archive.org")
+                || host.ends_with(".mzstatic.com")
         })
 }
 
@@ -139,8 +142,8 @@ pub async fn cached_artwork(app: tauri::AppHandle, url: String) -> Result<String
     if !allowed(&location) || url.len() > 4000 {
         return Err("Unsupported artwork location.".into());
     }
-    static GATE: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-    let _guard = GATE.lock().await;
+    static DOWNLOADS: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(4);
+    let _download = DOWNLOADS.acquire().await.map_err(crate::err)?;
     let root = app
         .path()
         .app_cache_dir()
@@ -173,6 +176,7 @@ pub async fn cached_artwork(app: tauri::AppHandle, url: String) -> Result<String
     for _ in 0..5 {
         let mut response = client
             .get(location.clone())
+            .header("accept", "image/avif,image/webp,image/*;q=0.8")
             .send()
             .await
             .map_err(|_| "Artwork unavailable.")?;
@@ -228,6 +232,8 @@ pub async fn cached_artwork(app: tauri::AppHandle, url: String) -> Result<String
         if bytes.is_empty() {
             return Err("Empty artwork response.".into());
         }
+        static WRITES: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+        let _write = WRITES.lock().await;
         prune(&root, bytes.len() as u64)?;
         store_image(&root, &path, &bytes)?;
         allow(&app, &path)?;
@@ -250,6 +256,11 @@ mod tests {
         assert!(allowed(
             &reqwest::Url::parse("https://ia800100.us.archive.org/image.jpg").unwrap()
         ));
+        assert!(allowed(
+            &reqwest::Url::parse("https://is1-ssl.mzstatic.com/image/thumb/Music/600x600bb.jpg").unwrap()
+        ));
+        assert!(allowed(&reqwest::Url::parse("https://c.saavncdn.com/517/cover.jpg").unwrap()));
+        assert!(!allowed(&reqwest::Url::parse("https://c.saavncdn.com.evil.test/cover.jpg").unwrap()));
         let root = std::env::temp_dir().join(format!("lumaire-art-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).unwrap();
         fs::write(root.join("keep.txt"), b"external").unwrap();

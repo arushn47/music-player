@@ -2,6 +2,8 @@ use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::io::Read;
+use std::time::{Duration, Instant};
 
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -46,6 +48,9 @@ struct YtdlpJson {
 }
 
 fn find_ytdlp() -> Result<PathBuf, String> {
+    if let Some(path) = crate::components::managed_engine() {
+        return Ok(path);
+    }
     // Try current directory first (for bundled binary)
     let local_path = std::env::current_exe()
         .ok()
@@ -75,13 +80,17 @@ fn find_ytdlp() -> Result<PathBuf, String> {
         }
     }
 
-    Err("yt-dlp not found. Please install yt-dlp and ensure it's in your PATH, or place yt-dlp.exe next to the Lumaire executable.".to_string())
+    Err("YouTube engine is not installed. Open Settings > Online Sources and choose Install engine.".to_string())
 }
 
 fn run_ytdlp(args: &[&str]) -> Result<String, String> {
     let program = find_ytdlp()?;
 
     let mut cmd = Command::new(&program);
+    if let Some(runtime) = crate::components::managed_runtime(&program) {
+        cmd.arg("--js-runtimes")
+            .arg(format!("quickjs:{}", runtime.display()));
+    }
     cmd.args(args).stdout(Stdio::piped()).stderr(Stdio::piped());
 
     #[cfg(target_os = "windows")]
@@ -93,13 +102,29 @@ fn run_ytdlp(args: &[&str]) -> Result<String, String> {
 
     debug!("[yt-dlp] Executing: {:?} {:?}", program, args);
 
-    let output = cmd.output().map_err(|error| {
+    let mut child = cmd.spawn().map_err(|error| {
         error!("[yt-dlp] Failed to execute: {}", error);
         format!("Failed to execute yt-dlp: {}. Is yt-dlp installed?", error)
     })?;
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
+    let mut stdout = child.stdout.take().ok_or("The audio engine did not provide an output pipe.")?;
+    let mut stderr = child.stderr.take().ok_or("The audio engine did not provide an error pipe.")?;
+    let output_reader = std::thread::spawn(move || { let mut bytes = Vec::new(); stdout.read_to_end(&mut bytes).map(|_| bytes) });
+    let error_reader = std::thread::spawn(move || { let mut bytes = Vec::new(); stderr.read_to_end(&mut bytes).map(|_| bytes) });
+    let started = Instant::now();
+    let status = loop {
+        if let Some(status) = child.try_wait().map_err(|error| error.to_string())? { break status; }
+        if started.elapsed() >= Duration::from_secs(45) {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err("The audio source engine timed out. Retry later or choose another recording.".into());
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    };
+    let stdout = output_reader.join().map_err(|_| "Audio engine output reader failed.")?.map_err(|error| error.to_string())?;
+    let stderr = error_reader.join().map_err(|_| "Audio engine error reader failed.")?.map_err(|error| error.to_string())?;
+    if !status.success() {
+        let stderr = String::from_utf8_lossy(&stderr);
         error!("[yt-dlp] Command failed: {}", stderr);
         return Err(format!(
             "yt-dlp error: {}",
@@ -107,7 +132,7 @@ fn run_ytdlp(args: &[&str]) -> Result<String, String> {
         ));
     }
 
-    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    Ok(String::from_utf8_lossy(&stdout).into_owned())
 }
 
 fn run_ytdlp_with_client(args: &[&str], client: &str) -> Result<String, String> {
@@ -212,6 +237,8 @@ fn is_likely_music(result: &YtdlpSearchResult) -> bool {
     .any(|label| title.contains(label))
         || words.contains(&"lyrics")
         || words.contains(&"lyrical")
+        || ((title.contains("(prod ") || title.contains("(prod.") || title.contains("(produced by"))
+            && title.contains('-'))
         || channel.ends_with(" - topic")
         || channel.ends_with("vevo")
         || (title.contains(" - ")
@@ -222,13 +249,17 @@ fn is_likely_music(result: &YtdlpSearchResult) -> bool {
 pub async fn ytdlp_search(
     query: String,
     max_results: Option<u32>,
+    catalog: Option<bool>,
 ) -> Result<Vec<YtdlpSearchResult>, String> {
-    tauri::async_runtime::spawn_blocking(move || search(query, max_results))
+    tauri::async_runtime::spawn_blocking(move || search(query, max_results, catalog.unwrap_or(false)))
         .await
         .map_err(|e| e.to_string())?
 }
 
-fn search(query: String, max_results: Option<u32>) -> Result<Vec<YtdlpSearchResult>, String> {
+fn search(query: String, max_results: Option<u32>, catalog: bool) -> Result<Vec<YtdlpSearchResult>, String> {
+    if query.trim().is_empty() || query.chars().count() > 200 || query.chars().any(char::is_control) {
+        return Err("Enter an audio search between 1 and 200 characters.".into());
+    }
     let limit = max_results.unwrap_or(10).clamp(1, 50);
     debug!("[yt-dlp] Searching: {} (limit: {})", query, limit);
 
@@ -239,6 +270,7 @@ fn search(query: String, max_results: Option<u32>) -> Result<Vec<YtdlpSearchResu
         "--dump-json",
         "--flat-playlist",
         "--no-warnings",
+        "--socket-timeout", "10", "--retries", "1", "--extractor-retries", "1",
         &search_url,
     ];
     let stdout = match run_ytdlp(&args) {
@@ -273,7 +305,9 @@ fn search(query: String, max_results: Option<u32>) -> Result<Vec<YtdlpSearchResu
     let results: Vec<YtdlpSearchResult> = all_results
         .into_iter()
         .filter(|result| {
-            let is_music = is_likely_music(result);
+            // Catalog resolution applies title/artist/version/duration matching in
+            // the shared resolver; browsing heuristics must not discard its inputs.
+            let is_music = catalog || is_likely_music(result);
             if !is_music {
                 debug!(
                     "[yt-dlp] Filtered out non-music: '{}' by '{}'",
@@ -388,6 +422,10 @@ fn resolve_audio(video_id: String, format: &str) -> Result<YtdlpStreamInfo, Stri
         "No stream URL returned by yt-dlp".to_string()
     })?;
 
+    validate_stream_url(&stream_url)?;
+    if info.acodec.as_deref() == Some("none") {
+        return Err("Stream extraction returned a video without an audio track. Try another recording.".into());
+    }
     debug!(
         "[yt-dlp] Got stream for '{}', duration: {:?}s",
         info.title.as_deref().unwrap_or("Unknown"),
@@ -408,6 +446,15 @@ fn resolve_audio(video_id: String, format: &str) -> Result<YtdlpStreamInfo, Stri
     })
 }
 
+fn validate_stream_url(value: &str) -> Result<(), String> {
+    let url = reqwest::Url::parse(value).map_err(|_| "Stream extraction returned an invalid audio URL.")?;
+    if url.scheme() != "https" || !url.host_str().is_some_and(|host| host == "googlevideo.com" || host.ends_with(".googlevideo.com"))
+        || !url.username().is_empty() || url.password().is_some() || url.port_or_known_default() != Some(443) {
+        return Err("Stream extraction returned an unsupported audio URL. Refresh the streaming engine and retry.".into());
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn ytdlp_check_available() -> bool {
     find_ytdlp().is_ok()
@@ -416,6 +463,13 @@ pub fn ytdlp_check_available() -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn extracted_streams_reject_invalid_hosts_and_preserve_signed_queries() {
+        assert!(validate_stream_url("https://rr1.googlevideo.com/videoplayback?expire=123&sig=a%2Fb").is_ok());
+        for url in ["http://rr1.googlevideo.com/audio", "https://googlevideo.com.evil.test/audio", "file:///audio", "https://u:p@rr1.googlevideo.com/audio", "https://rr1.googlevideo.com:123/audio"] {
+            assert!(validate_stream_url(url).is_err());
+        }
+    }
     fn entry(title: &str, channel: &str) -> YtdlpSearchResult {
         YtdlpSearchResult {
             id: "abcdefghijk".into(),
@@ -446,6 +500,8 @@ mod tests {
     }
     #[test]
     fn recognizes_topic_vevo_and_explicit_music_labels() {
+        assert!(is_likely_music(&entry("EMIWAY- MACHAYENGE (PROD BY.TONY JAMES)", "Emiway Bantai")));
+        assert!(!is_likely_music(&entry("EMIWAY- MACHAYENGE reaction (PROD BY.TONY JAMES)", "Reaction channel")));
         assert!(is_likely_music(&entry(
             "Alaakaa Loova Lyrical (Tamil) | OM | Dhanush",
             "Divo Music and 3 more"

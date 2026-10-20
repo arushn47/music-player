@@ -11,6 +11,7 @@ export interface ListeningRecord {
   artworkUrl: string | null;
   providerId: string | null;
   sourceId: string | null;
+  metadataSourceId?: string | null;
   startedAt: number;
   updatedAt: number;
   listenedMs: number;
@@ -39,6 +40,7 @@ export function historyTrack(record: ListeningRecord): Track {
   return {
     id: record.trackId, title: record.title, artist: record.artist,
     album: record.album, artworkUrl: record.artworkUrl,
+    ...(record.metadataSourceId ? { metadataSourceId: record.metadataSourceId } : {}),
     duration: 0, fileName: record.title, missing: false,
     format: record.providerId === "youtube" ? "YouTube" : "Local",
     ...(record.providerId === "youtube" && record.sourceId ? { source: {
@@ -128,6 +130,7 @@ export class ListeningTracker {
         id: crypto.randomUUID(), trackId: track.id, title: track.title || "Unknown track",
         artist: track.artist || "Unknown artist", album: track.album || "", artworkUrl: track.artworkUrl || null,
         providerId: track.source?.providerId ?? null, sourceId: track.source?.sourceId ?? null,
+        metadataSourceId: track.metadataSourceId ?? null,
         startedAt: wall, updatedAt: wall, listenedMs: 0, days: {},
       };
     }
@@ -137,6 +140,7 @@ export class ListeningTracker {
       this.record.artist = track.artist || this.record.artist;
       this.record.album = track.album || this.record.album;
       this.record.artworkUrl = track.artworkUrl || this.record.artworkUrl;
+      this.record.metadataSourceId = track.metadataSourceId || this.record.metadataSourceId;
     }
     const elapsed = prev ? mono - prev.mono : 0;
     const progress = prev ? (state.time - prev.position) * 1000 : 0;

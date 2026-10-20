@@ -3,6 +3,7 @@ import { convertFileSrc, invoke, isTauri } from "@tauri-apps/api/core";
 import { Music2 } from "lucide-react";
 
 const pending = new Map<string, Promise<string | null>>();
+const resolved = new Map<string, string>();
 
 function displayArtworkUrl(url?: string | null) {
   if (!url) return null;
@@ -21,8 +22,16 @@ function cached(url: string) {
   if (!request) {
     if (pending.size >= 256) pending.delete(pending.keys().next().value!);
     request = invoke<string>("cached_artwork", { url })
-      .then(convertFileSrc)
-      .catch(() => null);
+      .then(path => {
+        const local = convertFileSrc(path);
+        if (resolved.size >= 256) resolved.delete(resolved.keys().next().value!);
+        resolved.set(url, local);
+        return local;
+      })
+      .catch(() => {
+        pending.delete(url);
+        return null;
+      });
     pending.set(url, request);
   }
   return request;
@@ -76,18 +85,40 @@ export function Artwork({
     };
   }, [displayUrl, visible]);
 
+  const isLocalIdentity = displayUrl?.startsWith("local:");
+  const imgSrc =
+    displayUrl && resolved.has(displayUrl) ? resolved.get(displayUrl) : local?.url === displayUrl
+      ? local.path
+      : !isLocalIdentity
+        ? displayUrl
+        : null;
+
+  const canShow =
+    Boolean(imgSrc) &&
+    failed !== displayUrl &&
+    (!isTauri() || (displayUrl && resolved.has(displayUrl)) || local?.url === displayUrl || fallback === displayUrl);
+
+  const handleError = () => {
+    if ((local?.url === displayUrl || (displayUrl && resolved.has(displayUrl))) && !isLocalIdentity && displayUrl) {
+      resolved.delete(displayUrl);
+      pending.delete(displayUrl);
+      setLocal(null);
+      setFallback(displayUrl);
+    } else {
+      setFailed(displayUrl);
+    }
+  };
+
   return (
     <span className={`cover ${className}`} ref={ref}>
-      {displayUrl &&
-      failed !== displayUrl &&
-      (!isTauri() || local?.url === displayUrl || fallback === displayUrl) ? (
+      {canShow && imgSrc ? (
         <img
-          src={local?.url === displayUrl ? local.path : displayUrl}
+          src={imgSrc}
           alt=""
           loading="lazy"
           decoding="async"
           referrerPolicy="no-referrer"
-          onError={() => setFailed(displayUrl)}
+          onError={handleError}
         />
       ) : (
         <Music2 size={20} />

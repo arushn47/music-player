@@ -56,7 +56,7 @@ describe("queue and recovery", () => {
   it("shuffle never picks the current queue item", () => {
     const s = { ...defaults(), queue, currentId: queue[0].id };
     s.settings.shuffle = true;
-    expect(advance(s, 1, false, () => 0)).toBe(queue[1].id);
+    expect(advance(s, 1)).toBe(queue[1].id);
   });
   it("sanitizes untrusted backup references and settings", () => {
     const tracks = [

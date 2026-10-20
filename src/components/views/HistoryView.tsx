@@ -1,12 +1,17 @@
 import { useMemo, useState } from "react";
 import { Heart, ListPlus, RefreshCw } from "lucide-react";
-import { Artwork, IconButton } from "../common";
+import { Artwork, IconButton, Select } from "../common";
+import { EntityArtwork } from "../common/EntityArtwork";
+import { ArtistLinks } from "../common/ArtistLinks";
+import { albumReference, artistCredits, artistReference } from "../../domain/catalog-links";
 import {
   aggregateListening, formatListening, localDay, rangeStart,
   type HistoryRange, type ListeningRecord,
 } from "../../domain/listening";
 
 export interface HistoryViewProps {
+  onNavigateArtist?: (id: string) => void;
+  onNavigateAlbum?: (id: string) => void;
   records: ListeningRecord[];
   loading: boolean;
   error: string;
@@ -37,7 +42,7 @@ function dayTitle(day: string, now: number) {
   });
 }
 
-export function HistoryView({ records, loading, error, mobile, enabled,
+export function HistoryView({ records, loading, error, mobile, enabled, onNavigateArtist, onNavigateAlbum,
   onReplay, onQueue, onFavorite, favorites, onRefresh }: HistoryViewProps) {
   const [tab, setTab] = useState<"stats" | "history">("stats");
   const [range, setRange] = useState<HistoryRange>("year");
@@ -58,9 +63,9 @@ export function HistoryView({ records, loading, error, mobile, enabled,
   const dateLabel = range === "all" ? "All recorded listening" :
     `${new Date(rangeStart(range, now)).toLocaleDateString(undefined, dateFormat)} – ${new Date(now).toLocaleDateString(undefined, dateFormat)}`;
   const panels = [
-    { title: "Top artists", rows: stats.artists },
-    { title: "Top albums", rows: stats.albums },
-    { title: "Top tracks", rows: stats.tracks },
+    { title: "Top artists", kind: "artist", rows: stats.artists },
+    { title: "Top albums", kind: "album", rows: stats.albums },
+    { title: "Top tracks", kind: "track", rows: stats.tracks },
   ];
   const monthlyMax = Math.max(1, ...stats.insights.monthly.map(month => month.ms));
 
@@ -74,7 +79,18 @@ export function HistoryView({ records, loading, error, mobile, enabled,
         <button type="button" role="tab" id="listening-stats-tab" aria-controls="listening-panel" aria-selected={tab === "stats"} onClick={() => setTab("stats")}>Your recap</button>
         <button type="button" role="tab" id="listening-history-tab" aria-controls="listening-panel" aria-selected={tab === "history"} onClick={() => setTab("history")}>Recent plays</button>
       </div>
-      <label className="listening-range"><span>{dateLabel}</span><select aria-label="Listening date range" value={range} onChange={event => { setRange(event.target.value as HistoryRange); setPage(0); }}>{ranges.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+      <div className="listening-range">
+        <span>{dateLabel}</span>
+        <Select
+          ariaLabel="Listening date range"
+          value={range}
+          onChange={(newRange) => {
+            setRange(newRange as HistoryRange);
+            setPage(0);
+          }}
+          options={ranges}
+        />
+      </div>
     </div>
     {mobile && <p className="listening-notice">Listening is currently tracked on desktop. Android background listening is not recorded yet.</p>}
     {!enabled && <p className="listening-notice">Listening activity is paused. Your existing plays are kept. Enable recording in Settings &amp; sources.</p>}
@@ -92,8 +108,14 @@ export function HistoryView({ records, loading, error, mobile, enabled,
           </dl>
         </div>
         <div className="listening-panels">{panels.map(panel => <section className="listening-ranking" key={panel.title} aria-label={panel.title}><h2>{panel.title}</h2><ol>{panel.rows.slice(0, 5).map((row, index) => <li key={row.key}>
-          <span className="listening-rank-number">{index + 1}</span><Artwork url={row.artworkUrl} className="listening-artwork" />
-          <div className="listening-rank-detail"><button type="button" onClick={() => onReplay(row.record)} title={row.title}>{row.title}</button><span title={row.subtitle}>{row.subtitle}</span><div className="listening-time-bar" aria-hidden="true"><i style={{ width: `${Math.max(1, row.ms / Math.max(1, panel.rows[0]?.ms ?? 1) * 100)}%` }} /></div></div><span className="listening-duration">{formatListening(row.ms)}</span>
+          <span className="listening-rank-number">{index + 1}</span>{panel.kind === "track"
+            ? <Artwork url={row.artworkUrl} className="listening-artwork" />
+            : <EntityArtwork kind={panel.kind as "artist" | "album"} name={row.title} artist={panel.kind === "album" ? row.subtitle : ""} trackTitle={row.record.title} />}
+          <div className="listening-rank-detail"><button type="button" disabled={(panel.kind === "album" && !albumReference(row.title, row.subtitle)) || (panel.kind === "artist" && !artistCredits(row.title).length)} onClick={() => {
+            if (panel.kind === "artist" && onNavigateArtist) onNavigateArtist(artistReference(row.title));
+            else if (panel.kind === "album" && onNavigateAlbum) { const id = albumReference(row.title, row.subtitle); if (id) onNavigateAlbum(id); }
+            else onReplay(row.record);
+          }} title={row.title}>{row.title}</button><span title={row.subtitle}><ArtistLinks artistString={row.subtitle} onNavigateArtist={onNavigateArtist} /></span><div className="listening-time-bar" aria-hidden="true"><i style={{ width: `${Math.max(1, row.ms / Math.max(1, panel.rows[0]?.ms ?? 1) * 100)}%` }} /></div></div><span className="listening-duration">{formatListening(row.ms)}</span>
         </li>)}</ol></section>)}</div>
         <div className="listening-recap-bottom">
           <section className="listening-months" aria-label="Monthly listening"><h2>Your months in music</h2><p>Time listened each month within this date range.</p><ol>{stats.insights.monthly.map(month => {
@@ -109,12 +131,33 @@ export function HistoryView({ records, loading, error, mobile, enabled,
         </> : <>
           <div className="listening-summary"><span><strong>{formatListening(stats.totalMs)}</strong> listened</span><span>{visible.length} qualified {visible.length === 1 ? "play" : "plays"}</span></div>
           <div className="listening-days">{[...groups].map(([day, entries]) => <section key={day} aria-label={dayTitle(day, now)}><h2>{dayTitle(day, now)}</h2><ul>{entries.map(record => <li className="listening-history-row" key={record.id}>
-            <Artwork url={record.artworkUrl} className="listening-artwork" /><div className="listening-history-identity"><button type="button" onClick={() => onReplay(record)} title={`Play ${record.title}`}>{record.title}</button><span title={record.artist}>{record.artist || "Unknown artist"}</span></div>
+            <Artwork url={record.artworkUrl} className="listening-artwork" /><div className="listening-history-identity"><button type="button" onClick={() => onReplay(record)} title={`Play ${record.title}`}>{record.title}</button><span title={record.artist}><ArtistLinks artistString={record.artist || "Unknown artist"} onNavigateArtist={onNavigateArtist} /></span></div>
             <span className="listening-history-duration">{formatListening(record.listenedMs)} listened</span><time dateTime={new Date(record.startedAt).toISOString()}>{new Date(record.startedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</time>
             <IconButton label={`Add ${record.title} to queue`} className="listening-queue-action" onClick={() => onQueue(record)}><ListPlus size={18} /></IconButton>
             <IconButton label={`${favorites.includes(record.trackId) ? "Unfavorite" : "Favorite"} ${record.title}`} active={favorites.includes(record.trackId)} onClick={() => onFavorite(record)}><Heart size={18} fill={favorites.includes(record.trackId) ? "currentColor" : "none"} /></IconButton>
           </li>)}</ul></section>)}</div>
-          <footer className="listening-pagination"><label>Rows per page <select aria-label="Recent plays rows per page" value={pageSize} onChange={event => { setPageSize(Number(event.target.value)); setPage(0); }}>{[10, 25, 50].map(size => <option key={size}>{size}</option>)}</select></label><span>Page {currentPage + 1} of {pages}</span><button type="button" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Previous</button><button type="button" disabled={currentPage + 1 >= pages} onClick={() => setPage(currentPage + 1)}>Next</button></footer>
+          <footer className="listening-pagination">
+            <div className="pagination-page-size">
+              <span>Rows per page</span>
+              <Select
+                ariaLabel="Recent plays rows per page"
+                value={pageSize}
+                onChange={(newSize) => {
+                  setPageSize(Number(newSize));
+                  setPage(0);
+                }}
+                options={[
+                  { value: 10, label: "10" },
+                  { value: 25, label: "25" },
+                  { value: 50, label: "50" },
+                ]}
+                placement="up"
+              />
+            </div>
+            <span>Page {currentPage + 1} of {pages}</span>
+            <button type="button" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Previous</button>
+            <button type="button" disabled={currentPage + 1 >= pages} onClick={() => setPage(currentPage + 1)}>Next</button>
+          </footer>
         </>}
       </>}
     </div>

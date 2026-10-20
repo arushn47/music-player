@@ -16,7 +16,10 @@ use uuid::Uuid;
 
 mod android;
 mod artwork_cache;
+mod components;
+mod catalog;
 mod downloads;
+mod entity_artwork;
 mod itunes_metadata;
 mod lastfm_metadata;
 mod listening;
@@ -25,6 +28,7 @@ mod lyrics_provider;
 mod private_settings;
 mod provider_http;
 mod translation;
+mod lyric_languages;
 mod ytdlp;
 
 struct Store(Mutex<Connection>);
@@ -46,6 +50,8 @@ struct Track {
     artwork_url: Option<String>,
     #[serde(default)]
     offline: bool,
+    #[serde(default)]
+    metadata_source_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -172,6 +178,7 @@ fn initialize(db: &mut Connection) -> Result<()> {
     let tx = db.transaction().map_err(err)?;
     tx.execute_batch("CREATE TABLE IF NOT EXISTS tracks (id TEXT PRIMARY KEY, path TEXT UNIQUE, metadata TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS app_state (id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS entity_artwork (identity TEXT PRIMARY KEY, metadata TEXT NOT NULL);
       ").map_err(err)?;
     listening::initialize(&tx)?;
     tx.execute_batch("PRAGMA user_version=2;").map_err(err)?;
@@ -262,6 +269,7 @@ fn inspect(path: &Path, id: String) -> Track {
         source: None,
         artwork_url: None,
         offline: false,
+        metadata_source_id: None,
     };
     if let Ok(file) = Probe::open(path).and_then(|p| p.read()) {
         track.duration = file.properties().duration().as_secs_f64();
@@ -336,14 +344,17 @@ fn plain_metadata(value: &serde_json::Value) -> String {
         .collect()
 }
 
-fn licensed_audio(mime: &str, license: &str) -> bool {
-    let known_license = license.starts_with("cc-by-")
+fn libre_license(license: &str) -> bool {
+    license.starts_with("cc-by-")
         || license.starts_with("cc-by-sa-")
         || license == "cc0"
         || license == "cc-zero"
         || license.starts_with("pd-")
-        || license == "public domain";
-    known_license
+        || license == "public domain"
+}
+
+fn licensed_audio(mime: &str, license: &str) -> bool {
+    libre_license(license)
         && matches!(
             mime,
             "audio/mpeg" | "audio/ogg" | "audio/wav" | "audio/flac"
@@ -645,6 +656,12 @@ fn save_remote(db: &Connection, mut track: Track) -> Result<Track> {
     {
         return Err("Invalid online track information.".into());
     }
+    if track.metadata_source_id.as_ref().is_some_and(|id| {
+        !id.strip_prefix("itunes:").is_some_and(|value| value.parse::<u64>().is_ok_and(|n| n > 0 && value == n.to_string()))
+        && !id.strip_prefix("saavn:").is_some_and(|value| value.len() == 8 && value.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-'))
+    }) {
+        return Err("Invalid catalogue identity.".into());
+    }
     track.missing = false;
     // Derive the source page rather than trusting renderer-provided locations.
     let source = track.source.as_mut().unwrap();
@@ -656,16 +673,17 @@ fn save_remote(db: &Connection, mut track: Track) -> Result<Track> {
     track.artwork_url = track.artwork_url.filter(|url| {
         reqwest::Url::parse(url).is_ok_and(|url| {
             url.scheme() == "https"
-                && matches!(
-                    url.host_str(),
-                    Some(
+                && url.host_str().is_some_and(|host| {
+                    matches!(
+                        host,
                         "i.ytimg.com"
                             | "i.scdn.co"
                             | "upload.wikimedia.org"
                             | "coverartarchive.org"
                             | "lastfm-img.freetls.fastly.net"
-                    )
-                )
+                            | "c.saavncdn.com"
+                    ) || host.ends_with(".mzstatic.com")
+                })
         })
     });
     let json = serde_json::to_string(&track).map_err(err)?;
@@ -1072,7 +1090,10 @@ async fn lookup_metadata(
     let partial = match lastfm_metadata::lookup(&clean_title, &clean_artist, duration).await {
         Ok(Some(metadata)) if !metadata.album.is_empty() => return Ok(Some(metadata)),
         Ok(metadata) => metadata,
-        Err(error) => { eprintln!("[Metadata] {error} Trying MusicBrainz."); None },
+        Err(error) => {
+            eprintln!("[Metadata] {error} Trying MusicBrainz.");
+            None
+        }
     };
     match itunes_metadata::lookup(&clean_title, &clean_artist, duration).await {
         Ok(Some(metadata)) => return Ok(Some(metadata)),
@@ -1358,6 +1379,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(android::init())
         .setup(|app| {
+            #[cfg(windows)]
+            app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
             // Tests may isolate data; release builds always use the normal app-private directory.
             let root = if cfg!(debug_assertions) {
                 std::env::var_os("LUMAIRE_DATA_DIR")
@@ -1394,21 +1417,30 @@ pub fn run() {
             listening::clear_listening_history,
             remove_track,
             artwork_cache::cached_artwork,
+            entity_artwork::lookup_entity_artwork,
             downloads::download_track,
             downloads::cancel_download,
             downloads::delete_download,
             translation::translate_lyrics,
+            translation::process_lyrics,
+            lyric_languages::detect_lyric_languages,
             private_settings::gemini_key_status,
             private_settings::save_gemini_key,
             private_settings::delete_gemini_key,
             pick_lyrics,
             fetch_lyrics,
             lookup_metadata,
+            catalog::search_catalog,
+            catalog::search_catalog_entities,
+            catalog::lookup_catalog,
+            catalog::lookup_artist,
+            catalog::lookup_album,
             export_library,
             import_library,
             search_commons_audio,
             resolve_commons_audio,
             ytdlp::ytdlp_check_available,
+            components::install_youtube_engine,
             ytdlp::ytdlp_search,
             ytdlp::ytdlp_get_stream,
             android::android_playback,
@@ -1633,7 +1665,7 @@ mod tests {
         let track: Track = serde_json::from_value(serde_json::json!({
             "id":"youtube:abcdefghijk", "title":"Snowman", "artist":"Sia", "album":"", "duration":173,
             "fileName":"Snowman", "missing":false, "format":"YouTube",
-            "artworkUrl":"https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg",
+            "artworkUrl":"https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg", "metadataSourceId":"itunes:123",
             "source":{"providerId":"youtube", "sourceId":"abcdefghijk", "pageUrl":"untrusted",
                 "license":"YouTube", "licenseUrl":"https://www.youtube.com/t/terms", "attribution":"Sia"}
         })).unwrap();
@@ -1649,6 +1681,16 @@ mod tests {
             assert_eq!(saved.len(), 1);
             assert!(!saved[0].missing);
             assert_eq!(saved[0].artwork_url, track.artwork_url);
+            assert_eq!(saved[0].metadata_source_id, track.metadata_source_id);
+            let mut bad_catalog = track.clone();
+            bad_catalog.metadata_source_id = Some("itunes:0".into());
+            assert!(save_remote(&db, bad_catalog).is_err());
+            let mut saavn = track.clone();
+            saavn.metadata_source_id = Some("saavn:QAbmbZ7O".into());
+            assert_eq!(save_remote(&db, saavn).unwrap().metadata_source_id.as_deref(), Some("saavn:QAbmbZ7O"));
+            let mut invalid_saavn = track.clone();
+            invalid_saavn.metadata_source_id = Some("saavn:bad/path".into());
+            assert!(save_remote(&db, invalid_saavn).is_err());
             assert_eq!(
                 saved[0].source.as_ref().unwrap().page_url,
                 "https://www.youtube.com/watch?v=abcdefghijk"

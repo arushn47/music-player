@@ -15,7 +15,38 @@ const scripts: [number, number, string][] = [
 const runs =
   /[\u0900-\u097f][\u0900-\u097f\u200c\u200d]*|[\u0980-\u09ff][\u0980-\u09ff\u200c\u200d]*|[\u0a00-\u0a7f][\u0a00-\u0a7f\u200c\u200d]*|[\u0a80-\u0aff][\u0a80-\u0aff\u200c\u200d]*|[\u0b00-\u0b7f][\u0b00-\u0b7f\u200c\u200d]*|[\u0b80-\u0bff][\u0b80-\u0bff\u200c\u200d]*|[\u0c00-\u0c7f][\u0c00-\u0c7f\u200c\u200d]*|[\u0c80-\u0cff][\u0c80-\u0cff\u200c\u200d]*|[\u0d00-\u0d7f][\u0d00-\u0d7f\u200c\u200d]*|[\u0d80-\u0dff][\u0d80-\u0dff\u200c\u200d]*/g;
 
-/** Local script transliteration, not a claim of language-specific pronunciation. */
+// Familiar spellings from TuneScript 4010e3b's offline transliterator, using
+// Sanscript for the wider script coverage and conjunct/nukta handling.
+function readableRoman(text: string, script?: string): string {
+  const spelling: Record<string, string> = {
+    ā: "aa",
+    ī: "ee",
+    ū: "oo",
+    ē: "ee",
+    ō: "oo",
+    ṛ: "ri",
+    ṝ: "ree",
+    ḷ: "l",
+    ḹ: "ll",
+    ḻ: "zh",
+    ṅ: "ng",
+    ñ: "ny",
+    ṇ: "n",
+    ṭ: "t",
+    ḍ: "d",
+    ś: "sh",
+    ṣ: "sh",
+    ṃ: "m",
+    ṁ: "m",
+    ḥ: "h",
+    ẓ: "z",
+    c: "ch",
+    ...(script === "tamil" ? { t: "th" } : {}),
+  };
+  return Array.from(text, (letter) => spelling[letter] ?? letter).join("");
+}
+
+/** Offline script fallback; Gemini supplies contextual pronunciation when configured. */
 export async function romanizeDocument(
   doc: LyricDocument,
 ): Promise<Record<string, string>> {
@@ -65,7 +96,8 @@ export async function romanizeDocument(
   }
   const result: Record<string, string> = {};
   for (const line of doc.lines) {
-    const roman = line.text.replace(runs, (run) => {
+    const spoken: string[] = [];
+    const academic = line.text.replace(runs, (run) => {
       const code = run.codePointAt(0)!;
       const script = scripts.find(
         ([first, last]) => code >= first && code <= last,
@@ -89,14 +121,18 @@ export async function romanizeDocument(
             Sanscript.schemes[`lumaire_${script}`].extra_consonants[key];
           if (token !== value) text = text.replaceAll(value, token);
         }
-      return script
+      const transliterated = script
         ? Sanscript.t(
             text,
             `lumaire_${script}`,
             script === "tamil" ? "lumaire_tamil_roman" : "iast",
           )
         : run;
+      spoken.push(readableRoman(transliterated, script));
+      return transliterated;
     });
+    let runIndex = 0;
+    const roman = line.text.replace(runs, () => spoken[runIndex++]);
     const existing = doc.romanisation[line.id];
     if (existing) {
       // Repair only an exact old generated value. Different supplied text is
@@ -108,7 +144,13 @@ export async function romanizeDocument(
         )?.[2];
         return script ? Sanscript.t(run, script, "iast") : run;
       });
-      if (existing !== legacy || roman === existing) continue;
+      if (
+        doc.romanisationSource === "gemini" ||
+        doc.romanisationSource === "imported"
+      )
+        continue;
+      if ((existing !== legacy && existing !== academic) || roman === existing)
+        continue;
     }
     if (roman !== line.text) result[line.id] = roman;
   }

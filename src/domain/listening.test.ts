@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateListening, ListeningTracker, localDay, rangeStart, type ListeningRecord } from "./listening";
+import { aggregateListening, historyTrack, ListeningTracker, localDay, rangeStart, type ListeningRecord } from "./listening";
 import type { Playback } from "../player/controller";
 import type { Track } from "./types";
 
@@ -13,6 +13,25 @@ function fixture() {
   return { tracker, writes, sample };
 }
 describe("real listening accounting", () => {
+  it("retains catalogue provenance through checkpoints and history replay without changing audio identity", () => {
+    const { tracker } = fixture();
+    const catalogued = { ...track, metadataSourceId: "itunes:123", source: {
+      providerId: "youtube", sourceId: "abcdefghijk", pageUrl: "https://www.youtube.com/watch?v=abcdefghijk",
+      license: "", licenseUrl: "", attribution: "Uploader",
+    } };
+    tracker.sample(state(0), catalogued, true, 0, wall);
+    tracker.sample(state(1), catalogued, true, 1000, wall + 1000);
+    const replay = historyTrack(JSON.parse(JSON.stringify(tracker.record)));
+    expect(replay).toMatchObject({ id: track.id, title: track.title, artist: track.artist,
+      album: track.album, metadataSourceId: "itunes:123", source: { providerId: "youtube", sourceId: "abcdefghijk" } });
+  });
+  it("keeps legacy history replayable and records catalogue provenance added during a play", () => {
+    const { tracker, sample } = fixture();
+    sample(0);
+    expect(historyTrack(tracker.record!)).not.toHaveProperty("metadataSourceId");
+    tracker.sample(state(1), { ...track, metadataSourceId: "itunes:123" }, true, 1000, wall + 1000);
+    expect(historyTrack(tracker.record!).metadataSourceId).toBe("itunes:123");
+  });
   it("ignores clicks, loading and a clock that does not advance", () => {
     const { tracker, sample, writes } = fixture();
     sample(0, 0, "loading"); sample(1, 0); sample(2, 0); tracker.flush();

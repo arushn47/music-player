@@ -1,5 +1,6 @@
 import type { Track } from "./types";
 import type { YtdlpSearchResult } from "../adapters/native";
+import { canonicalArtistCredit } from "./catalog-links";
 
 const presentationLabel =
   /^(?:(?:official\s+)?(?:music\s+)?(?:lyric(?:s)?(?:\s+video)?|audio|video|visuali[sz]er)|hd|hq|4k)$/i;
@@ -24,6 +25,7 @@ export function cleanVideoTitle(value: string): string {
       "",
     )
     .replace(/\s+/g, " ")
+    .replace(/\s*[([]prod(?:uced)?\.?\s*(?:by\b|[.:])[^)\]]*[)\]]/gi, "")
     .trim();
 }
 
@@ -32,7 +34,7 @@ export function metadataQueries(
   track: Track,
 ): { title: string; artist: string }[] {
   const queries = [{ title: track.title, artist: track.artist }];
-  const parts = cleanVideoTitle(track.fileName).split(/\s+[-–—]\s+/);
+  const parts = cleanVideoTitle(track.fileName).split(/(?:\s+[-–—]\s*|\s*[-–—]\s+)/);
   if (
     parts.length === 2 &&
     !parts.some((part) => presentationLabel.test(part))
@@ -50,14 +52,15 @@ export function metadataQueries(
 }
 
 export const needsMetadata = (track: Track) =>
-  track.source?.providerId === "youtube" &&
-  (/^unknown(?: artist)?$/i.test(track.artist.trim()) ||
-    !track.artist.trim() ||
-    !track.album.trim());
+  !track.metadataSourceId && (
+  /^unknown(?: artist)?$/i.test(track.artist.trim()) ||
+  !track.artist.trim() ||
+  !track.album.trim() ||
+  !track.artworkUrl);
 
 export function youtubeTrack(result: YtdlpSearchResult): Track {
   const title = cleanVideoTitle(result.title);
-  const parts = title.split(/\s+[-–—]\s+/);
+  const parts = title.split(/(?:\s+[-–—]\s*|\s*[-–—]\s+)/);
   let song = title,
     artist = channelArtist(result.channel);
   if (parts.length > 1) {
@@ -80,7 +83,7 @@ export function youtubeTrack(result: YtdlpSearchResult): Track {
   return {
     id: `youtube:${result.id}`,
     title: result.track?.trim() || song,
-    artist: result.artist?.trim() || artist,
+    artist: canonicalArtistCredit(result.artist?.trim() || artist),
     album: result.album?.trim() || "",
     duration: result.duration || 0,
     fileName: result.title,
@@ -98,17 +101,21 @@ export function youtubeTrack(result: YtdlpSearchResult): Track {
   };
 }
 
-/** Repair only the known presentation-label inversion; keep IDs and user data. */
+/** Repair known online credit aliases and presentation-label inversions; keep IDs and user data. */
 export function repairYoutubeTrack(track: Track): Track {
+  if (track.source?.providerId !== "youtube") return track;
+  const source = track.source;
+  const artist = canonicalArtistCredit(track.artist);
+  if (artist !== track.artist) track = { ...track, artist };
   if (
-    track.source?.providerId !== "youtube" ||
+    track.metadataSourceId ||
     !presentationLabel.test(track.title.trim())
   )
     return track;
   const parsed = youtubeTrack({
-    id: track.source.sourceId,
+    id: source.sourceId,
     title: track.fileName,
-    channel: track.source.attribution,
+    channel: source.attribution,
     duration: track.duration,
     thumbnail: track.artworkUrl || null,
   });

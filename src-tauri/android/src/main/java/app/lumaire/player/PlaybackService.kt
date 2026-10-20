@@ -23,6 +23,10 @@ class PlaybackService : MediaSessionService() {
             setWakeMode(C.WAKE_MODE_LOCAL)
         }
         session = MediaSession.Builder(this, player).build()
+        val notificationProvider = androidx.media3.session.DefaultMediaNotificationProvider(this).apply {
+            setSmallIcon(R.drawable.ic_notification)
+        }
+        setMediaNotificationProvider(notificationProvider)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {

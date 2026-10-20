@@ -104,15 +104,17 @@ if (
   failure.includes("Creation symbolic link is not allowed")
 ) {
   // The Rust build succeeded; only the CLI's symlink step failed. Copy the exact
-  // freshly compiled ARM64 debug library, then skip its duplicate Gradle task.
-  // Never use this fallback after a compiler failure or for another build flavor.
+  // freshly compiled ARM64 library, then skip its duplicate Gradle task.
+  // Never use this fallback after a compiler failure or for another target.
   if (
-    !args.includes("--debug") ||
+    (!args.includes("--debug") && !args.includes("--apk")) ||
     args[args.indexOf("--target") + 1] !== "aarch64"
   )
     process.exit(status ?? 1);
+  const profile = args.includes("--debug") ? "debug" : "release";
+  const flavor = profile === "debug" ? "Debug" : "Release";
   const source = path.resolve(
-    "src-tauri/target/aarch64-linux-android/debug/liblumaire_lib.so",
+    `src-tauri/target/aarch64-linux-android/${profile}/liblumaire_lib.so`,
   );
   const destination = path.resolve(
     "src-tauri/gen/android/app/src/main/jniLibs/arm64-v8a/liblumaire_lib.so",
@@ -129,9 +131,9 @@ if (
       "-classpath",
       "gradle/wrapper/gradle-wrapper.jar",
       "org.gradle.wrapper.GradleWrapperMain",
-      ":app:assembleArm64Debug",
+      `:app:assembleArm64${flavor}`,
       "-x",
-      ":app:rustBuildArm64Debug",
+      `:app:rustBuildArm64${flavor}`,
       "--console=plain",
       "-Dorg.gradle.internal.http.socketTimeout=60000",
       "-Dorg.gradle.internal.http.connectionTimeout=30000",

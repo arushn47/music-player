@@ -1,3 +1,4 @@
+import { ArtistLinks } from "../common/ArtistLinks";
 import React, { useRef, useState } from "react";
 import {
   Shuffle,
@@ -12,6 +13,7 @@ import {
   VolumeX,
   Heart,
   ListMusic,
+  Loader2,
 } from "lucide-react";
 import { Artwork } from "../common/Artwork";
 import { IconButton } from "../common/IconButton";
@@ -19,6 +21,7 @@ import type { Track, Session, Preferences } from "../../domain/types";
 import type { Playback } from "../../player/controller";
 
 export interface PlayerBarProps {
+  onNavigateArtist?: (id: string) => void;
   track?: Track | null;
   tracks: Track[];
   playback: Playback;
@@ -46,6 +49,7 @@ const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 
 export function PlayerBar({
+  onNavigateArtist,
   track,
   tracks,
   playback,
@@ -74,17 +78,20 @@ export function PlayerBar({
   );
 
   const titleLimit = mobile ? 22 : 28;
-  const rawTitle = track?.title ?? "Room for a little music";
+  const rawTitle =
+    (track?.title && track.title.trim()) ||
+    (track?.fileName && track.fileName.trim()) ||
+    "Room for a little music";
   const isTitleLong = rawTitle.length > titleLimit;
   const displayTitle = isTitleLong
     ? `${rawTitle.slice(0, titleLimit).trimEnd()}...`
     : rawTitle;
 
-  const rawArtist = track?.artist ?? "Choose a track to begin";
-  const isArtistLong = rawArtist.length > 25;
-  const displayArtist = isArtistLong
-    ? `${rawArtist.slice(0, 25).trimEnd()}...`
-    : rawArtist;
+  const rawArtist =
+    (track?.artist && track.artist.trim()) ||
+    (track?.source?.attribution && track.source.attribution.trim()) ||
+    "Choose a track to begin";
+
 
   return (
     <footer className="transport" aria-label="Playback controls">
@@ -141,7 +148,7 @@ export function PlayerBar({
           <div className="track-subtitle-row">
             <span className="now-playing-artist-wrap">
               <small dir="auto" className="now-playing-artist">
-                {displayArtist}
+                {track ? <ArtistLinks artistString={rawArtist} onNavigateArtist={onNavigateArtist} /> : rawArtist}
               </small>
               {Boolean(track?.artist) && (
                 <span className="artist-hover-tooltip" role="tooltip">
@@ -173,7 +180,7 @@ export function PlayerBar({
           </IconButton>
         )}
 
-        {track && (
+        {track && track.format !== "catalog" && (
           <details className="track-menu current-track-menu">
             <summary aria-label="Current song actions">•••</summary>
             <div className="menu-popover">
@@ -237,14 +244,14 @@ export function PlayerBar({
           <button
             className="play-button"
             aria-label={
-              playback.status === "playing" || playback.status === "buffering"
+              playback.status === "loading" ? "Loading song" : playback.status === "playing" || playback.status === "buffering"
                 ? "Pause"
                 : "Play"
             }
             disabled={(!track && !tracks.length) || playback.status === "loading"}
             onClick={onTogglePlay}
           >
-            {playback.status === "playing" || playback.status === "buffering" ? (
+            {playback.status === "loading" ? <Loader2 size={21} className="spin" aria-hidden="true" /> : playback.status === "playing" || playback.status === "buffering" ? (
               <Pause size={21} fill="currentColor" />
             ) : (
               <Play size={21} fill="currentColor" />

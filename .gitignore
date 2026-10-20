@@ -22,10 +22,23 @@ test-results/
 .DS_Store
 Thumbs.db
 
-docs/
+docs/*
+!docs/windows-updates.md
+!docs/windows-release-publishing.md
+!docs/CURRENT-STATUS.md
+!docs/development-history.md
+
+# Distribute binaries as GitHub Release assets, not source commits.
+/release/*
+!/release/README.md
 
 # Generated Android tool schemas (the Android project sources remain tracked)
 /src-tauri/gen/schemas/android-schema.json
 /src-tauri/gen/schemas/mobile-schema.json
 
 experiments/
+
+# Shareable builds (never include signing keys or private app data).
+releases/
+
+.kiro/
