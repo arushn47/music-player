@@ -14,9 +14,10 @@ test('release config preserves ordinary builds and rejects wrong tags/versions',
 });
 test('manifest must use the actual signed v2 EXE and complete matching signature', () => {
   const filename = 'Lumaire_1.0.4_x64-setup.exe';
-  const manifest = { version: '1.0.4', pub_date: '2026-10-20T00:00:00Z', platforms: { 'windows-x86_64': { signature: 'signature-content', url: `https://github.com/arushn47/music-player/releases/download/v1.0.4/${filename}` } } };
+  const manifest = { notes: 'User-visible changes', version: '1.0.4', pub_date: '2026-10-20T00:00:00Z', platforms: { 'windows-x86_64': { signature: 'signature-content', url: `https://github.com/arushn47/music-player/releases/download/v1.0.4/${filename}` } } };
   const validate = (value) => validateManifest(value, '1.0.4', 'signature-content\n', 'v1.0.4', filename);
   validate(manifest);
+  assert.throws(() => validate({ ...manifest, notes: "" }));
   assert.throws(() => validate({ ...manifest, version: '1.0.3' }));
   for (const change of [{ url: manifest.platforms['windows-x86_64'].url.replace('.exe', '.nsis.zip') }, { signature: 'file.sig' }]) {
     assert.throws(() => validate({ ...manifest, platforms: { 'windows-x86_64': { ...manifest.platforms['windows-x86_64'], ...change } } }));

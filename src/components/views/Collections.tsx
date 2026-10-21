@@ -1,7 +1,8 @@
 import React from "react";
-import { Download, FolderOpen, Globe2, ListMusic } from "lucide-react";
+import { Download, FolderOpen, ListMusic } from "lucide-react";
 import type { Collection } from "../../domain/collections";
 import { Artwork } from "../common/Artwork";
+import { DownloadedBadge } from "../common/DownloadedBadge";
 
 export function Collections({
   collections,
@@ -61,8 +62,6 @@ export function Collections({
                   <div className="collection-art-placeholder">
                     {collection.id === "collection:local" ? (
                       <FolderOpen size={36} strokeWidth={1.5} />
-                    ) : collection.id === "collection:online" ? (
-                      <Globe2 size={36} strokeWidth={1.5} />
                     ) : collection.id === "collection:downloads" ? (
                       <Download size={36} strokeWidth={1.5} />
                     ) : (
@@ -74,7 +73,7 @@ export function Collections({
             </div>
             <div className="collection-info">
               <div className="collection-title-row">
-                <span className="collection-title">{collection.name}</span>
+                <span className="collection-title"><span className="collection-name">{collection.name}</span>{collection.tracks.length > 0 && collection.tracks.length === (collection.playlist?.items.length ?? collection.tracks.length) && collection.tracks.every(track => track.offline && !track.missing) && <DownloadedBadge track={collection.tracks[0]} />}</span>
                 <span className="collection-track-count">
                   {collection.tracks.length}{" "}
                   {collection.tracks.length === 1 ? "track" : "tracks"}

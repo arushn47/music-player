@@ -30,6 +30,17 @@ class FakeAudio extends EventTarget {
 beforeEach(() => vi.stubGlobal("Audio", FakeAudio));
 afterEach(() => vi.unstubAllGlobals());
 describe("single-owner playback lifecycle", () => {
+  it("upgrades a paused preload when Play album is requested before metadata loads", async () => {
+    const resolve = vi.fn(async () => "asset:one");
+    const controller = new PlaybackController(resolve);
+    await controller.load("one", false);
+    await controller.load("one", true);
+    (controller.audio as unknown as FakeAudio).loaded();
+    expect(controller.state.autoplay).toBe(true);
+    expect(controller.state.status).toBe("playing");
+    expect(resolve).toHaveBeenCalledTimes(2);
+    controller.stop();
+  });
   it("stops the old song immediately while a catalog selection resolves and ignores stale failures", async () => {
     const controller = new PlaybackController(async () => "asset:one");
     await controller.load("one", true);

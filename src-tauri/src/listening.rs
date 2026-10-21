@@ -131,6 +131,7 @@ fn safe_artwork(value: &str, track_id: &str) -> bool {
             matches!(
                 host,
                 "i.ytimg.com"
+                    | "c.saavncdn.com"
                     | "i.scdn.co"
                     | "upload.wikimedia.org"
                     | "coverartarchive.org"
@@ -445,6 +446,14 @@ mod tests {
     fn rejects_invalid_ids_times_dates_and_identity_changes_and_redacts_artwork() {
         let mut db = db();
         let mut row = record(12_000);
+        row.artwork_url = Some("https://c.saavncdn.com/517/cover.jpg".into());
+        checkpoint(&mut db, 0, row.clone()).unwrap();
+        assert_eq!(read(&db).unwrap().records[0].artwork_url.as_deref(), row.artwork_url.as_deref());
+        for url in ["https://c.saavncdn.com.evil.test/cover.jpg", "https://c.saavncdn.com/cover.jpg?token=secret"] {
+            row.artwork_url = Some(url.into());
+            checkpoint(&mut db, 0, row.clone()).unwrap();
+            assert!(read(&db).unwrap().records[0].artwork_url.is_none());
+        }
         row.artwork_url = Some("https://googlevideo.com/audio?token=secret".into());
         checkpoint(&mut db, 0, row.clone()).unwrap();
         assert!(read(&db).unwrap().records[0].artwork_url.is_none());

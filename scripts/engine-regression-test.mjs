@@ -51,6 +51,13 @@ async function launch() {
         missing: false,
       }));
       const native = async (command, args = {}) => {
+        if (command === "discover_albums") {
+          window.__qaHomeCalls = (window.__qaHomeCalls || 0) + 1;
+          if (window.__qaHomeOffline) throw Error("Offline fixture");
+          return [{ id: "saavn:album:42", title: "Fixture album", artist: "Fixture artist", artists: [] }];
+        }
+        if (command === "search_catalog") return [];
+        if (command === "search_catalog_entities") return { artists: [], albums: [] };
         if (command === "load_library")
           return {
             tracks,
@@ -73,7 +80,7 @@ async function launch() {
           return;
         }
         if (command === "get_listening_history")
-          return { generation: 0, records: [] };
+          return { generation: 0, records: JSON.parse(localStorage.getItem("qa-recent-records") || "[]") };
         if (command === "checkpoint_listening") return true;
         if (command.startsWith("plugin:")) return;
         throw new Error(`Unexpected native command ${command}`);
@@ -124,6 +131,7 @@ async function launch() {
     { audio },
   );
   await page.goto("http://127.0.0.1:1420");
+  await page.getByRole("button", { name: "Open library", exact: true }).click();
   await page
     .getByRole("heading", { name: "Your library.", exact: true })
     .waitFor();
@@ -206,6 +214,7 @@ try {
     },
   });
   await page.reload();
+  await page.getByRole("button", { name: "Open library", exact: true }).click();
   await page
     .getByRole("heading", { name: "Your library.", exact: true })
     .waitFor();
@@ -276,6 +285,7 @@ try {
         assert.equal((await session()).currentId, before.currentId);
       }
       await page.reload();
+      await page.getByRole("button", { name: "Open library", exact: true }).click();
       await page
         .getByRole("heading", { name: "Your library.", exact: true })
         .waitFor();
@@ -500,18 +510,18 @@ try {
     await page.getByRole("button", { name: "Settings & sources", exact: true }).click();
     await page.getByRole("navigation", { name: "Settings categories" }).getByRole("button", { name: "Online Sources", exact: true }).click();
     await page.evaluate(() => { window.__qaEngineInstallFail = true; });
-    await page.getByRole("button", { name: "Install engine", exact: true }).click();
-    assert(await page.getByRole("button", { name: "Installing…", exact: true }).isDisabled());
+    await page.getByRole("button", { name: "Enable online playback", exact: true }).click();
+    assert(await page.getByRole("button", { name: "Setting up…", exact: true }).isDisabled());
     await page.getByRole("alert").filter({ hasText: "Fixture: download unavailable" }).waitFor();
     await page.evaluate(() => { window.__qaEngineInstallFail = false; });
-    await page.getByRole("button", { name: "Retry installation", exact: true }).click();
+    await page.getByRole("button", { name: "Retry setup", exact: true }).click();
     await page.locator('nav[aria-label="Main navigation"]').getByRole("button", { name: /^Library/ }).click();
     await page.getByRole("button", { name: "Settings & sources", exact: true }).click();
     await page.getByRole("navigation", { name: "Settings categories" }).getByRole("button", { name: "Online Sources", exact: true }).click();
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
     await page.getByRole("button", { name: "Installed", exact: true }).waitFor();
     assert(await page.getByRole("button", { name: "Installed", exact: true }).isDisabled());
-    assert.equal(await page.getByRole("button", { name: "Install engine", exact: true }).count(), 0);
+    assert.equal(await page.getByRole("button", { name: "Enable online playback", exact: true }).count(), 0);
     assert.equal(await page.evaluate(() => window.__qaInstallCalls), 2);
     assert.equal(await page.getByRole("alert").count(), 0);
     await page.reload();
@@ -521,8 +531,49 @@ try {
     assert(await page.getByRole("button", { name: "Installed", exact: true }).isDisabled());
     await page.screenshot({ path: path.join(results, "engine-installed.png") });
     await page.evaluate(() => { localStorage.removeItem("qa-engine"); window.dispatchEvent(new Event("focus")); });
-    await page.getByRole("button", { name: "Install engine", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Enable online playback", exact: true }).waitFor();
     assert.equal(await page.evaluate(() => window.__qaInstallCalls || 0), 0);
+  });
+  await check("Discover remembers searches and languages, reuses cache offline and clears searches when history is disabled", async () => {
+    await page.evaluate(() => {
+      const record = { id: "recent", trackId: "local-0", title: "Morning light", artist: "Lumaire", album: "Original fixtures", artworkUrl: null, providerId: null, sourceId: null, startedAt: Date.now(), updatedAt: Date.now(), listenedMs: 12000, days: {} };
+      localStorage.setItem("qa-recent-records", JSON.stringify([record, { ...record, id: "older", title: "Older duplicate", startedAt: 1 }, { ...record, id: "missing", trackId: "missing", title: "Missing local file" }]));
+    });
+    await page.reload();
+    const recent = page.getByRole("region", { name: "Recently played", exact: true });
+    await recent.waitFor();
+    assert.equal(await recent.getByRole("button").count(), 2);
+    assert(await recent.getByRole("button", { name: "Missing local file Lumaire", exact: true }).isDisabled());
+    await recent.getByRole("button", { name: "Morning light Lumaire", exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('[data-testid="playback-state"]')?.textContent === "playing");
+    await page.getByRole("button", { name: "Discovery language", exact: true }).click();
+    await page.getByRole("option", { name: "Tamil", exact: true }).click();
+    await page.getByRole("button", { name: "Open album Fixture album", exact: true }).waitFor();
+    const search = page.getByRole("textbox", { name: "Search music", exact: true });
+    await search.fill("Fixture search"); await search.press("Enter");
+    await page.getByRole("region", { name: "Artists", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Clear search", exact: true }).click();
+    await page.getByRole("region", { name: "Recent searches", exact: true }).getByRole("button", { name: "Fixture search", exact: true }).click();
+    await page.getByRole("region", { name: "Artists", exact: true }).waitFor();
+    await page.getByRole("button", { name: "Clear search", exact: true }).click();
+    await page.evaluate(() => { window.__qaHomeOffline = true; });
+    await page.getByRole("button", { name: "Refresh discovery albums", exact: true }).click();
+    await page.getByRole("status").filter({ hasText: "Showing saved catalogue results" }).waitFor();
+    assert(await search.isEnabled());
+    assert(await page.getByRole("button", { name: "Open album Fixture album", exact: true }).isEnabled());
+    await page.screenshot({ path: path.join(results, "discover-offline.png") });
+    await page.getByRole("button", { name: "Clear recent searches", exact: true }).click();
+    assert.equal(await page.getByRole("region", { name: "Recent searches", exact: true }).count(), 0);
+    await page.evaluate(() => { window.__qaFreeze = true; const state = window.__qaSession; state.settings.historyEnabled = false; localStorage.setItem("qa-session", JSON.stringify(state)); localStorage.setItem("lumaire-discovery", JSON.stringify({ language: "tamil", searches: ["Hidden query"] })); });
+    await page.reload();
+    await page.getByRole("heading", { name: "Discover new music.", exact: true }).waitFor();
+    assert.equal(await page.getByRole("region", { name: "Recent searches", exact: true }).count(), 0);
+    assert.equal(await page.getByRole("region", { name: "Recently played", exact: true }).count(), 0);
+    assert.equal(await page.getByRole("button", { name: "Discovery language", exact: true }).innerText(), "Tamil");
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert(await page.getByRole("textbox", { name: "Search music", exact: true }).isVisible());
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    await page.screenshot({ path: path.join(results, "discover-narrow.png") });
   });
   assert.deepEqual(report.errors, []);
 } catch (error) {

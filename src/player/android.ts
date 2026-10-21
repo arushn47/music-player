@@ -117,6 +117,20 @@ export class AndroidPlaybackController {
       }),
     });
   }
+  beginLoading(id: string, autoplay = false, position = 0): string {
+    ++this.generation;
+    this.failedLoad = false;
+    this.ended = false;
+    const playbackId = crypto.randomUUID();
+    this.update({ status: "loading", trackId: id, playbackId, autoplay, time: position, duration: 0, error: null });
+    void invoke("android_playback", { action: "stop" }).catch(() => {});
+    return playbackId;
+  }
+  failLoading(playbackId: string, error: string, autoplay = false) {
+    if (this.state.playbackId !== playbackId) return;
+    this.failedLoad = true;
+    this.update({ ...this.state, status: "error", error, autoplay });
+  }
   play() {
     return this.command("play");
   }

@@ -7,7 +7,10 @@ import {
   playCollection,
   playbackQueue,
   setShuffle,
+  isQueuedCatalog,
+  resolveQueueEntry,
 } from "./queue";
+import { catalogQueueTrack } from "./catalog-track";
 import { restoreSession } from "./session";
 
 const tracks: Track[] = ["a", "b", "a", "c"].map((id) => ({
@@ -21,6 +24,28 @@ const tracks: Track[] = ["a", "b", "a", "c"].map((id) => ({
   format: "WAV",
 }));
 describe("collection playback sequence", () => {
+  it("keeps an entire unresolved album across restore and source resolution without changing occurrence order", () => {
+    const album = [1, 2, 3].map(id => catalogQueueTrack({ id: `itunes:${id}`, title: `Song ${id}`, artist: "Artist", artists: [], album: "Album", duration: 100 }));
+    const session = playCollection(defaults(), album, 0);
+    const restored = restoreSession(session, []);
+    expect(restored.queue.map(entry => entry.trackId)).toEqual(album.map(track => track.id));
+    expect(Object.keys(restored.queueTracks)).toHaveLength(3);
+    const source = { ...album[0], id: "youtube:abcdefghijk", format: "YouTube", source: { providerId: "youtube", sourceId: "abcdefghijk", pageUrl: "https://www.youtube.com/watch?v=abcdefghijk", license: "", licenseUrl: "", attribution: "Artist" } };
+    const resolved = resolveQueueEntry(restored, restored.currentId!, album[0].id, source);
+    expect(resolved.queue.map(entry => entry.id)).toEqual(restored.queue.map(entry => entry.id));
+    expect(resolved.queue.map(entry => entry.trackId)).toEqual([source.id, album[1].id, album[2].id]);
+    expect(advance(resolved, 1, true)).toBe(resolved.queue[1].id);
+    expect(restoreSession(resolved, []).queue).toEqual(resolved.queue);
+    expect(resolveQueueEntry({ ...restored, currentId: restored.queue[1].id }, restored.currentId!, album[0].id, source).queue).toBe(restored.queue);
+    expect(isQueuedCatalog({ ...album[0], id: "../../local.wav" })).toBe(false);
+  });
+  it("round-trips favorite album metadata and rejects untrusted IDs without disturbing old sessions", () => {
+    const album = { id: "saavn:album:42", title: "Album", artist: "Artist", artworkUrl: "https://c.saavncdn.com/cover.jpg" };
+    const restored = restoreSession({ ...defaults(), favoriteAlbums: [album, album, { ...album, id: "https://evil.test" }] }, []);
+    expect(restored.favoriteAlbums).toHaveLength(1);
+    expect(restored.favoriteAlbums[0].id).toBe(album.id);
+    expect(restoreSession({}, []).favoriteAlbums).toEqual([]);
+  });
   it("skips failed occurrences without repeat-one loops and stops when every item failed", () => {
     const s = playCollection(defaults(), tracks, 0);
     s.settings.repeat = "one";

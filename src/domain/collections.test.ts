@@ -27,7 +27,7 @@ const remote: Track = {
   },
 };
 describe("persistent collection membership and removal", () => {
-  it("derives local, online and downloaded collections while preserving existing playlists", () => {
+  it("shows local and downloaded collections without duplicating saved online playlists", () => {
     const downloaded = { ...remote, id: "wikimedia-commons:42", offline: true };
     const playlist = {
       id: "mine",
@@ -40,14 +40,14 @@ describe("persistent collection membership and removal", () => {
     );
     expect(collections.map((collection) => collection.name)).toEqual([
       "Local",
-      "Saved online",
       "Downloads",
       "My favorites",
     ]);
     expect(collections[0].tracks).toEqual([local]);
-    expect(collections[1].tracks).toEqual([remote]);
-    expect(collections[2].tracks).toEqual([downloaded]);
-    expect(collections[3].playlist).toBe(playlist);
+    expect(collections[1].tracks).toEqual([downloaded]);
+    expect(collections[2].playlist).toBe(playlist);
+    expect(collections[2].tracks).toEqual([local, remote]);
+    expect(remote.source).toBeDefined();
   });
   it("removes every reference and advances a removed current item without deleting another song", () => {
     const queue = [item("a"), item("a"), item("b")];

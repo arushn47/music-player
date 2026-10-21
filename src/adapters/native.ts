@@ -1,5 +1,6 @@
-import { convertFileSrc, invoke, isTauri } from "@tauri-apps/api/core";
-import type { Session, Snapshot, Track } from "../domain/types";
+import type { DownloadProgress } from "../domain/downloads";
+import { Channel, convertFileSrc, invoke, isTauri } from "@tauri-apps/api/core";
+import type { EngineInstallProgress, Session, Snapshot, Track } from "../domain/types";
 
 export interface RemoteTrack {
   id: string;
@@ -105,7 +106,7 @@ export interface LibraryPort {
   load(): Promise<Snapshot>;
   save(session: Session): Promise<void>;
   remove(id: string, session: Session): Promise<Snapshot>;
-  download(id: string): Promise<Track>;
+  download(id: string, onProgress?: (progress: DownloadProgress) => void): Promise<Track>;
   cancelDownload(id: string): Promise<void>;
   deleteDownload(id: string): Promise<Track>;
   importAudio(
@@ -120,11 +121,14 @@ export interface LibraryPort {
   searchCommons(query: string): Promise<RemoteTrack[]>;
   resolveCommons(sourceId: string): Promise<ResolvedMedia>;
   ytdlpCheckAvailable(): Promise<boolean>;
-  ytdlpInstallEngine(): Promise<void>;
+  ytdlpInstallEngine(onProgress?: (progress: EngineInstallProgress) => void): Promise<void>;
+  ytdlpCancelInstall(): Promise<void>;
+  discoverAlbums(language: string): Promise<CatalogAlbum[]>;
   ytdlpSearch(query: string, maxResults?: number, catalog?: boolean): Promise<YtdlpSearchResult[]>;
   ytdlpGetStream(videoId: string): Promise<YtdlpStreamInfo>;
   searchCatalog(query: string, limit?: number): Promise<CatalogTrack[]>;
   searchCatalogEntities(query: string): Promise<CatalogEntities>;
+  recommendCatalog(id: string): Promise<CatalogTrack[]>;
   lookupCatalog(id: string): Promise<CatalogTrack>;
   lookupArtist(id: string): Promise<{ info: CatalogArtist; topTracks: CatalogTrack[]; albums: CatalogAlbum[]; similarArtists: CatalogArtist[] }>;
   lookupAlbum(id: string): Promise<{ info: CatalogAlbum; tracks: CatalogTrack[]; partial: boolean }>;
@@ -172,7 +176,12 @@ export const library: LibraryPort = desktop
       load: () => invoke("load_library"),
       save: (session) => invoke("save_session", { session }),
       remove: (id, session) => invoke("remove_track", { id, session }),
-      download: (id) => invoke("download_track", { id }),
+      download: (id, onProgress) => {
+        if (!onProgress) return invoke("download_track", { id });
+        const channel = new Channel<DownloadProgress>();
+        channel.onmessage = onProgress;
+        return invoke("download_track", { id, onProgress: channel });
+      },
       cancelDownload: (id) => invoke("cancel_download", { id }),
       deleteDownload: (id) =>
         invoke("delete_download", { id, confirmed: true }),
@@ -191,9 +200,14 @@ export const library: LibraryPort = desktop
       ytdlpCheckAvailable: () => mobile
         ? invoke<{ available: boolean }>("android_source", { operation: "probe" }).then((r) => r.available)
         : invoke("ytdlp_check_available"),
-      ytdlpInstallEngine: () => mobile
-        ? Promise.reject(new Error("Android already includes its streaming engine."))
-        : invoke("install_youtube_engine"),
+      ytdlpInstallEngine: (onProgress) => {
+        if (mobile) return Promise.reject(new Error("Android already includes its streaming engine."));
+        const channel = new Channel<EngineInstallProgress>();
+        channel.onmessage = progress => onProgress?.(progress);
+        return invoke("install_youtube_engine", { onProgress: channel });
+      },
+      ytdlpCancelInstall: () => invoke("cancel_youtube_engine_install"),
+      discoverAlbums: (language) => invoke("discover_albums", { language }),
       ytdlpSearch: (query, maxResults, catalog = false) =>
         mobile
           ? invoke<{ results: YtdlpSearchResult[] }>("android_source", { operation: "search", query, maxResults }).then((r) => r.results)
@@ -203,6 +217,7 @@ export const library: LibraryPort = desktop
         : invoke("ytdlp_get_stream", { videoId }),
       lookupMetadata,
       searchCatalog: (query, limit) => invoke("search_catalog", { query, limit }),
+      recommendCatalog: (id) => invoke("recommend_catalog", { id }),
       lookupCatalog: (id) => invoke("lookup_catalog", { id }),
       lookupArtist,
       searchCatalogEntities: (query) => invoke("search_catalog_entities", { query }),
@@ -228,10 +243,13 @@ export const library: LibraryPort = desktop
       resolveCommons: needDesktop,
       ytdlpCheckAvailable: async () => false,
       ytdlpInstallEngine: needDesktop,
+      ytdlpCancelInstall: needDesktop,
+      discoverAlbums: needDesktop,
       ytdlpSearch: async () => [],
       ytdlpGetStream: needDesktop,
       lookupMetadata: async () => null,
       searchCatalog: async () => [],
+      recommendCatalog: needDesktop,
       lookupCatalog: needDesktop,
       lookupArtist: needDesktop,
       searchCatalogEntities: needDesktop,

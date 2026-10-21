@@ -23,3 +23,10 @@ export function sameLyricText(left: string, right: string): boolean {
   const normalize = (text: string) => text.normalize("NFKC").toLowerCase().replace(/[\p{P}\p{S}]/gu, "").replace(/\s+/g, " ").trim();
   return normalize(left) === normalize(right);
 }
+
+export function englishLyrics(doc: LyricDocument): boolean {
+  if (doc.englishOnly) return true;
+  if (!doc.languageSource) return false;
+  const sung = doc.lines.filter(line => /\p{L}/u.test(line.text) && !/^\s*\[.*\]\s*$/.test(line.text));
+  return sung.length > 0 && sung.every(line => englishLine(doc, line.id));
+}

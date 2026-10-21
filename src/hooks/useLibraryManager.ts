@@ -1,3 +1,4 @@
+import { type DownloadProgress } from "../domain/downloads";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushListening } from "../player/listening-service";
 import { PlaybackController } from "../player/controller";
@@ -15,9 +16,10 @@ import {
   repairYoutubeTrack,
 } from "../domain/online-track";
 import { canonicalArtistNames, canonicalTrack, resolveCatalogSource } from "../domain/catalog-track";
-import { enqueue, setShuffle } from "../domain/queue";
+import { matchSource } from "../domain/source-matching";
+import { enqueue, setShuffle, isQueuedCatalog } from "../domain/queue";
 import { restoreSession } from "../domain/session";
-import { defaults, item, type EngineInstallState, type Session, type Track } from "../domain/types";
+import { defaults, item, type EngineInstallProgress, type EngineInstallState, type Session, type Track } from "../domain/types";
 import {
   player,
   offlineTracks,
@@ -43,6 +45,8 @@ export function useLibraryManager() {
   const [ytdlpAvailable, setYtdlpAvailable] = useState(false);
   const [engineState, setEngineState] = useState<EngineInstallState>("checking");
   const [engineError, setEngineError] = useState("");
+  const [engineProgress, setEngineProgress] = useState<EngineInstallProgress | null>(null);
+  const [engineCancelling, setEngineCancelling] = useState(false);
   const engineInstallPromise = useRef<Promise<void> | null>(null);
   const engineCheckGeneration = useRef(0);
 
@@ -212,7 +216,7 @@ export function useLibraryManager() {
         const selected = restored.queue.find(
           (i) => i.id === restored.currentId,
         );
-        if (selected)
+        if (selected && !isQueuedCatalog(restored.queueTracks[selected.trackId] || snapshot.tracks.find(t => t.id === selected.trackId)!))
           void player.load(selected.trackId, false, restored.position);
       })
       .catch((e) =>
@@ -370,7 +374,8 @@ export function useLibraryManager() {
       }));
     });
 
-  async function saveOnline(t: Track) {
+  async function saveOnline(t: Track): Promise<Track> {
+    if (isQueuedCatalog(t)) return saveOnline(await resolveDiscovery(await library.lookupCatalog(t.id)));
     const saved = await library.saveOnline(t);
     tracksRef.current = [
       ...tracksRef.current.filter((track) => track.id !== saved.id),
@@ -395,12 +400,24 @@ export function useLibraryManager() {
     });
   }
 
-  async function downloadTrack(t: Track) {
+  async function downloadTrack(t: Track, signal?: AbortSignal, onProgress?: (progress: DownloadProgress) => void): Promise<boolean> {
+    if (signal?.aborted) return false;
+    const cancel = () => { void library.cancelDownload(t.id).catch(err => setError(formatError(err))); };
     setDownloads((prev) => ({ ...prev, [t.id]: "downloading" }));
     try {
+      if (isQueuedCatalog(t)) {
+        const success = await downloadTrack(await resolveDiscovery(await library.lookupCatalog(t.id)), signal, onProgress);
+        setDownloads(previous => ({ ...previous, [t.id]: success ? "complete" : "Audio source unavailable; retry" }));
+        return success;
+      }
       if (t.metadataSourceId || !tracksRef.current.some((track) => track.id === t.id))
         await saveOnline(t);
-      const saved = await library.download(t.id);
+      if (signal?.aborted) { setDownloads(prev => ({ ...prev, [t.id]: "Cancelled" })); return false; }
+      signal?.addEventListener("abort", cancel, { once: true });
+      const saved = await library.download(t.id, progress => {
+        setDownloads(prev => ({ ...prev, [t.id]: "downloading" }));
+        onProgress?.(progress);
+      });
       tracksRef.current = [
         ...tracksRef.current.filter((track) => track.id !== saved.id),
         saved,
@@ -408,9 +425,13 @@ export function useLibraryManager() {
       setTracks(tracksRef.current);
       setDownloads((prev) => ({ ...prev, [t.id]: "complete" }));
       notify(`${saved.title} is available offline`);
+      return true;
     } catch (err) {
-      setDownloads((prev) => ({ ...prev, [t.id]: String(err) }));
-      setError(String(err));
+      setDownloads((prev) => ({ ...prev, [t.id]: signal?.aborted ? "Cancelled" : String(err) }));
+      if (!signal?.aborted) setError(String(err));
+      return false;
+    } finally {
+      signal?.removeEventListener("abort", cancel);
     }
   }
 
@@ -512,6 +533,20 @@ export function useLibraryManager() {
     newName?: string,
   ) {
     await action(async () => {
+      if (playlistId === "favorites") {
+        const saved = t.metadataSourceId
+          ? await saveOnline(t)
+          : tracksRef.current.find((entry) => entry.id === t.id) ||
+            await saveOnline(sessionRef.current.queueTracks[t.id] || t);
+        if (!sessionRef.current.favorites.includes(saved.id)) {
+          update((s) => ({
+            ...s,
+            favorites: [...s.favorites, saved.id],
+          }));
+        }
+        notify(`Added ${saved.title} to favorites`);
+        return;
+      }
       if (
         !newName &&
         !sessionRef.current.playlists.some((p) => p.id === playlistId)
@@ -538,11 +573,23 @@ export function useLibraryManager() {
     });
   }
 
-  async function resolveDiscovery(result: CatalogTrack): Promise<Track> {
+  async function resolveDiscovery(result: CatalogTrack, refresh = false): Promise<Track> {
     const known = [...tracksRef.current, ...Object.values(sessionRef.current.queueTracks)]
-      .find(t => t.metadataSourceId === result.id);
-    if (known) return { ...known, title: result.title, artist: known.artist || result.artist,
-      album: result.album, duration: result.duration, artworkUrl: result.artworkUrl };
+      .find(t => t.metadataSourceId === result.id && !isQueuedCatalog(t));
+    if (known && !refresh) {
+      let compatible = true;
+      if (!known.offline && known.source?.providerId === "youtube") {
+        const candidate = { id: known.source.sourceId, title: known.title, channel: known.artist, duration: null, thumbnail: null };
+        try {
+          const details = await prepareCatalogCandidate(candidate);
+          compatible = (await matchSource(result, { ...candidate, ...details })).accepted;
+        } catch { compatible = false; }
+      }
+      if (compatible) return { ...known, title: result.title, artist: known.artist || result.artist,
+        album: result.album, duration: result.duration, artworkUrl: result.artworkUrl };
+      catalogSources.current.delete(result.id);
+    }
+    if (refresh) catalogSources.current.delete(result.id);
     let pending = catalogSources.current.get(result.id);
     if (!pending) {
       if (catalogSources.current.size >= 128) catalogSources.current.delete(catalogSources.current.keys().next().value!);
@@ -635,9 +682,11 @@ export function useLibraryManager() {
     ++engineCheckGeneration.current;
     setEngineState("installing");
     setEngineError("");
+    setEngineProgress(null);
+    setEngineCancelling(false);
     const pending = (async () => {
       try {
-        await library.ytdlpInstallEngine();
+        await library.ytdlpInstallEngine(setEngineProgress);
         const available = await library.ytdlpCheckAvailable();
         if (!available) throw new Error("The engine installed but could not be located. Please retry.");
         setYtdlpAvailable(true);
@@ -648,13 +697,22 @@ export function useLibraryManager() {
         setEngineError(formatError(error));
       } finally {
         engineInstallPromise.current = null;
+        setEngineCancelling(false);
       }
     })();
     engineInstallPromise.current = pending;
     return pending;
   }
 
+  async function cancelYoutubeEngineInstall(): Promise<void> {
+    if (!engineInstallPromise.current) return;
+    setEngineCancelling(true);
+    try { await library.ytdlpCancelInstall(); }
+    catch (error) { setEngineError(`Could not cancel installation. ${formatError(error)}`); setEngineCancelling(false); }
+  }
+
   return {
+    clearPendingPlayback: () => { setPendingTrack(null); pendingCatalog.current = null; },
     pendingTrack,
     retryPendingPlayback: (onPlayTrack: (t: Track) => void) => {
       if (pendingCatalog.current) void saveDiscovery(pendingCatalog.current, "play", onPlayTrack);
@@ -673,6 +731,9 @@ export function useLibraryManager() {
     ytdlpAvailable,
     engineState,
     engineError,
+    engineProgress,
+    engineCancelling,
+    cancelYoutubeEngineInstall,
     installYoutubeEngine,
     refreshYoutubeEngine,
     sessionRef,

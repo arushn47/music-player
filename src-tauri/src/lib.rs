@@ -18,6 +18,11 @@ mod android;
 mod artwork_cache;
 mod components;
 mod catalog;
+mod collection_io;
+mod nearby;
+mod playlist_link;
+#[cfg(windows)]
+mod lyric_overlay;
 mod downloads;
 mod entity_artwork;
 mod itunes_metadata;
@@ -28,6 +33,7 @@ mod lyrics_provider;
 mod private_settings;
 mod provider_http;
 mod translation;
+mod keyless_translation;
 mod lyric_languages;
 mod ytdlp;
 
@@ -210,7 +216,7 @@ fn snapshot(db: &Connection) -> Result<Snapshot> {
                     Some(format!("local:{}?v={stamp}-{}", track.id, metadata.len()));
             }
         }
-        track.missing = (track.source.is_none() || track.offline)
+        track.missing = track.format != "catalog" && (track.source.is_none() || track.offline)
             && path.as_ref().is_none_or(|p| !Path::new(p).is_file());
         tracks.push(track);
     }
@@ -1286,8 +1292,7 @@ fn clean_artist_for_lyrics(artist: &str, title: &str) -> (String, String) {
     (artist.trim().to_string(), result_title)
 }
 
-/// Fetch lyrics from LRCLIB. Called from the renderer; runs in Tauri's async runtime.
-/// Duration is required so LRCLIB can filter to the correct recording length.
+/// Fetch lyrics from LRCLIB, then lrc.red when needed, verifying the recording duration.
 #[tauri::command]
 async fn fetch_lyrics(
     title: String,
@@ -1377,6 +1382,7 @@ pub fn run() {
         }
     }
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build())
         .plugin(android::init())
         .setup(|app| {
             #[cfg(windows)]
@@ -1403,9 +1409,29 @@ pub fn run() {
                 import_selected(app.handle(), &mut db, paths).map_err(std::io::Error::other)?;
             }
             app.manage(Store(Mutex::new(db)));
+            app.manage(nearby::Nearby::default());
+            #[cfg(windows)]
+            app.manage(lyric_overlay::Overlay::default());
             Ok(())
         })
+        .on_window_event(|window, event| {
+            #[cfg(windows)]
+            lyric_overlay::window_event(window, event);
+            #[cfg(not(windows))]
+            let _ = (window, event);
+        })
         .invoke_handler(tauri::generate_handler![
+            #[cfg(windows)]
+            lyric_overlay::lyric_overlay_publish,
+            #[cfg(windows)]
+            lyric_overlay::lyric_overlay_control,
+            collection_io::read_playlist_file,
+            playlist_link::read_playlist_link,
+            collection_io::save_catalog_tracks,
+            nearby::nearby_start,
+            nearby::nearby_stop,
+            nearby::nearby_publish,
+            nearby::nearby_fetch,
             load_library,
             save_online_track,
             import_audio,
@@ -1423,6 +1449,7 @@ pub fn run() {
             downloads::delete_download,
             translation::translate_lyrics,
             translation::process_lyrics,
+            keyless_translation::process_keyless_lyrics,
             lyric_languages::detect_lyric_languages,
             private_settings::gemini_key_status,
             private_settings::save_gemini_key,
@@ -1433,6 +1460,7 @@ pub fn run() {
             catalog::search_catalog,
             catalog::search_catalog_entities,
             catalog::lookup_catalog,
+            catalog::recommend_catalog,
             catalog::lookup_artist,
             catalog::lookup_album,
             export_library,
@@ -1441,6 +1469,8 @@ pub fn run() {
             resolve_commons_audio,
             ytdlp::ytdlp_check_available,
             components::install_youtube_engine,
+            components::cancel_youtube_engine_install,
+            catalog::discover_albums,
             ytdlp::ytdlp_search,
             ytdlp::ytdlp_get_stream,
             android::android_playback,

@@ -19,13 +19,7 @@ export function libraryCollections(
       id: "collection:local",
       name: "Local",
       description: "Files linked from your device",
-      tracks: tracks.filter((track) => !track.source),
-    },
-    {
-      id: "collection:online",
-      name: "Saved online",
-      description: "Saved sources · connection required",
-      tracks: tracks.filter((track) => track.source && !track.offline),
+      tracks: tracks.filter((track) => !track.source && track.format !== "catalog"),
     },
     {
       id: "collection:downloads",

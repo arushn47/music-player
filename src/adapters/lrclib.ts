@@ -1,5 +1,5 @@
 /**
- * LRCLIB lyrics provider for Lumaire.
+ * Native lyrics lookup: LRCLIB first, with lrc.red fallback.
  *
  * All network I/O happens inside the Rust `fetch_lyrics` Tauri command so the
  * WebView2 Content-Security-Policy is not involved. This module only shapes
@@ -22,7 +22,8 @@ type LyricResult =
   | { kind: "not_found" };
 
 interface LyricMatch {
-  id: number;
+  id: number | string;
+  provider?: "lrclib" | "lrc.red";
   title: string;
   artist: string;
   album: string;
@@ -99,10 +100,10 @@ function lookupError(e: unknown): LookupState {
 }
 
 function shapeResult(result: LyricResult, track: Track): LookupState {
+  const provider = "matched" in result && result.matched?.provider === "lrc.red" ? "lrc.red" : "LRCLIB";
   switch (result.kind) {
     case "synced": {
-      // Use filename "<title> · LRCLIB" so provenance is clear in the UI.
-      const doc = parseLyrics(result.lrc, `${track.title} · LRCLIB`);
+      const doc = parseLyrics(result.lrc, `${track.title} · ${provider}`);
       addProvenance(doc, result.matched);
       return {
         status: "found",
@@ -110,7 +111,7 @@ function shapeResult(result: LyricResult, track: Track): LookupState {
       };
     }
     case "plain": {
-      const doc = parseLyrics(result.text, `${track.title} · LRCLIB (plain)`);
+      const doc = parseLyrics(result.text, `${track.title} · ${provider} (plain)`);
       addProvenance(doc, result.matched);
       doc.timingMode = "unsynced";
       doc.lines = doc.lines.map((line) => ({ ...line, time: null }));
@@ -144,7 +145,7 @@ function addProvenance(
   doc.origin = "provider";
   if (!matched) return;
   doc.source = {
-    provider: "lrclib",
+    provider: matched.provider ?? "lrclib",
     recordId: matched.id,
     title: matched.title,
     artist: matched.artist,

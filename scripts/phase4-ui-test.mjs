@@ -389,6 +389,7 @@ const check = async (name, run) => {
 };
 try {
   await page.goto("http://127.0.0.1:1420");
+  await page.getByRole("button", { name: "Open library", exact: true }).click();
   await page.getByRole("heading", { name: "Your library." }).waitFor();
   await check(
     "library opens with collections rather than scattered tracks",

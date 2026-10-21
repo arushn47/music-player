@@ -27,7 +27,7 @@ try {
   if (page.url() === "about:blank") await page.goto("http://127.0.0.1:1420");
   page.setDefaultTimeout(25000);
   page.on("pageerror", error => report.errors.push(error.message));
-  await page.getByRole("heading", { name: "Your library." }).waitFor().catch(async error => {
+  await page.getByRole("heading", { name: "Discover new music." }).waitFor().catch(async error => {
     console.log(page.url(), await page.locator("body").innerText(), report.errors);
     await page.screenshot({ path: path.join(out, "startup.png"), timeout: 5000 }).catch(() => {});
     throw error;
@@ -53,7 +53,7 @@ try {
     await library.save(state);
   }, english);
   await page.reload();
-  await page.getByRole("heading", { name: "Your library." }).waitFor();
+  await page.getByRole("heading", { name: "Discover new music." }).waitFor();
   await check("English language appears in Lyrics and automatic Gemini remains unused", async () => {
     await page.evaluate(() => {
       const original = window.__TAURI_INTERNALS__.invoke.bind(window.__TAURI_INTERNALS__);

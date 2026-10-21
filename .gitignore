@@ -27,6 +27,9 @@ docs/*
 !docs/windows-release-publishing.md
 !docs/CURRENT-STATUS.md
 !docs/development-history.md
+!docs/implementation-plan.md
+!docs/lyrics-alternatives-research.md
+!docs/connected-features.md
 
 # Distribute binaries as GitHub Release assets, not source commits.
 /release/*
@@ -42,3 +45,19 @@ experiments/
 releases/
 
 .kiro/
+
+scratch/
+scripts/*
+!scripts/connected-desktop-test.mjs
+!scripts/overlay-desktop-test.mjs
+!scripts/overlay-lock-test.mjs
+!scripts/album-download-test.mjs
+!scripts/playlist-import-test.mjs
+!scripts/support-desktop-test.mjs
+!scripts/expanded-lyrics-test.mjs
+!scripts/autoplay-test.mjs
+!scripts/ambient-test.mjs
+!scripts/overlay-opacity-test.mjs
+!scripts/updates-ui-test.mjs
+
+!scripts/sidebar-scroll-test.mjs

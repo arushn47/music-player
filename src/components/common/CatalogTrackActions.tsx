@@ -11,8 +11,8 @@ export interface CatalogActionHandlers {
   onCatalogAction: (track: CatalogTrack, action: CatalogAction) => void;
 }
 
-export function CatalogTrackActions({ track, savedTracks, favorites, onCatalogAction, disabled }: CatalogActionHandlers & {
-  track: CatalogTrack; disabled: boolean;
+export function CatalogTrackActions({ track, savedTracks, favorites, onCatalogAction, disabled, downloading = false }: CatalogActionHandlers & {
+  track: CatalogTrack; disabled: boolean; downloading?: boolean;
 }): JSX.Element {
   const saved = savedTracks.find(saved => saved.metadataSourceId === track.id);
   const favorite = saved ? favorites.includes(saved.id) : false;
@@ -27,8 +27,8 @@ export function CatalogTrackActions({ track, savedTracks, favorites, onCatalogAc
     <details className="track-menu">
       <summary aria-label={`Actions for ${track.title}`}>•••</summary>
       <div className="menu-popover">
-        <button disabled={disabled} onClick={event => run(event, saved ? "remove" : "save")}>{saved ? "Remove from library" : "Save to library"}</button>
-        <button disabled={disabled} onClick={event => run(event, saved?.offline ? "delete-offline" : "download")}>{saved?.offline ? "Delete offline copy" : "Download for offline"}</button>
+        <button disabled={disabled || downloading} onClick={event => run(event, saved ? "remove" : "save")}>{saved ? "Remove from library" : "Save to library"}</button>
+        <button disabled={disabled || downloading} onClick={event => run(event, saved?.offline ? "delete-offline" : "download")}>{downloading ? "Downloading…" : saved?.offline ? "Delete offline copy" : "Download for offline"}</button>
         <button disabled={disabled} onClick={event => run(event, "next")}>Play next</button>
         <button disabled={disabled} onClick={event => run(event, "queue")}>Add to queue</button>
         <button disabled={disabled} onClick={event => run(event, "refresh")}>Refresh metadata</button>

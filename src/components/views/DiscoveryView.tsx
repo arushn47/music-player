@@ -1,6 +1,6 @@
-import React, { useEffect, useLayoutEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  Globe,
+  Clock,
   Loader2,
   Play,
   Search,
@@ -8,12 +8,13 @@ import {
 } from "lucide-react";
 import { library, type CatalogTrack, type CatalogArtist, type CatalogAlbum } from "../../adapters/native";
 import type { Track } from "../../domain/types";
+import type { ListeningRecord } from "../../domain/listening";
+import { clearDiscoverySearches, discoveryPreferences, rememberDiscoverySearch } from "../../adapters/discovery-home";
+import { DiscoveryHome } from "./DiscoveryHome";
 import { Artwork, IconButton } from "../common";
+import { EngineSetupCard, type EngineSetupProps } from "../common/EngineSetupCard";
 import { CatalogTrackActions, type CatalogActionHandlers } from "../common/CatalogTrackActions";
-import {
-  CommonsDiscovery,
-  type CommonsDiscoveryState,
-} from "./CommonsDiscovery";
+import type { CommonsDiscoveryState } from "./CommonsDiscovery";
 
 export interface DiscoveryViewState {
   query: string;
@@ -41,7 +42,8 @@ export const initialDiscoveryViewState = (): DiscoveryViewState => ({
   commons: { query: "", results: [], loading: false, error: "" },
 });
 
-export interface DiscoveryViewProps extends CatalogActionHandlers {
+export interface DiscoveryViewProps extends CatalogActionHandlers, EngineSetupProps {
+  onPlayAlbum: (id: string) => Promise<void>;
   state: DiscoveryViewState;
   onStateChange: (
     update: (current: DiscoveryViewState) => DiscoveryViewState,
@@ -60,6 +62,11 @@ export interface DiscoveryViewProps extends CatalogActionHandlers {
   onQueueRemote: (track: Track, next: boolean) => void;
   onNavigateArtist?: (artistId: string) => void;
   onNavigateAlbum?: (albumId: string) => void;
+  recentRecords: ListeningRecord[];
+  historyEnabled: boolean;
+  onReplay: (record: ListeningRecord) => void;
+  onImportMusic: () => void;
+  onOpenLibrary: () => void;
 }
 
 const clock = (s: number) =>
@@ -74,15 +81,39 @@ export function DiscoveryView({
   busy,
   downloads,
   onSaveDiscovery,
+  onPlayAlbum,
   onChoosePlaylist,
   onDownloadTrack,
   onSaveCommons,
   onQueueRemote,
   onNavigateArtist,
   onNavigateAlbum,
+  recentRecords,
+  historyEnabled,
+  onReplay,
+  onImportMusic,
+  onOpenLibrary,
+  ...engineSetup
 }: DiscoveryViewProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
   const searchGeneration = useRef(0);
+  const [recentSearches, setRecentSearches] = useState(() => discoveryPreferences().searches);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) {
+        setSearchFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!historyEnabled) { clearDiscoverySearches(); setRecentSearches([]); }
+  }, [historyEnabled]);
   useEffect(() => () => {
     searchGeneration.current++;
     onStateChange(current => ({ ...current, searching: false }));
@@ -102,13 +133,17 @@ export function DiscoveryView({
     };
   }, []);
 
-  const handleSearch = () => {
-    const trimmed = query.trim();
+  const handleSearch = (requested = query) => {
+    const trimmed = requested.trim().slice(0, 200);
     if (!trimmed || searching) return;
+    if (historyEnabled) setRecentSearches(rememberDiscoverySearch(trimmed));
+    rootRef.current?.closest("main")?.scrollTo({ top: 0 });
     const generation = ++searchGeneration.current;
     onStateChange((current) => ({
       ...current,
       searching: true,
+      query: trimmed,
+      scrollTop: 0,
       results: [],
       artists: [],
       albums: [],
@@ -139,40 +174,28 @@ export function DiscoveryView({
       className="discovery-view-state"
     >
       <section className="discover-page">
-        <div className="page-heading">
+        <div className="page-heading discover-page-heading">
           <div>
-            <p className="eyebrow">SEARCH FOR MUSIC</p>
+            <p className="eyebrow">ONLINE & CURATED</p>
             <h1>
-              Discover new music<span className="heading-dot">.</span>
+              Discover<span className="heading-dot">.</span>
             </h1>
             <p className="subtitle">
-              Find songs, artists and albums. Choose a song to find playable audio.
+              Search songs, artists, albums, or explore curated playlists and trending releases.
             </p>
           </div>
         </div>
 
-        {!ytdlpAvailable && (
-          <div className="banner error" role="alert">
-            <span>
-              {mobile ? (
-                "Online streaming could not start. Try restarting Lumaire; your local music remains available."
-              ) : (
-                <>
-                  yt-dlp not found. Please install yt-dlp (https://github.com/yt-dlp/yt-dlp) and place yt-dlp.exe in the same folder as Lumaire, or ensure it's available in your system PATH.
-                </>
-              )}
-            </span>
-          </div>
-        )}
-
-        <section className="library-tools">
-          <label className="search">
-            <Search size={17} />
+        <div className="discover-search-central" ref={searchWrapRef}>
+          <label className={`discover-search-bar ${searchFocused ? "is-focused" : ""}`}>
+            <Search size={16} className="discover-search-icon" />
             <input
               aria-label="Search music"
-              placeholder="Search for music, artist, or song"
+              placeholder="Search songs, artists, albums…"
+              maxLength={200}
               value={query}
               disabled={searching}
+              onFocus={() => setSearchFocused(true)}
               onChange={(e) =>
                 onStateChange((current) => ({
                   ...current,
@@ -182,11 +205,16 @@ export function DiscoveryView({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
+                  setSearchFocused(false);
                   handleSearch();
+                } else if (e.key === "Escape") {
+                  setSearchFocused(false);
                 }
               }}
             />
-            {query && (
+            {searching ? (
+              <Loader2 size={15} className="spin" style={{ color: "var(--accent)" }} />
+            ) : query ? (
               <button
                 type="button"
                 className="search-clear-button"
@@ -206,28 +234,50 @@ export function DiscoveryView({
                   }));
                 }}
               >
-                <X size={15} />
+                <X size={14} />
               </button>
-            )}
+            ) : null}
           </label>
-          <button
-            className="primary"
-            disabled={searching || !query.trim()}
-            onClick={handleSearch}
-          >
-            {searching ? (
-              <>
-                <Loader2 size={16} className="spin" />
-                Searching…
-              </>
-            ) : (
-              <>
-                <Search size={16} />
-                Search
-              </>
-            )}
-          </button>
-        </section>
+
+          {searchFocused && historyEnabled && recentSearches.length > 0 && !query.trim() && (
+            <div className="discover-search-popover">
+              <div className="discover-popover-header">
+                <span>Recent searches</span>
+                <button
+                  type="button"
+                  className="link-button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    clearDiscoverySearches();
+                    setRecentSearches([]);
+                  }}
+                >
+                  Clear all
+                </button>
+              </div>
+              <div className="discover-popover-items">
+                {recentSearches.map((item) => (
+                  <button
+                    type="button"
+                    key={item}
+                    className="discover-popover-item"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setSearchFocused(false);
+                      handleSearch(item);
+                    }}
+                  >
+                    <Clock size={13} className="discover-popover-icon" />
+                    <span className="discover-popover-text ellipsis">{item}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {!ytdlpAvailable && mobile && engineSetup.engineState !== "checking" && <div className="banner error" role="alert">Online streaming could not start. Try restarting Lumaire; your local music remains available.</div>}
+        {!mobile && (!ytdlpAvailable || engineSetup.engineState === "installing") && <EngineSetupCard {...engineSetup} />}
 
         {error && (
           <div className="banner error" role="alert">
@@ -244,13 +294,28 @@ export function DiscoveryView({
         )}
 
         {!searchedQuery && !searching && !error && (
-          <div className="empty">
-            <Globe size={36} />
-            <h2>Search music</h2>
-            <p>
-              Search the music catalogue for songs and their original album covers.
-            </p>
-          </div>
+          <DiscoveryHome
+            searches={historyEnabled ? recentSearches : []}
+            records={historyEnabled ? recentRecords : []}
+            savedTracks={savedTracks}
+            busy={busy}
+            onlineAvailable={ytdlpAvailable}
+            onSearch={handleSearch}
+            onClearSearches={() => {
+              clearDiscoverySearches();
+              setRecentSearches([]);
+            }}
+            onReplay={onReplay}
+            onImportMusic={onImportMusic}
+            onOpenLibrary={onOpenLibrary}
+            onNavigateAlbum={onNavigateAlbum}
+            onNavigateArtist={onNavigateArtist}
+            onSaveDiscovery={onSaveDiscovery}
+            onPlayAlbum={onPlayAlbum}
+            favorites={favorites}
+            downloads={downloads}
+            onCatalogAction={onCatalogAction}
+          />
         )}
 
         {!searching && searchedQuery && (
@@ -260,7 +325,7 @@ export function DiscoveryView({
               <h2>Artists</h2>
               {artists.length ? <div className="search-artists">
                 {artists.map(artist => <button key={artist.id} className="search-artist" onClick={() => onNavigateArtist?.(artist.id)}>
-                  <Artwork url={artist.artworkUrl} />
+                  <Artwork url={artist.artworkUrl} kind="artist" />
                   <span>{artist.name}</span>
                 </button>)}
               </div> : <p className="subtitle">No artist results for this search.</p>}
@@ -270,8 +335,10 @@ export function DiscoveryView({
               {albums.length ? <div className="albums-grid">
                 {albums.map(album => <button key={album.id} className="album-card" aria-label={`Open album ${album.title}`} onClick={() => onNavigateAlbum?.(album.id)}>
                   <Artwork url={album.artworkUrl} className="album-card-cover" />
-                  <div className="album-title" title={album.title}>{album.title}</div>
-                  <div className="album-year" title={`${album.artist}${album.year != null ? ` · ${album.year}` : ""}`}>{album.artist}{album.year != null ? ` · ${album.year}` : ""}</div>
+                  <div className="album-card-info">
+                    <div className="album-title" title={album.title}>{album.title}</div>
+                    <div className="album-year" title={`${album.artist}${album.year != null ? ` · ${album.year}` : ""}`}>{album.artist}{album.year != null ? ` · ${album.year}` : ""}</div>
+                  </div>
                 </button>)}
               </div> : <p className="subtitle">No album results for this search.</p>}
             </section>
@@ -378,22 +445,6 @@ export function DiscoveryView({
           </>
         )}
       </section>
-
-      <CommonsDiscovery
-        onNavigateArtist={onNavigateArtist}
-        save={onSaveCommons}
-        download={onDownloadTrack}
-        queue={onQueueRemote}
-        playlist={onChoosePlaylist}
-        pending={downloads}
-        state={state.commons}
-        onStateChange={(update) =>
-          onStateChange((current) => ({
-            ...current,
-            commons: update(current.commons),
-          }))
-        }
-      />
     </div>
   );
 }

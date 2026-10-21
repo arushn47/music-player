@@ -29,6 +29,10 @@ export interface QueueItem {
   requested?: boolean;
 }
 export interface Playlist {
+  importSources?: string[];
+  syncSource?: string;
+  syncFingerprint?: string;
+  syncLocalFingerprint?: string;
   id: string;
   name: string;
   items: QueueItem[];
@@ -49,18 +53,18 @@ export interface LyricDocument {
   warnings: string[];
   romanisation: Record<string, string>;
   translation: Record<string, string>;
-  romanisationSource?: "local" | "gemini" | "imported";
+  romanisationSource?: "local" | "gemini" | "google" | "imported";
   localRomanisation?: Record<string, string>;
-  translationSource?: "gemini" | "imported";
+  translationSource?: "gemini" | "google" | "imported";
   processedModel?: string;
   lineLanguages?: Record<string, string[]>;
-  languageSource?: "local" | "gemini";
+  languageSource?: "local" | "gemini" | "google";
   englishOnly?: boolean;
   instrumental?: boolean;
   timingMode?: "synced" | "unsynced";
   source?: {
-    provider: "lrclib";
-    recordId: number;
+    provider: "lrclib" | "lrc.red";
+    recordId: number | string;
     title: string;
     artist: string;
     duration: number;
@@ -77,6 +81,7 @@ export interface Preferences {
   originalScript: boolean;
   originalFirst: boolean;
   autoOpenLyrics: boolean;
+  autoplay: boolean;
   estimatedScroll: boolean;
   geminiModel: string;
   lyricSize: number;
@@ -84,6 +89,7 @@ export interface Preferences {
   autoGemini: boolean;
 }
 export interface Session {
+  favoriteAlbums: { id: string; title: string; artist: string; artworkUrl?: string | null; year?: number | null }[];
   queue: QueueItem[];
   shuffleOrder: string[];
   /** Remote metadata needed for this listening session, never library membership. */
@@ -101,6 +107,7 @@ export interface Snapshot {
   session: Session | null;
 }
 export const defaults = (): Session => ({
+  favoriteAlbums: [],
   queue: [],
   shuffleOrder: [],
   queueTracks: {},
@@ -121,9 +128,10 @@ export const defaults = (): Session => ({
     originalScript: true,
     originalFirst: true,
     autoOpenLyrics: false,
+    autoplay: false,
     estimatedScroll: true,
     geminiModel: "gemini-3.5-flash-lite",
-    lyricSize: 28,
+    lyricSize: 32,
     historyEnabled: true,
     autoGemini: true,
   },
@@ -133,3 +141,10 @@ export const item = (trackId: string): QueueItem => ({
   trackId,
 });
 export type EngineInstallState = "checking" | "missing" | "installing" | "installed" | "error";
+export interface EngineInstallProgress {
+  stage: "connecting" | "retrying" | "downloading" | "verifying" | "testing" | "activating";
+  component: string;
+  received: number;
+  total: number | null;
+  attempt: number;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateListening, historyTrack, ListeningTracker, localDay, rangeStart, type ListeningRecord } from "./listening";
+import { aggregateListening, historyArtwork, historyTrack, ListeningTracker, localDay, rangeStart, type ListeningRecord } from "./listening";
 import type { Playback } from "../player/controller";
 import type { Track } from "./types";
 
@@ -13,6 +13,18 @@ function fixture() {
   return { tracker, writes, sample };
 }
 describe("real listening accounting", () => {
+  it("keeps catalogue covers and recovers old missing artwork only from verified video identity", () => {
+    const { tracker, sample } = fixture();
+    sample(0);
+    const record = { ...tracker.record!, providerId: "youtube", sourceId: "abcdefghijk" };
+    expect(historyArtwork(record)).toBe("https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg");
+    expect(historyTrack(record).artworkUrl).toBe(historyArtwork(record));
+    const cover = "https://c.saavncdn.com/517/cover.jpg";
+    expect(historyArtwork({ ...record, artworkUrl: cover })).toBe(cover);
+    expect(historyArtwork({ ...record, sourceId: "wrong" })).toBeNull();
+    expect(historyArtwork({ ...record, trackId: "youtube:other-id000" })).toBeNull();
+    expect(historyArtwork({ ...record, providerId: null })).toBeNull();
+  });
   it("retains catalogue provenance through checkpoints and history replay without changing audio identity", () => {
     const { tracker } = fixture();
     const catalogued = { ...track, metadataSourceId: "itunes:123", source: {

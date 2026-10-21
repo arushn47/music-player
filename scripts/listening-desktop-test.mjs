@@ -42,6 +42,7 @@ async function launch(seed) {
   assert(page);
   page.on('pageerror',error=> { report.rendererErrors ??= []; report.rendererErrors.push(error.message); });
   page.on('console',message=> { if(message.type()==='error') {report.consoleErrors ??=[]; report.consoleErrors.push(message.text().slice(0,1000));} });
+  await page.getByRole('button',{name:'Open library',exact:true}).click();
   await page.getByRole('heading',{name:'Your library.',exact:true}).waitFor();
 }
 async function close() { await browser?.close(); browser=null; app?.kill(); app=null; await delay(1200); }

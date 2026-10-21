@@ -84,6 +84,7 @@
   --bg-subtle-button: rgba(0, 0, 0, 0.04);
   --bg-subtle-button-hover: rgba(0, 0, 0, 0.08);
   --text-strong: #0a0c08;
+  --accent-text: #ffffff;
 }
 
 /* Shared elevation shadows and layout tokens */

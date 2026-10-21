@@ -1,5 +1,18 @@
 import { item, type QueueItem, type Session, type Track } from "./types";
 
+export function isQueuedCatalog(track?: Track | null): boolean {
+  if (!track) return false;
+  return track.format === "catalog" && track.metadataSourceId === track.id &&
+    (/^saavn:[A-Za-z0-9_-]{8}$/.test(track.id) || (/^itunes:[1-9]\d{0,19}$/.test(track.id) && BigInt(track.id.slice(7)) <= 18446744073709551615n));
+}
+
+export function resolveQueueEntry(session: Session, entryId: string, catalogId: string, track: Track): Session {
+  if (session.currentId !== entryId || !session.queue.some(entry => entry.id === entryId && entry.trackId === catalogId)) return session;
+  const queueTracks = { ...session.queueTracks, [track.id]: track };
+  if (track.id !== catalogId) delete queueTracks[catalogId];
+  return { ...session, queue: session.queue.map(entry => entry.trackId === catalogId ? { ...entry, trackId: track.id } : entry), queueTracks };
+}
+
 /** Persist one shuffled sequence so Previous and Up next reflect actual playback. */
 export function playbackQueue(session: Session): QueueItem[] {
   if (!session.settings.shuffle || !session.shuffleOrder?.length)
@@ -78,7 +91,7 @@ export function playCollection(
       ...session.queueTracks,
       ...Object.fromEntries(
         playable
-          .filter(({ track }) => track.source)
+          .filter(({ track }) => track.source || isQueuedCatalog(track))
           .map(({ track }) => [track.id, track]),
       ),
     },

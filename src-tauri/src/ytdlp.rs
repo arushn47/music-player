@@ -66,15 +66,12 @@ fn find_ytdlp() -> Result<PathBuf, String> {
     // Try system PATH
     #[cfg(target_os = "windows")]
     {
-        if let Ok(output) = Command::new("where").arg("yt-dlp").output() {
-            if output.status.success() {
-                let path_str = String::from_utf8_lossy(&output.stdout);
-                if let Some(first_line) = path_str.lines().next() {
-                    let path = PathBuf::from(first_line.trim());
-                    if path.exists() {
-                        debug!("[yt-dlp] Found system binary at {:?}", path);
-                        return Ok(path);
-                    }
+        if let Some(paths) = std::env::var_os("PATH") {
+            for folder in std::env::split_paths(&paths) {
+                let path = folder.join("yt-dlp.exe");
+                if path.is_file() {
+                    debug!("[yt-dlp] Found system binary at {:?}", path);
+                    return Ok(path);
                 }
             }
         }
@@ -83,7 +80,7 @@ fn find_ytdlp() -> Result<PathBuf, String> {
     Err("YouTube engine is not installed. Open Settings > Online Sources and choose Install engine.".to_string())
 }
 
-fn run_ytdlp(args: &[&str]) -> Result<String, String> {
+pub(crate) fn run_ytdlp(args: &[&str]) -> Result<String, String> {
     let program = find_ytdlp()?;
 
     let mut cmd = Command::new(&program);
@@ -109,8 +106,8 @@ fn run_ytdlp(args: &[&str]) -> Result<String, String> {
 
     let mut stdout = child.stdout.take().ok_or("The audio engine did not provide an output pipe.")?;
     let mut stderr = child.stderr.take().ok_or("The audio engine did not provide an error pipe.")?;
-    let output_reader = std::thread::spawn(move || { let mut bytes = Vec::new(); stdout.read_to_end(&mut bytes).map(|_| bytes) });
-    let error_reader = std::thread::spawn(move || { let mut bytes = Vec::new(); stderr.read_to_end(&mut bytes).map(|_| bytes) });
+    let output_reader = std::thread::spawn(move || { let mut bytes = Vec::new(); stdout.by_ref().take(8_000_001).read_to_end(&mut bytes).map(|_| bytes) });
+    let error_reader = std::thread::spawn(move || { let mut bytes = Vec::new(); stderr.by_ref().take(65_537).read_to_end(&mut bytes).map(|_| bytes) });
     let started = Instant::now();
     let status = loop {
         if let Some(status) = child.try_wait().map_err(|error| error.to_string())? { break status; }
@@ -123,6 +120,7 @@ fn run_ytdlp(args: &[&str]) -> Result<String, String> {
     };
     let stdout = output_reader.join().map_err(|_| "Audio engine output reader failed.")?.map_err(|error| error.to_string())?;
     let stderr = error_reader.join().map_err(|_| "Audio engine error reader failed.")?.map_err(|error| error.to_string())?;
+    if stdout.len() > 8_000_000 || stderr.len() > 65_536 { return Err("Audio engine output exceeded its size limit. Use a smaller playlist or retry later.".into()); }
     if !status.success() {
         let stderr = String::from_utf8_lossy(&stderr);
         error!("[yt-dlp] Command failed: {}", stderr);
@@ -456,8 +454,15 @@ fn validate_stream_url(value: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn ytdlp_check_available() -> bool {
-    find_ytdlp().is_ok()
+pub async fn ytdlp_check_available() -> bool {
+    tauri::async_runtime::spawn_blocking(|| {
+        let Ok(engine) = find_ytdlp() else { return false; };
+        if crate::components::test_executable(&engine, &["--version"]).is_err() { return false; }
+        if let Some(runtime) = crate::components::managed_runtime(&engine) {
+            return crate::components::test_executable(&runtime, &["-e", "if (6 * 7 !== 42) throw Error('Runtime test failed')"]).is_ok();
+        }
+        true
+    }).await.unwrap_or(false)
 }
 
 #[cfg(test)]

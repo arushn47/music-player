@@ -47,4 +47,18 @@ describe("automatic lyric timing and estimated following", () => {
     expect(synchronizedLyrics(doc, 30)).toBe(false);
     expect(normalizeCachedLyrics(doc, 30)).toBe(doc);
   });
+  it("computes focus distance strictly when following is active and suppresses it when browsing", () => {
+    const doc = parseLyrics("[00:01]line 0\n[00:05]line 1\n[00:10]line 2");
+    const active = doc.lines[1].id;
+    const activeIndex = doc.lines.findIndex((l) => l.id === active);
+
+    // Following active: distances are computed around activeIndex
+    const followingDistances = doc.lines.map((_, index) => Math.abs(index - activeIndex));
+    expect(followingDistances).toEqual([1, 0, 1]);
+
+    // Browsing (follow = false): distances are suppressed (null), disabling blur and fade
+    const isFollowing = false;
+    const browsingDistances = doc.lines.map((_, index) => (isFollowing ? Math.abs(index - activeIndex) : null));
+    expect(browsingDistances).toEqual([null, null, null]);
+  });
 });

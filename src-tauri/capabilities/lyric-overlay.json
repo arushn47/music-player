@@ -1,0 +1,7 @@
+{
+  "identifier": "lyric-overlay",
+  "description": "Floating lyrics can receive player events and move or resize its own window.",
+  "windows": ["lyrics-overlay"],
+  "platforms": ["windows"],
+  "permissions": ["core:event:default", "core:window:allow-start-dragging", "core:window:allow-start-resize-dragging", "core:window:allow-outer-position", "core:window:allow-set-position", "core:window:allow-inner-size", "core:window:allow-set-size", "core:window:allow-scale-factor"]
+}

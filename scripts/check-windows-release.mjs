@@ -19,6 +19,7 @@ export function validateConfig(config, overlay, pkg, cargo, cliVersion, tag) {
 }
 
 export function validateManifest(manifest, version, signature, tag, filename) {
+  assert(typeof manifest.notes === "string" && manifest.notes.trim(), "Updater manifest must include release notes.");
   assert.equal(manifest.version.replace(/^v/, ''), version, 'Manifest version mismatch.');
   assert(Number.isFinite(Date.parse(manifest.pub_date)), 'Manifest needs a valid publication date.');
   const platform = manifest.platforms['windows-x86_64'];

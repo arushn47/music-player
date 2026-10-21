@@ -131,7 +131,7 @@ describe("saved library and listening session stay independent", () => {
     const restored = restoreSession(s, [remote]);
     expect(restored.queue).toEqual(s.queue);
     expect(restored.queueTracks).toEqual({});
-    expect(libraryCollections([remote], [])[0].name).toBe("Saved online");
+    expect(libraryCollections([remote], [])).toEqual([]);
   });
   it("rejects transient local paths, invalid identities and offline claims", () => {
     const s = playSelection(defaults(), { ...remote, offline: true }, false);

@@ -123,13 +123,17 @@ fn track(value: &Value) -> Option<CatalogTrack> {
 }
 
 async fn request(base: &str, operation: &str, params: &[(&str, String)]) -> Result<Value, String> {
-    // shortcut: this public metadata endpoint is undocumented, use Apple fallback if it changes.
+    request_context(base, operation, params, "web6dot0").await
+}
+
+async fn request_context(base: &str, operation: &str, params: &[(&str, String)], context: &str) -> Result<Value, String> {
+    // shortcut: public metadata endpoints are undocumented; revisit if their response shape changes.
     let mut query = vec![
         ("__call", operation.into()),
         ("_format", "json".into()),
         ("_marker", "0".into()),
         ("api_version", "4".into()),
-        ("ctx", "web6dot0".into()),
+        ("ctx", context.into()),
     ];
     query.extend_from_slice(params);
     let response = provider_http::get(base, &query).await?;
@@ -207,6 +211,45 @@ pub async fn lookup_catalog(id: String) -> Result<CatalogTrack, String> {
     lookup_from(BASE, &id).await
 }
 
+fn radio_tracks(response: &Value, language: &str) -> Vec<CatalogTrack> {
+    let mut seen = HashSet::new();
+    // Numeric station positions carry the provider's radio ranking; metadata fields do not.
+    (0..30).filter_map(|i| {
+        let row = &response[i.to_string()]["song"];
+        (row["language"].as_str() == Some(language)).then(|| track(row)).flatten()
+    }).filter(|song| seen.insert(song.id.clone())).collect()
+}
+
+async fn recommendations_from(base: &str, id: &str) -> Result<Vec<CatalogTrack>, String> {
+    let source = id.strip_prefix("saavn:").filter(|id| valid_id(id))
+        .ok_or("Invalid radio seed track ID.")?;
+    let details = request(base, "song.getDetails", &[("pids", source.into())]).await?;
+    let seed = details["songs"].as_array().and_then(|rows| rows.iter().find(|row| row["id"].as_str() == Some(source) && track(row).is_some()))
+        .ok_or("This radio seed is unavailable.")?;
+    let language = seed["language"].as_str().filter(|value| !value.is_empty() && *value != "unknown")
+        .ok_or("This song has no catalog language for autoplay.")?;
+    let station = request_context(base, "webradio.createEntityStation", &[
+        ("entity_id", serde_json::json!([source]).to_string()), ("entity_type", "queue".into())
+    ], "android").await?;
+    let station_id = station["stationid"].as_str().filter(|value| !value.is_empty() && value.len() <= 512 && !value.chars().any(char::is_control))
+        .ok_or("Song radio is temporarily unavailable.")?;
+    let response = request_context(base, "webradio.getSong", &[("stationid", station_id.into()), ("k", "30".into())], "android").await?;
+    Ok(radio_tracks(&response, language))
+}
+
+#[tauri::command]
+pub async fn recommend_catalog(id: String) -> Result<Vec<CatalogTrack>, String> {
+    if id.starts_with("saavn:") { return recommendations_from(BASE, &id).await; }
+    // Apple IDs must be matched to the same song before using the radio provider.
+    let seed = itunes_metadata::lookup_catalog(id).await?;
+    let query = format!("{} {}", crate::lyric_identity::query_title(&seed.title), crate::lyric_identity::primary_artist(&seed.artist));
+    let matched = search_from(BASE, &query.chars().take(200).collect::<String>(), 10).await?
+        .into_iter().find(|song| crate::lyric_identity::title(&song.title) == crate::lyric_identity::title(&seed.title)
+            && crate::lyric_identity::artists_match(&song.artist, &seed.artist))
+        .ok_or("No matching song radio was found.")?;
+    recommendations_from(BASE, &matched.id).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,6 +258,25 @@ mod tests {
         "image":"https://c.saavncdn.com/517/album-150x150.jpg", "more_info":{
             "duration":"224", "album":"Yours &quot;Truly&quot;", "artistMap":{"primary_artists":[{"name":"KR$NA"},{"name":"Seedhe Maut"},{"name":"Hurricane"}]}
         }})
+    }
+    #[test]
+    fn song_radio_uses_seed_language_and_validated_metadata_in_provider_order() {
+        let mut seed = song(); seed["language"] = "urdu".into();
+        let mut same = seed.clone(); same["id"] = "abcdefgh".into();
+        let mut other = seed.clone(); other["id"] = "ijklmnop".into(); other["language"] = "english".into();
+        let response = serde_json::json!({"0":{"song":same},"1":{"song":other},"2":{"song":same},"3":{"song":{"id":"bad"}},"stationid":"temporary"});
+        assert_eq!(radio_tracks(&response, "urdu").iter().map(|row| row.id.as_str()).collect::<Vec<_>>(), vec!["saavn:abcdefgh"]);
+        let (base, server) = crate::provider_http::tests::server(vec![
+            ("200 OK", serde_json::json!({"songs":[seed]}).to_string()),
+            ("200 OK", serde_json::json!({"stationid":"temporary"}).to_string()),
+            ("200 OK", response.to_string()),
+        ]);
+        let songs = runtime().block_on(recommendations_from(&base, "saavn:QAbmbZ7O")).unwrap();
+        assert_eq!(songs.len(), 1);
+        let requests = server.join().unwrap();
+        assert!(requests[1].contains("webradio.createEntityStation") && requests[1].contains("ctx=android"));
+        assert!(requests[2].contains("webradio.getSong") && requests[2].contains("stationid=temporary"));
+        assert!(runtime().block_on(recommendations_from(&base, "saavn:bad")).is_err());
     }
     fn runtime() -> tokio::runtime::Runtime {
         tokio::runtime::Builder::new_current_thread()
@@ -617,6 +679,51 @@ fn album_summary(row: &Value) -> Option<CatalogAlbum> {
         year: positive_number(&row["year"]),
         track_count: positive_number(&row["more_info"]["song_count"]),
     })
+}
+
+fn home_albums(response: &Value, language: &str) -> Result<Vec<CatalogAlbum>, String> {
+    let rows = response.as_array().ok_or("The discovery shelf is unavailable. Search music or try again later.")?;
+    let mut ids = HashSet::new();
+    let mut editions = HashSet::new();
+    Ok(rows.iter().filter(|row| row["language"].as_str() == Some(language)).filter_map(|row| {
+        row.get("more_info")?.as_object()?.get("artistMap")?.as_object()?;
+        let mut row = row.clone();
+        // This feed puts album credits in artistMap.artists instead of primary_artists.
+        if credits(&row["more_info"]["artistMap"]).is_empty() {
+            row["more_info"]["artistMap"]["primary_artists"] = row["more_info"]["artistMap"]["artists"].clone();
+        }
+        let mut album = album_summary(&row)?;
+        album.year = album.year.or_else(|| row["more_info"]["release_date"].as_str()?.split('-').next()?.parse::<u32>().ok().filter(|year| (1900..=2200).contains(year)));
+        if !ids.insert(album.id.clone()) || (!album.artist.is_empty() && !editions.insert(format!("{}\0{}", album.title.to_lowercase(), album.artist.to_lowercase()))) { return None; }
+        Some(album)
+    }).take(12).collect())
+}
+
+#[tauri::command]
+pub async fn discover_albums(language: String) -> Result<Vec<CatalogAlbum>, String> {
+    if !["english", "hindi", "tamil", "telugu", "malayalam", "kannada", "punjabi", "bengali", "marathi"].contains(&language.as_str()) {
+        return Err("Choose a supported discovery language.".into());
+    }
+    let response = request(BASE, "content.getTrending", &[("entity_type", "album".into()), ("entity_language", language.clone())]).await?;
+    home_albums(&response, &language)
+}
+
+#[cfg(test)]
+mod home_tests {
+    use super::*;
+    #[test]
+    fn home_feed_validates_language_identity_credits_and_duplicate_editions() {
+        let row = serde_json::json!({"id":"42", "type":"album", "title":"A &amp; B", "language":"tamil", "image":"https://c.saavncdn.com/cover.jpg", "more_info":{"release_date":"2026-10-20", "artistMap":{"artists":[{"id":"9","name":"Composer"}]}}});
+        let mut duplicate = row.clone(); duplicate["id"] = "43".into();
+        let mut other_language = row.clone(); other_language["language"] = "hindi".into();
+        let albums = home_albums(&serde_json::json!([row, duplicate, other_language, {"id":"oops"}, {"language":"tamil", "more_info":[]}]), "tamil").unwrap();
+        assert_eq!(albums.len(), 1);
+        assert_eq!(albums[0].id, "saavn:album:42");
+        assert_eq!(albums[0].title, "A & B");
+        assert_eq!(albums[0].artist, "Composer");
+        assert_eq!(albums[0].year, Some(2026));
+        assert!(home_albums(&serde_json::json!({"error":"unavailable"}), "tamil").is_err());
+    }
 }
 
 #[tauri::command]

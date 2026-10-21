@@ -105,9 +105,8 @@ async function launch(seed = false) {
       passed: false,
     }),
   );
-  await page
-    .getByRole("heading", { name: "Your library." })
-    .waitFor({ timeout: 30000 });
+  await page.getByRole("button", { name: "Open library", exact: true }).click({ timeout: 30000 });
+  await page.getByRole("heading", { name: "Your library." }).waitFor();
   cdp = await page.context().newCDPSession(page);
 }
 async function close() {

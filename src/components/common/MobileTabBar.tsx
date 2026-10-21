@@ -23,6 +23,9 @@ export function MobileTabBar({
 
   return (
     <nav className="mobile-tab-bar" aria-label="Mobile navigation">
+      <button type="button" className={`mobile-tab ${view === "discover" ? "active" : ""}`} onClick={() => setView("discover")} aria-label="Discover">
+        <Globe size={20} strokeWidth={view === "discover" ? 2.2 : 1.8} /><span>Discover</span>
+      </button>
       <button
         type="button"
         className={`mobile-tab ${isLibraryActive ? "active" : ""}`}
@@ -31,16 +34,6 @@ export function MobileTabBar({
       >
         <Library size={20} strokeWidth={isLibraryActive ? 2.2 : 1.8} />
         <span>Library</span>
-      </button>
-
-      <button
-        type="button"
-        className={`mobile-tab ${view === "discover" ? "active" : ""}`}
-        onClick={() => setView("discover")}
-        aria-label="Discover"
-      >
-        <Globe size={20} strokeWidth={view === "discover" ? 2.2 : 1.8} />
-        <span>Discover</span>
       </button>
 
       <button

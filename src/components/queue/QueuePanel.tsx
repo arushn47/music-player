@@ -7,7 +7,7 @@ import {
   PanelRightClose,
   X,
 } from "lucide-react";
-import { Artwork, IconButton } from "../common";
+import { Artwork, DownloadedBadge, IconButton } from "../common";
 import type { Session, Track } from "../../domain/types";
 import { playbackQueue } from "../../domain/queue";
 
@@ -75,6 +75,7 @@ export function QueuePanel({
                   <span className="queue-info">
                     <button className="track-title-button" aria-label={`Play queued ${t.title}`} onClick={() => onSelectQueue(entry.id, true)}><strong dir="auto">{t.title}</strong></button>
                     <small>
+                      <DownloadedBadge track={t} />
                       <ArtistLinks artistString={t.artist} onNavigateArtist={onNavigateArtist} />
                       {entry.id === session.currentId ? " · Now playing" : ""}
                     </small>

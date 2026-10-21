@@ -36,6 +36,11 @@ export function canonicalTrack(
   };
 }
 
+export function catalogQueueTrack(catalog: CatalogTrack): Track {
+  return { id: catalog.id, metadataSourceId: catalog.id, title: catalog.title, artist: canonicalArtistCredit(catalog.artist),
+    album: catalog.album, duration: catalog.duration, artworkUrl: catalog.artworkUrl, format: "catalog", fileName: "", missing: false };
+}
+
 export interface ResolutionOptions {
   verify?: (candidate: YtdlpSearchResult) => Promise<Partial<YtdlpSearchResult> | void>;
   exclude?: Set<string>;
@@ -117,5 +122,5 @@ export async function resolveCatalogSource(
   if (!successfulSearches && searches) throw new Error("Audio search failed: the source provider or network is unavailable. Check your connection and retry.");
   if (extractionFailures) throw new Error("Matching recordings were found, but stream extraction failed for all available candidates. Retry later or check the streaming engine in Settings.");
   if (successfulSearches < searches) throw new Error("Some audio searches failed. Source availability could not be confirmed; check your connection and retry.");
-  throw new Error("No matching audio source was found after checking available recordings. This catalog entry may be unavailable; retry later.");
+  throw new Error("No matching audio source could be verified for this catalog entry. Try searching the song directly in Discover, or retry.");
 }

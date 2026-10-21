@@ -1,6 +1,7 @@
 import { ArtistLinks } from "../common/ArtistLinks";
 import React, { useRef, useState } from "react";
 import {
+  Ellipsis,
   Shuffle,
   SkipBack,
   Play,
@@ -13,7 +14,9 @@ import {
   VolumeX,
   Heart,
   ListMusic,
-  Loader2,
+  Maximize2,
+  PictureInPicture2,
+  Infinity as InfinityIcon,
 } from "lucide-react";
 import { Artwork } from "../common/Artwork";
 import { IconButton } from "../common/IconButton";
@@ -21,6 +24,13 @@ import type { Track, Session, Preferences } from "../../domain/types";
 import type { Playback } from "../../player/controller";
 
 export interface PlayerBarProps {
+  autoplayLoading?: boolean;
+  onFloatingLyrics?: () => void;
+  floatingLyricsOpen?: boolean;
+  floatingLyricsLocked?: boolean;
+  floatingLyricsBusy?: boolean;
+  onExpand?: () => void;
+  expanded?: boolean;
   onNavigateArtist?: (id: string) => void;
   track?: Track | null;
   tracks: Track[];
@@ -49,6 +59,13 @@ const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 
 export function PlayerBar({
+  autoplayLoading = false,
+  onFloatingLyrics,
+  floatingLyricsOpen,
+  floatingLyricsLocked,
+  floatingLyricsBusy,
+  onExpand,
+  expanded = false,
   onNavigateArtist,
   track,
   tracks,
@@ -73,6 +90,7 @@ export function PlayerBar({
   onSetting,
 }: PlayerBarProps) {
   const [seekHover, setSeekHover] = useState<{ time: number; x: number } | null>(null);
+  const [showRemaining, setShowRemaining] = useState(false);
   const lastVolume = useRef<number>(
     session.settings.volume > 0 ? session.settings.volume : 0.72,
   );
@@ -94,7 +112,7 @@ export function PlayerBar({
 
 
   return (
-    <footer className="transport" aria-label="Playback controls">
+    <footer className={`transport ${expanded ? "expanded-transport" : ""}`} aria-label="Playback controls">
       <div
         className="seek-bar-top"
         onMouseMove={(e) => {
@@ -132,12 +150,28 @@ export function PlayerBar({
         />
       </div>
 
+      {expanded && (
+        <div className="expanded-times">
+          <span>{clock(playback.time)}</span>
+          <button
+            type="button"
+            className="expanded-time-toggle"
+            aria-label={showRemaining ? "Show total duration" : "Show remaining time"}
+            title={showRemaining ? "Click to show total duration" : "Click to show remaining time"}
+            onClick={() => setShowRemaining((s) => !s)}
+          >
+            {showRemaining
+              ? `−${clock(Math.max(0, playback.duration - playback.time))}`
+              : clock(playback.duration)}
+          </button>
+        </div>
+      )}
       <div className="now-playing">
-        <Artwork url={track?.artworkUrl} className="transport-cover" />
+        {onExpand && !mobile ? <button className="cover-expand" disabled={!track} aria-label="Open expanded player" onClick={onExpand}><Artwork url={track?.artworkUrl} className="transport-cover" /><Maximize2 size={18} /></button> : <Artwork url={track?.artworkUrl} className="transport-cover" />}
         <div className="track-meta now-playing-meta">
           <span className="now-playing-title-wrap">
             <strong dir="auto">
-              {displayTitle}
+              {expanded ? rawTitle : displayTitle}
             </strong>
             {Boolean(track?.title) && (
               <span className="title-hover-tooltip" role="tooltip">
@@ -167,7 +201,7 @@ export function PlayerBar({
           <span>{clock(playback.duration)}</span>
         </div>
 
-        {track && tracks.some((saved) => saved.id === track.id) && (
+        {track && tracks.some((saved) => saved.id === track.id) && !expanded && (
           <IconButton
             label="Favorite current track"
             active={session.favorites.includes(track.id)}
@@ -182,7 +216,7 @@ export function PlayerBar({
 
         {track && track.format !== "catalog" && (
           <details className="track-menu current-track-menu">
-            <summary aria-label="Current song actions">•••</summary>
+            <summary aria-label="Current song actions" title="Song actions"><Ellipsis size={20} aria-hidden="true" /></summary>
             <div className="menu-popover">
               {!tracks.some((saved) => saved.id === track.id) && (
                 <button
@@ -242,16 +276,23 @@ export function PlayerBar({
             <SkipBack size={19} fill="currentColor" />
           </IconButton>
           <button
-            className="play-button"
+            className={`play-button ${(autoplayLoading || playback.status === "loading") ? "is-loading" : ""} ${playback.status === "buffering" ? "is-buffering" : ""}`}
             aria-label={
-              playback.status === "loading" ? "Loading song" : playback.status === "playing" || playback.status === "buffering"
-                ? "Pause"
-                : "Play"
+              autoplayLoading || playback.status === "loading"
+                ? "Loading song"
+                : playback.status === "buffering"
+                  ? "Buffering song"
+                  : playback.status === "playing"
+                    ? "Pause"
+                    : "Play"
             }
-            disabled={(!track && !tracks.length) || playback.status === "loading"}
+            disabled={autoplayLoading || (!track && !tracks.length)}
+            aria-busy={autoplayLoading || playback.status === "loading" || playback.status === "buffering"}
             onClick={onTogglePlay}
           >
-            {playback.status === "loading" ? <Loader2 size={21} className="spin" aria-hidden="true" /> : playback.status === "playing" || playback.status === "buffering" ? (
+            {autoplayLoading || playback.status === "loading" || playback.status === "buffering" ? (
+              <div className="player-spinner" aria-hidden="true" />
+            ) : playback.status === "playing" ? (
               <Pause size={21} fill="currentColor" />
             ) : (
               <Play size={21} fill="currentColor" />
@@ -287,69 +328,85 @@ export function PlayerBar({
         </div>
       </div>
 
-      <div className="player-right">
-        <span className="playback-state" data-testid="playback-state">
-          {playback.status === "idle" ? "Ready" : playback.status}
-        </span>
-        <IconButton
-          label="Open lyrics"
-          className="player-btn-lyrics"
-          active={view === "lyrics"}
-          onClick={() => setView("lyrics")}
-        >
-          <FileText size={18} />
-        </IconButton>
-        {onToggleQueue && (
-          <IconButton
-            label={queueOpen ? "Hide queue" : "Show queue"}
-            className="player-btn-queue"
-            active={queueOpen}
-            onClick={onToggleQueue}
-          >
-            <ListMusic size={18} />
+      {!expanded && (
+        <div className="player-right">
+          <IconButton label={session.settings.autoplay ? 'Turn off Autoplay' : 'Turn on Autoplay'} active={session.settings.autoplay} onClick={() => onSetting('autoplay', !session.settings.autoplay)}>
+            <InfinityIcon size={18} />
           </IconButton>
-        )}
-        {!mobile && (
-          <div className="player-volume-container">
+          {onFloatingLyrics && !mobile && <IconButton
+            label={floatingLyricsLocked ? 'Unlock floating lyrics' : floatingLyricsOpen ? 'Close floating lyrics' : 'Open floating lyrics'}
+            active={floatingLyricsOpen} disabled={floatingLyricsBusy} onClick={onFloatingLyrics}
+          ><PictureInPicture2 size={18} /></IconButton>}
+          <span
+            className={`playback-state ${(autoplayLoading || playback.status === "loading") ? "is-loading" : ""} ${playback.status === "buffering" ? "is-buffering" : ""}`}
+            data-testid="playback-state"
+          >
+            {playback.status === "idle"
+              ? "Ready"
+              : autoplayLoading || playback.status === "loading" || playback.status === "buffering"
+                ? "Buffering…"
+                : playback.status}
+          </span>
+          <IconButton
+            label="Open lyrics"
+            className="player-btn-lyrics"
+            active={view === "lyrics"}
+            onClick={() => setView("lyrics")}
+          >
+            <FileText size={18} />
+          </IconButton>
+          {(mobile || expanded) && onToggleQueue && (
             <IconButton
-              label={session.settings.volume === 0 ? "Unmute" : "Mute"}
-              className="volume-icon-btn"
-              onClick={() => {
-                if (session.settings.volume > 0) {
-                  lastVolume.current = session.settings.volume;
-                  onSetting("volume", 0);
-                } else {
-                  onSetting("volume", lastVolume.current || 0.72);
-                }
-              }}
+              label={queueOpen ? "Hide queue" : "Show queue"}
+              className="player-btn-queue"
+              active={queueOpen}
+              onClick={onToggleQueue}
             >
-              {session.settings.volume === 0 ? (
-                <VolumeX size={18} />
-              ) : (
-                <Volume2 size={18} />
-              )}
+              <ListMusic size={18} />
             </IconButton>
-            <input
-              aria-label="Volume"
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={session.settings.volume}
-              style={
-                {
-                  "--volume-percent": `${Math.min(100, Math.max(0, session.settings.volume * 100))}%`,
-                } as React.CSSProperties
-              }
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                if (val > 0) lastVolume.current = val;
-                onSetting("volume", val);
-              }}
-            />
-          </div>
-        )}
-      </div>
+          )}
+          {!mobile && (
+            <div className="player-volume-container">
+              <IconButton
+                label={session.settings.volume === 0 ? "Unmute" : "Mute"}
+                className="volume-icon-btn"
+                onClick={() => {
+                  if (session.settings.volume > 0) {
+                    lastVolume.current = session.settings.volume;
+                    onSetting("volume", 0);
+                  } else {
+                    onSetting("volume", lastVolume.current || 0.72);
+                  }
+                }}
+              >
+                {session.settings.volume === 0 ? (
+                  <VolumeX size={18} />
+                ) : (
+                  <Volume2 size={18} />
+                )}
+              </IconButton>
+              <input
+                aria-label="Volume"
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={session.settings.volume}
+                style={
+                  {
+                    "--volume-percent": `${Math.min(100, Math.max(0, session.settings.volume * 100))}%`,
+                  } as React.CSSProperties
+                }
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val > 0) lastVolume.current = val;
+                  onSetting("volume", val);
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
     </footer>
   );
 }

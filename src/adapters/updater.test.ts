@@ -15,6 +15,9 @@ describe("manual Windows updater", () => {
     vi.clearAllMocks();
     vi.stubEnv("DEV", false);
     vi.stubGlobal("navigator", { userAgent: "Windows NT 10.0" });
+    const values = new Map<string, string>();
+    vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
+    mocks.getVersion.mockResolvedValue("1.0.4");
     mocks.config.plugins.updater.pubkey = "test-key";
     mocks.config.plugins.updater.endpoints = ["https://example.com/latest.json"];
   });
@@ -29,7 +32,7 @@ describe("manual Windows updater", () => {
     mocks.config.plugins.updater.pubkey = "test-key";
     vi.stubEnv("DEV", true);
     await api.checkForUpdates();
-    expect(api.getUpdateState().stage).toBe("unconfigured");
+    expect(api.getUpdateState().stage).toBe("development");
   });
   it("only reports current after a successful configured check", async () => {
     mocks.check.mockResolvedValue(null);
@@ -97,4 +100,36 @@ describe("manual Windows updater", () => {
     expect(api.getUpdateState().stage).toBe("error");
     expect(install).not.toHaveBeenCalled();
   });
+});
+
+it("retains notes for the target version and shows them only after that version actually starts", async () => {
+  vi.resetModules();vi.stubGlobal("navigator", { userAgent: "Windows" });vi.stubEnv("DEV", false);
+  const values = new Map<string, string>([["lumaire:last-installed-version", "1.0.4"]]);
+  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
+  mocks.getVersion.mockResolvedValue("1.0.4");
+  mocks.check.mockResolvedValue({ version: "1.0.5", body: "New lyrics and autoplay", download: vi.fn().mockResolvedValue(undefined), install: vi.fn().mockResolvedValue(undefined) });
+  let api = await import("./updater");await api.initializeUpdates();
+  expect(api.getUpdateState().unreadNotes).toBe(false);
+  await api.checkForUpdates();await api.downloadUpdate();await api.restartAndUpdate();
+  expect(JSON.parse(values.get("lumaire:pending-release-notes")!).notes).toBe("New lyrics and autoplay");
+  vi.resetModules();api=await import("./updater");await api.initializeUpdates();
+  expect(api.getUpdateState().unreadNotes).toBe(false);
+  expect(values.has("lumaire:pending-release-notes")).toBe(true);
+  mocks.getVersion.mockResolvedValue("1.0.5");vi.resetModules();api=await import("./updater");await api.initializeUpdates();
+  expect(api.getUpdateState()).toMatchObject({ unreadNotes: true, installedRelease: { version: "1.0.5", notes: "New lyrics and autoplay" } });
+  expect(values.has("lumaire:pending-release-notes")).toBe(false);
+  api.dismissReleaseNotes();expect(api.getUpdateState().unreadNotes).toBe(false);
+  vi.resetModules();api=await import("./updater");await api.initializeUpdates();
+  expect(api.getUpdateState()).toMatchObject({ unreadNotes:false, installedRelease:{version:"1.0.5"} });
+  vi.unstubAllGlobals();vi.unstubAllEnvs();
+});
+it("shows bundled notes after a manual APK upgrade and rejects malformed saved notes", async () => {
+  vi.resetModules();vi.stubGlobal("navigator", { userAgent: "Android" });vi.stubEnv("DEV", false);
+  const values = new Map<string,string>([["lumaire:last-installed-version","1.0.3"],["lumaire:pending-release-notes",JSON.stringify({ version:"1.0.4", notes: { html: "invalid" } })]]);
+  vi.stubGlobal("localStorage",{getItem:(key:string)=>values.get(key)??null,setItem:(key:string,value:string)=>values.set(key,value),removeItem:(key:string)=>values.delete(key)});
+  mocks.getVersion.mockResolvedValue("1.0.4");const api=await import("./updater");await api.initializeUpdates();
+  expect(api.getUpdateState()).toMatchObject({unreadNotes:true,installedRelease:{version:"1.0.4"}});
+  expect(typeof api.getUpdateState().installedRelease?.notes).toBe("string");
+  expect(api.supportsAndroidUpdates()).toBe(true);expect(api.supportsWindowsUpdates()).toBe(false);
+  vi.unstubAllGlobals();vi.unstubAllEnvs();
 });

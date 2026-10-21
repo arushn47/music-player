@@ -1,6 +1,6 @@
 import React from "react";
 import type { CatalogArtistCredit } from "../../adapters/native";
-import { artistCredits } from "../../domain/catalog-links";
+import { artistCredits, artistReference } from "../../domain/catalog-links";
 
 export interface ArtistLinksProps {
   artists?: CatalogArtistCredit[];
@@ -16,7 +16,7 @@ export function ArtistLinks({
   className = "",
 }: ArtistLinksProps) {
   artists = artists?.length ? artists : artistCredits(artistString || "");
-  artists = artists.map(credit => ({ ...credit, id: credit.id || artistCredits(credit.name)[0]?.id }));
+  artists = artists.map(credit => ({ ...credit, id: credit.id || (artistCredits(credit.name).length ? artistReference(credit.name) : undefined) }));
   // If we have structured artist data with IDs, render individual links
   if (artists && artists.length > 0 && onNavigateArtist) {
     return (

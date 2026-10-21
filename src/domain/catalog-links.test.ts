@@ -11,6 +11,8 @@ describe("catalog navigation references", () => {
   });
   it("keeps individual collaboration credits and escapes locator delimiters", () => {
     expect(artistCredits("KR$NA, Seedhe Maut").map(credit => credit.name)).toEqual(["KR$NA", "Seedhe Maut"]);
+    expect(artistCredits("Bayaan, Hasan Raheem & Rovalio").map(credit => credit.name)).toEqual(["Bayaan", "Hasan Raheem", "Rovalio"]);
+    expect(artistCredits("R&B")[0].name).toBe("R&B");
     expect(artistReference("AC/DC: Live")).toBe("saavn:artist:name:AC%2FDC%3A%20Live");
     expect(albumReference("Yours: Truly", "KR$NA, Phenom")).toBe("saavn:album:search:KR%24NA:Yours%3A%20Truly");
   });

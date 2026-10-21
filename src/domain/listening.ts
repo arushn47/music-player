@@ -36,10 +36,15 @@ export function formatListening(ms: number) {
   const minutes = Math.floor(seconds / 60);
   return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
+export function historyArtwork(record: ListeningRecord): string | null {
+  if (record.artworkUrl) return record.artworkUrl;
+  return record.providerId === "youtube" && /^[A-Za-z0-9_-]{11}$/.test(record.sourceId ?? "") && record.trackId === `youtube:${record.sourceId}`
+    ? `https://i.ytimg.com/vi/${record.sourceId}/mqdefault.jpg` : null;
+}
 export function historyTrack(record: ListeningRecord): Track {
   return {
     id: record.trackId, title: record.title, artist: record.artist,
-    album: record.album, artworkUrl: record.artworkUrl,
+    album: record.album, artworkUrl: historyArtwork(record),
     ...(record.metadataSourceId ? { metadataSourceId: record.metadataSourceId } : {}),
     duration: 0, fileName: record.title, missing: false,
     format: record.providerId === "youtube" ? "YouTube" : "Local",

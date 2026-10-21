@@ -89,6 +89,16 @@ jobs:
           npm test
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Load reviewed release notes
+        id: notes
+        run: |
+          $releaseNotesText = Get-Content -Raw -LiteralPath 'RELEASE_NOTES.md'
+          if (-not $releaseNotesText.StartsWith("# Lumaire $env:RELEASE_TAG" + "`n") -and -not $releaseNotesText.StartsWith("# Lumaire $env:RELEASE_TAG" + "`r`n")) { throw 'Finalize RELEASE_NOTES.md with the exact release tag before publishing.' }
+          $notesDelimiter = [guid]::NewGuid().ToString()
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "body<<$notesDelimiter"
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value $releaseNotesText
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value $notesDelimiter
+
       # v0, inspected for Tauri v2 .exe.sig support and tauriScript argument forwarding.
       - name: Build signed NSIS artifacts and upload draft release
         uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5
@@ -101,7 +111,7 @@ jobs:
           args: --ci --bundles nsis --target x86_64-pc-windows-msvc --config src-tauri/tauri.release.conf.json -- --locked
           tagName: ${{ env.RELEASE_TAG }}
           releaseName: Lumaire ${{ env.RELEASE_TAG }}
-          releaseBody: 'Windows x64 release. Download the setup EXE to install Lumaire. Existing updater-enabled installations can update through Settings → About.'
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true

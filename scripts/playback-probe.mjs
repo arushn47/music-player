@@ -18,7 +18,7 @@ try {
   for (let i = 0; i < 120; i++) { try { if ((await fetch(`http://127.0.0.1:${port}/json/version`)).ok) break; } catch {} await delay(250); }
   browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
   const page = browser.contexts()[0].pages()[0];
-  await page.getByRole("heading", { name: "Your library." }).waitFor().catch(async error => { console.log(page.url(), await page.locator("body").innerText()); throw error; });
+  await page.getByRole("heading", { name: "Discover new music." }).waitFor().catch(async error => { console.log(page.url(), await page.locator("body").innerText()); throw error; });
   const invoke = (command, args) => page.evaluate(([c, a]) => window.__TAURI_INTERNALS__.invoke(c, a), [command, args]);
   for (const title of ["Golden Sparrow", "Kadhal Fail", "Yedi", "Pulla", "Sensitive", "Boom Shaka"]) {
     const tracks = await invoke("search_catalog", { query: title, limit: 10 });

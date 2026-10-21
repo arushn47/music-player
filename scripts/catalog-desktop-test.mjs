@@ -50,7 +50,21 @@ try {
   page = browser.contexts().flatMap(context => context.pages())[0];
   page.setDefaultTimeout(20000);
   page.on("pageerror", error => report.errors.push(error.message));
-  await page.getByRole("heading", { name: "Your library." }).waitFor();
+  await page.getByRole("heading", { name: "Discover new music." }).waitFor();
+  await check("Discover starts with search and real language-filtered albums", async () => {
+    assert(await page.getByRole("textbox", { name: "Search music" }).isVisible());
+    await page.getByRole("region", { name: "Explore albums", exact: true }).locator(".album-card").first().waitFor({ timeout: 90000 });
+    await page.getByRole("button", { name: "Discovery language", exact: true }).click();
+    await page.getByRole("option", { name: "Tamil", exact: true }).click();
+    await page.getByRole("region", { name: "Explore albums", exact: true }).locator(".album-card").first().waitFor({ timeout: 90000 });
+    await page.waitForFunction(() => document.querySelector('.discover-cache-note') && !document.querySelector('[aria-label="Refresh discovery albums"]').disabled);
+    await page.screenshot({ path: path.join(output, "discover-home.png") });
+    const title = await page.getByRole("region", { name: "Explore albums", exact: true }).locator(".album-title").first().innerText();
+    await page.getByRole("region", { name: "Explore albums", exact: true }).locator(".album-card").first().click();
+    await page.locator(".album-page h1").filter({ hasText: title }).waitFor({ timeout: 90000 });
+    await page.getByRole("button", { name: "Back", exact: true }).click();
+    await page.getByRole("heading", { name: "Discover new music." }).waitFor();
+  });
   const invoke = async (command, args) => {
     const request = { command, args };
     report.commands.push(request);

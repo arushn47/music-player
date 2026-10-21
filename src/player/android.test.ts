@@ -24,6 +24,19 @@ afterEach(() => {
 });
 
 describe("Android native playback ownership", () => {
+  it("shows pending catalog identity, stops old audio and keeps unavailable collection entries skippable", async () => {
+    vi.mocked(invoke).mockResolvedValue(playing);
+    const player = new AndroidPlaybackController();
+    const token = player.beginLoading("itunes:42", true);
+    expect(player.state).toMatchObject({ trackId: "itunes:42", status: "loading", autoplay: true });
+    expect(invoke).toHaveBeenCalledWith("android_playback", { action: "stop" });
+    player.failLoading(token, "Unavailable", true);
+    expect(player.state).toMatchObject({ status: "error", trackId: "itunes:42", autoplay: true });
+    const next = player.beginLoading("itunes:43", true);
+    player.failLoading(token, "Old failure", true);
+    expect(player.state.playbackId).toBe(next);
+    expect(player.state.status).toBe("loading");
+  });
   it("forwards canonical display credits only for the selected load", async () => {
     vi.mocked(invoke).mockResolvedValue(playing);
     const metadata = vi.fn((id: string) =>

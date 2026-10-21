@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   FileText,
+  Languages,
   Loader2,
   Music2,
-  Plus,
   RefreshCw,
   Settings2,
+  Subtitles,
   Type,
-  Upload,
   Wifi,
   WifiOff,
   X,
 } from "lucide-react";
 import type { LookupState } from "../../adapters/lrclib";
-import { lyricLayers, isFetchedLyrics } from "../../domain/lyric-display";
+import { lyricLayers, isFetchedLyrics, lyricSourceLink } from "../../domain/lyric-display";
 import { lyricLanguageNames } from "../../domain/lyric-languages";
 import type {
   LyricDocument,
@@ -22,13 +23,14 @@ import type {
   Track,
 } from "../../domain/types";
 import { LyricsSettings } from "./LyricsSettings";
+import { centerLyricLine } from "./scroll-lyric";
 import { ArtistLinks } from "../common/ArtistLinks";
 import {
-  GEMINI_PROCESS_RETRY,
   type LyricProcessingState,
 } from "../../adapters/lyric-processing";
 
 export interface LyricsViewProps {
+  embedded?: boolean;
   onNavigateArtist?: (id: string) => void;
   track?: Track | null;
   doc?: LyricDocument;
@@ -43,13 +45,14 @@ export interface LyricsViewProps {
   session: Session;
   setting: <K extends keyof Preferences>(key: K, value: Preferences[K]) => void;
   onUpdateOffset: (offset: number) => void;
-  attach: (
-    kind: "original" | "romanisation" | "translation",
-  ) => Promise<void> | void;
   clearCache: () => void;
   regenerate: () => void;
   processingState: LyricProcessingState;
+  translateLyrics: (language: string) => Promise<void>;
+  romanizing?: boolean;
   onRetryLookup: () => void;
+  onAlbumRecording?: () => void;
+  audioDuration?: number;
   onMarkInstrumental: () => void;
   onSeek: (seconds: number) => void;
 }
@@ -58,6 +61,7 @@ const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 
 export function LyricsView({
+  embedded = false,
   onNavigateArtist,
   track,
   doc,
@@ -72,15 +76,112 @@ export function LyricsView({
   session,
   setting,
   onUpdateOffset,
-  attach,
   clearCache,
   regenerate,
   processingState,
+  translateLyrics,
+  romanizing = false,
   onRetryLookup,
+  onAlbumRecording,
+  audioDuration,
   onMarkInstrumental,
   onSeek,
 }: LyricsViewProps) {
   const [lyricsMenuOpen, setLyricsMenuOpen] = useState(false);
+  const [portalNode, setPortalNode] = useState<HTMLElement | null>(() =>
+    typeof document !== "undefined" ? document.getElementById("expanded-lyrics-settings-slot") : null
+  );
+
+  useLayoutEffect(() => {
+    if (embedded) {
+      setPortalNode(document.getElementById("expanded-lyrics-settings-slot"));
+    } else {
+      setPortalNode(null);
+    }
+  }, [embedded]);
+
+  const targetSlot = embedded
+    ? (portalNode ?? (typeof document !== "undefined" ? document.getElementById("expanded-lyrics-settings-slot") : null))
+    : null;
+
+  const isProgrammaticScroll = React.useRef(false);
+  const programmaticScrollTimer = React.useRef<number | null>(null);
+
+  useEffect(() => {
+    setFollow(true);
+    isProgrammaticScroll.current = true;
+    if (programmaticScrollTimer.current) window.clearTimeout(programmaticScrollTimer.current);
+    if (!embedded) {
+      document.getElementById("main")?.scrollTo({ top: 0, behavior: "instant" });
+    } else {
+      const container = document.querySelector<HTMLElement>(".expanded-lyrics");
+      if (activeRef.current) {
+        centerLyricLine(activeRef.current, "instant");
+      } else if (container) {
+        container.scrollTo({ top: 0, behavior: "instant" });
+      }
+    }
+    programmaticScrollTimer.current = window.setTimeout(() => {
+      isProgrammaticScroll.current = false;
+    }, 450);
+  }, [track?.id, setFollow, embedded]);
+
+  useEffect(() => {
+    if (follow && followTarget && activeRef.current) {
+      isProgrammaticScroll.current = true;
+      if (programmaticScrollTimer.current) window.clearTimeout(programmaticScrollTimer.current);
+      centerLyricLine(
+        activeRef.current,
+        matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+      );
+      programmaticScrollTimer.current = window.setTimeout(() => {
+        isProgrammaticScroll.current = false;
+      }, 450);
+    }
+  }, [followTarget, follow]);
+
+  useEffect(() => {
+    return () => {
+      if (programmaticScrollTimer.current) {
+        window.clearTimeout(programmaticScrollTimer.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const container = embedded
+      ? document.querySelector<HTMLElement>(".expanded-lyrics")
+      : document.getElementById("main");
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (isProgrammaticScroll.current) return;
+      if (follow) {
+        setFollow(false);
+      }
+    };
+
+    const handleUserGesture = () => {
+      isProgrammaticScroll.current = false;
+      if (follow) {
+        setFollow(false);
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    container.addEventListener("wheel", handleUserGesture, { passive: true });
+    container.addEventListener("touchmove", handleUserGesture, { passive: true });
+    container.addEventListener("pointerdown", handleUserGesture, { passive: true });
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      container.removeEventListener("wheel", handleUserGesture);
+      container.removeEventListener("touchmove", handleUserGesture);
+      container.removeEventListener("pointerdown", handleUserGesture);
+    };
+  }, [embedded, follow, setFollow]);
+
+  const sourceLink = doc && lyricSourceLink(doc);
 
   useEffect(() => {
     if (!lyricsMenuOpen) return;
@@ -109,63 +210,71 @@ export function LyricsView({
     };
   }, [lyricsMenuOpen]);
 
+  const settingsContent = (
+    <div className="lyric-settings">
+      <button
+        type="button"
+        className="icon-button lyric-settings-trigger"
+        aria-label="Lyrics settings"
+        title="Lyrics settings"
+        aria-haspopup="true"
+        aria-expanded={lyricsMenuOpen}
+        aria-controls="lyrics-settings-menu"
+        onClick={() => setLyricsMenuOpen((x) => !x)}
+      >
+        <Settings2 size={18} />
+      </button>
+      {lyricsMenuOpen && (
+        <>
+          <div
+            className="lyric-settings-backdrop"
+            aria-hidden="true"
+            onClick={() => setLyricsMenuOpen(false)}
+          />
+          <div
+            id="lyrics-settings-menu"
+            className="lyric-settings-menu"
+            role="dialog"
+            aria-label="Lyrics settings"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setLyricsMenuOpen(false);
+                e.currentTarget.parentElement
+                  ?.querySelector("button")
+                  ?.focus();
+              }
+            }}
+          >
+            <LyricsSettings
+              settings={session.settings}
+              setting={setting}
+              doc={doc}
+              track={track || undefined}
+              lyricSynced={lyricSynced}
+              onUpdateOffset={onUpdateOffset}
+              onClose={() => setLyricsMenuOpen(false)}
+              cachedCount={
+                Object.values(session.lyrics).filter(isFetchedLyrics).length
+              }
+              clearCache={clearCache}
+              regenerate={regenerate}
+              processingState={processingState}
+            />
+          </div>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <section className="lyric-room">
-      <div className="lyric-settings-fixed-anchor">
-        <div className="lyric-settings">
-          <button
-            className="icon-button lyric-settings-trigger"
-            aria-label="Lyrics settings"
-            title="Lyrics settings"
-            aria-haspopup="true"
-            aria-expanded={lyricsMenuOpen}
-            aria-controls="lyrics-settings-menu"
-            onClick={() => setLyricsMenuOpen((x) => !x)}
-          >
-            <Type size={17} />
-          </button>
-          {lyricsMenuOpen && (
-            <>
-              <div
-                className="lyric-settings-backdrop"
-                aria-hidden="true"
-                onClick={() => setLyricsMenuOpen(false)}
-              />
-              <div
-                id="lyrics-settings-menu"
-                className="lyric-settings-menu"
-                role="dialog"
-                aria-label="Lyrics settings"
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setLyricsMenuOpen(false);
-                    e.currentTarget.parentElement
-                      ?.querySelector("button")
-                      ?.focus();
-                  }
-                }}
-              >
-                <LyricsSettings
-                  settings={session.settings}
-                  setting={setting}
-                  doc={doc}
-                  track={track || undefined}
-                  lyricSynced={lyricSynced}
-                  onUpdateOffset={onUpdateOffset}
-                  attach={attach}
-                  onClose={() => setLyricsMenuOpen(false)}
-                  cachedCount={
-                    Object.values(session.lyrics).filter(isFetchedLyrics).length
-                  }
-                  clearCache={clearCache}
-                  regenerate={regenerate}
-                  processingState={processingState}
-                />
-              </div>
-            </>
-          )}
+      {embedded ? (
+        targetSlot ? createPortal(settingsContent, targetSlot) : null
+      ) : (
+        <div className="lyric-settings-fixed-anchor">
+          {settingsContent}
         </div>
-      </div>
+      )}
 
       <div className="page-heading lyric-room-heading">
         <div>
@@ -187,58 +296,41 @@ export function LyricsView({
                       ? "Not synced · Estimated autoscroll"
                       : "Not synced · Manual scrolling"}
                 </span>
-                {doc.source?.provider === "lrclib" &&
-                  Number.isSafeInteger(doc.source.recordId) && (
+                {sourceLink && (
                     <>
                       {" · "}
                       <a
                         className="lyric-provenance-link"
-                        href={`https://lrclib.net/tracks/${doc.source.recordId}`}
+                        href={sourceLink.url}
                         target="_blank"
                         rel="noreferrer"
                       >
-                        LRCLIB ↗
+                        {sourceLink.name} ↗
                       </a>
                     </>
                   )}
               </span>
             )}
           </p>
+          {doc && isFetchedLyrics(doc) && !doc.instrumental && !lyricSynced && <p className="subtitle">
+            <button className="link-button" disabled={lyricLookup.status === "loading"} onClick={onRetryLookup}>{lyricLookup.status === "loading" ? "Checking synced lyrics…" : "Check for synced lyrics"}</button>
+            {track?.metadataSourceId && onAlbumRecording && audioDuration && track.duration - audioDuration > Math.max(5, track.duration * 0.02) ? <>
+              {" · This audio is shorter than the album recording. "}
+              <button className="link-button" disabled={busy} onClick={onAlbumRecording}>Try album recording</button>
+            </> : null}
+          </p>}
           {doc && !doc.instrumental && <p className="subtitle" aria-label="Song languages">
             Languages: {lyricLanguageNames(doc).join(", ") || (doc.languageSource ? "Not identified" : "Detecting…")}
           </p>}
         </div>
-        {!doc && (
-          <div className="lyric-header-actions">
-            <button
-              className="subtle"
-              disabled={!track || busy}
-              onClick={() => void attach("original")}
-            >
-              <Upload size={15} />
-              Attach lyrics
-            </button>
-          </div>
-        )}
       </div>
-
       {doc &&
-        (processingState.status === "processing" ||
-          processingState.status === "error") && (
+        processingState.status === "error" && (
           <div className="listening-notice" role="status">
-            {processingState.status === "processing"
-              ? "Generating pronunciation and English meaning…"
-              : processingState.message}
-            {processingState.status === "error" && (
-              <button
-                type="button"
-                onClick={() =>
-                  window.dispatchEvent(new Event(GEMINI_PROCESS_RETRY))
-                }
-              >
-                Retry Gemini
-              </button>
-            )}
+            {processingState.message}
+            <button type="button" onClick={() => void translateLyrics("auto")}>
+              Retry translation
+            </button>
           </div>
         )}
       {!doc ? (
@@ -247,7 +339,7 @@ export function LyricsView({
             <>
               <Loader2 size={36} className="spin" />
               <h2>Looking up lyrics…</h2>
-              <p>Searching LRCLIB for {track?.title}.</p>
+              <p>Searching for lyrics to {track?.title}.</p>
             </>
           ) : lyricLookup.status === "error" ? (
             <>
@@ -262,39 +354,19 @@ export function LyricsView({
                 <RefreshCw size={16} />
                 Retry
               </button>
-              <button
-                className="subtle"
-                disabled={!track || busy}
-                onClick={() => void attach("original")}
-              >
-                <Upload size={16} />
-                Attach lyrics manually instead
-              </button>
             </>
           ) : lyricLookup.status === "not_found" ? (
             <>
               <Wifi size={36} />
               <h2>No lyrics found</h2>
-              <p>
-                No lyrics are available for this track yet.
-                <br />
-                Attach an LRC or text file manually.
-              </p>
+              <p>No lyrics are available for this track yet.</p>
               <button
-                className="subtle"
+                className="primary"
                 disabled={!track}
                 onClick={onRetryLookup}
               >
                 <RefreshCw size={16} />
                 Retry lookup
-              </button>
-              <button
-                className="primary"
-                disabled={!track || busy}
-                onClick={() => void attach("original")}
-              >
-                <Upload size={16} />
-                Attach lyrics manually
               </button>
               <button
                 className="subtle"
@@ -308,19 +380,7 @@ export function LyricsView({
             <>
               <FileText size={36} />
               <h2>The music has words. Bring them here.</h2>
-              <p>
-                Lyrics are looked up automatically when you play a track.
-                <br />
-                Or attach an LRC or text file manually.
-              </p>
-              <button
-                className="primary"
-                disabled={!track || busy}
-                onClick={() => void attach("original")}
-              >
-                <Plus size={17} />
-                Attach original lyrics
-              </button>
+              <p>Lyrics are looked up automatically when you play a track.</p>
               <button
                 className="subtle"
                 disabled={!track}
@@ -332,13 +392,10 @@ export function LyricsView({
           )}
         </div>
       ) : doc.instrumental ? (
-        <div className="empty">
-          <Music2 size={36} />
+        <div className="lyric-empty-instrumental">
+          <Music2 size={38} className="lyric-instrumental-icon" />
           <h2>Let the music speak.</h2>
-          <p>You marked this recording as instrumental.</p>
-          <button className="subtle" onClick={() => void attach("original")}>
-            Attach lyrics instead
-          </button>
+          <p>This track is an instrumental.</p>
         </div>
       ) : (
         <>
@@ -349,70 +406,119 @@ export function LyricsView({
                 {w}
               </p>
             ))}
-          <div
-            className={`lyric-lines ${lyricSynced ? "" : "unsynced"}`}
-            style={
-              {
-                "--lyric-size": `${session.settings.lyricSize}px`,
-              } as React.CSSProperties
-            }
-            onWheel={() => setFollow(false)}
-            onTouchMove={() => setFollow(false)}
-          >
-            {doc.lines.map((line) => (
-              <button
-                key={line.id}
-                ref={line.id === followTarget ? activeRef : undefined}
-                className={`lyric-line ${active === line.id ? "is-active" : ""}`}
-                disabled={!lyricSynced || line.time === null}
-                onClick={() =>
-                  onSeek(
-                    Math.max(
-                      0,
-                      (line.time! + doc.fileOffset + doc.userOffset) / 1000,
-                    ),
-                  )
+          {(() => {
+            const activeIndex = lyricSynced && active ? doc.lines.findIndex((l) => l.id === active) : -1;
+            const isFollowing = lyricSynced && follow && activeIndex >= 0;
+            return (
+              <div
+                className={`lyric-lines ${lyricSynced ? "" : "unsynced"} ${isFollowing ? "is-following" : "is-browsing"}`}
+                data-has-active={isFollowing ? "true" : undefined}
+                data-following={isFollowing ? "true" : "false"}
+                style={
+                  {
+                    "--lyric-size": `${session.settings.lyricSize}px`,
+                  } as React.CSSProperties
                 }
-                aria-label={
-                  lyricSynced && line.time !== null
-                    ? `Seek to ${clock((line.time + doc.fileOffset + doc.userOffset) / 1000)}: ${line.text}`
-                    : line.text
-                }
+                onWheel={() => setFollow(false)}
+                onTouchMove={() => setFollow(false)}
               >
-                {lyricLayers(doc, line, session.settings).map(
-                  (layer, index) => (
-                    <span
-                      key={layer.kind}
-                      className={`lyric-${layer.kind} ${index === 0 ? "lyric-primary" : ""}`}
-                      lang={
-                        layer.kind === "translation"
-                          ? "en"
-                          : layer.kind === "roman"
-                            ? "und-Latn"
-                            : /[\u0b80-\u0bff]/.test(line.text)
-                              ? "ta"
-                              : /[\u0900-\u097f]/.test(line.text)
-                                ? "und-Deva"
-                                : undefined
+                {doc.lines.map((line, index) => {
+                  const distance = isFollowing ? Math.abs(index - activeIndex) : null;
+                  return (
+                    <button
+                      key={line.id}
+                      ref={line.id === followTarget ? activeRef : undefined}
+                      className={`lyric-line ${active === line.id ? "is-active" : ""}`}
+                      data-distance={distance !== null ? Math.min(distance, 4) : undefined}
+                      disabled={!lyricSynced || line.time === null}
+                      onClick={() => {
+                        setFollow(true);
+                        onSeek(
+                          Math.max(
+                            0,
+                            (line.time! + doc.fileOffset + doc.userOffset) / 1000,
+                          ),
+                        );
+                      }}
+                      aria-label={
+                        lyricSynced && line.time !== null
+                          ? `Seek to ${clock((line.time + doc.fileOffset + doc.userOffset) / 1000)}: ${line.text}`
+                          : line.text
                       }
-                      dir="auto"
                     >
-                      {layer.text}
-                    </span>
-                  ),
-                )}
-              </button>
-            ))}
-          </div>
-          {!follow && (lyricSynced || session.settings.estimatedScroll) && (
-            <button
-              className="lyric-back-to-sync"
-              onClick={() => setFollow(true)}
-              aria-label="Back to sync"
-            >
-              <RefreshCw size={13} />
-              Back to sync
-            </button>
+                      {lyricLayers(doc, line, session.settings).map(
+                        (layer, lIndex) => (
+                          <span
+                            key={layer.kind}
+                            className={`lyric-${layer.kind} ${lIndex === 0 ? "lyric-primary" : ""}`}
+                            lang={
+                              layer.kind === "translation"
+                                ? "en"
+                                : layer.kind === "roman"
+                                  ? "und-Latn"
+                                  : /[\u0b80-\u0bff]/.test(line.text)
+                                    ? "ta"
+                                    : /[\u0900-\u097f]/.test(line.text)
+                                      ? "und-Deva"
+                                      : undefined
+                            }
+                            dir="auto"
+                          >
+                            {layer.text}
+                          </span>
+                        ),
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+          {!embedded && (
+            <div className="lyric-room-floating-bar">
+              {doc && !doc.instrumental && (() => {
+                const isTranslating = Boolean(session.settings.translation && processingState.status === "processing");
+                const isRomanizing = Boolean(session.settings.romanisation && (romanizing || (processingState.status === "processing" && !Object.keys(doc.romanisation || {}).length)));
+                return (
+                  <>
+                    <button
+                      type="button"
+                      className={`icon-button lyric-float-btn ${session.settings.romanisation ? "is-active" : ""}`}
+                      aria-pressed={session.settings.romanisation}
+                      title={isRomanizing ? "Romanizing lyrics…" : session.settings.romanisation ? "Turn off romanization" : "Turn on romanization"}
+                      aria-label="Toggle romanization"
+                      onClick={() => setting("romanisation", !session.settings.romanisation)}
+                    >
+                      {isRomanizing ? <Loader2 size={16} className="spin" /> : <Languages size={17} />}
+                    </button>
+                    <button
+                      type="button"
+                      className={`icon-button lyric-float-btn ${session.settings.translation ? "is-active" : ""}`}
+                      aria-pressed={session.settings.translation}
+                      title={isTranslating ? "Translating lyrics…" : session.settings.translation ? "Turn off translation" : "Turn on translation"}
+                      aria-label="Toggle translation"
+                      onClick={() => {
+                        setting("translation", !session.settings.translation);
+                        if (!session.settings.translation) void translateLyrics("auto");
+                      }}
+                    >
+                      {isTranslating ? <Loader2 size={16} className="spin" /> : <Subtitles size={17} />}
+                    </button>
+                  </>
+                );
+              })()}
+              {!follow && (lyricSynced || session.settings.estimatedScroll) && (
+                <button
+                  type="button"
+                  className="icon-button lyric-float-btn lyric-float-sync"
+                  onClick={() => setFollow(true)}
+                  title="Back to sync"
+                  aria-label="Back to sync"
+                >
+                  <RefreshCw size={16} />
+                </button>
+              )}
+            </div>
           )}
         </>
       )}

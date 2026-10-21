@@ -1,4 +1,5 @@
 import { defaults, type QueueItem, type Session, type Track } from "./types";
+import { isQueuedCatalog } from "./queue";
 // Backups and database contents are untrusted. Normalize before rendering or playing.
 export function restoreSession(value: unknown, tracks: Track[]): Session {
   const base = defaults();
@@ -16,6 +17,11 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
     .slice(0, 500)) {
     const t = candidate as Track;
     const source = t?.source;
+    if (t?.id === id && isQueuedCatalog(t) && [t.title, t.artist, t.album, t.fileName].every(value => typeof value === "string" && value.length <= 4000) && Number.isFinite(t.duration) && t.duration >= 0) {
+      queueTracks[id] = { id, metadataSourceId: id, title: t.title, artist: t.artist, album: t.album, fileName: "", format: "catalog", duration: t.duration, missing: false,
+        artworkUrl: typeof t.artworkUrl === "string" && t.artworkUrl.startsWith("https://") ? t.artworkUrl : null };
+      continue;
+    }
     if (t?.id !== id || !source || typeof source.sourceId !== "string")
       continue;
     const youtube =
@@ -101,6 +107,11 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
   const p = v.settings ?? base.settings;
   return {
     ...base,
+    favoriteAlbums: Array.isArray(v.favoriteAlbums) ? [...new Map(v.favoriteAlbums.filter(album => album && typeof album.id === "string" && /^(?:saavn:album:[1-9]\d{0,19}|itunes:[1-9]\d{0,19}|saavn:album:search:[^:]{1,1200}:[^:]{1,1200})$/.test(album.id) && [album.title, album.artist].every(text => typeof text === "string" && text.length <= 4000)).slice(0, 500).map(album => [album.id, {
+      id: album.id, title: album.title, artist: album.artist,
+      artworkUrl: typeof album.artworkUrl === "string" && album.artworkUrl.startsWith("https://") ? album.artworkUrl : null,
+      year: Number.isInteger(album.year) ? album.year : null,
+    }])).values()] : [],
     queue,
     shuffleOrder: Array.isArray(v.shuffleOrder)
       ? [
@@ -127,6 +138,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
           .map((p) => ({
             ...p,
             name: p.name.slice(0, 100),
+            importSources: Array.isArray(p.importSources) ? p.importSources.filter((source: unknown): source is string => typeof source === "string" && source.length <= 200).slice(0, 100) : undefined,
             items: cleanItems(p.items, savedIds),
           }))
       : [],
@@ -184,6 +196,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
       originalScript: p.originalScript !== false,
       originalFirst: p.originalFirst !== false,
       autoOpenLyrics: p.autoOpenLyrics === true,
+      autoplay: p.autoplay === true,
       estimatedScroll: p.estimatedScroll !== false,
       geminiModel:
         typeof p.geminiModel === "string" &&
@@ -192,7 +205,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
           : base.settings.geminiModel,
       lyricSize: Number.isFinite(p.lyricSize)
         ? Math.max(18, Math.min(46, p.lyricSize))
-        : 28,
+        : base.settings.lyricSize,
       historyEnabled: p.historyEnabled !== false,
       autoGemini: p.autoGemini !== false,
     },

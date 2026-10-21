@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeLine, alignVariant, parseLyrics } from "./lyrics";
+import { activeLine, alignVariant, parseLyrics, normalizeCachedLyrics } from "./lyrics";
 import { defaults, item } from "./types";
 import { advance, move } from "./queue";
 import { restoreSession } from "./session";
@@ -85,4 +85,14 @@ describe("queue and recovery", () => {
     expect(s.settings.volume).toBe(1);
     expect(s.settings.lyricSize).toBe(18);
   });
+});
+
+it('treats bracketed lyric sections as text and removes only their legacy warnings', () => {
+  const raw = '[Intro: Asfar Hussain]\nHello\n[Chorus]\n[01:88]bad time';
+  const doc = parseLyrics(raw);
+  expect(doc.lines.map(line => line.text)).toEqual(['[Intro: Asfar Hussain]', 'Hello', '[Chorus]', '[01:88]bad time']);
+  expect(doc.warnings).toEqual(['Line 4: unsupported or invalid timestamp; shown as text.']);
+  doc.warnings.unshift('Line 1: unsupported or invalid timestamp; shown as text.', 'Line 3: unsupported or invalid timestamp; shown as text.');
+  expect(normalizeCachedLyrics(doc, 60).warnings).toEqual(['Line 4: unsupported or invalid timestamp; shown as text.']);
+  expect(normalizeCachedLyrics(doc, 60).lines).toBe(doc.lines);
 });

@@ -7,8 +7,8 @@ export function canonicalArtistCredit(value: string): string {
 }
 
 export function artistCredits(value: string): CatalogArtistCredit[] {
-  // shortcut: legacy credits use commas; persist structured credits to support commas within artist names.
-  return canonicalArtistCredit(value).split(/\s*,\s*/).filter(usable).map(name => ({ name, id: artistReference(name) }));
+  // shortcut: legacy separators are ambiguous in group names; prefer structured credits when available.
+  return canonicalArtistCredit(value).split(/\s*,\s*|\s+&\s+/).filter(usable).map(name => ({ name, id: artistReference(name) }));
 }
 
 export function artistReference(name: string): string {

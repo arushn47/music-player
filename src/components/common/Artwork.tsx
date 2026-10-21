@@ -37,14 +37,23 @@ function cached(url: string) {
   return request;
 }
 
+/** Reuse the backend-owned artwork cache, including embedded local-file covers. */
+export async function artworkImageSource(url: string): Promise<string | null> {
+  const display = displayArtworkUrl(url)!;
+  if (!isTauri() || display.startsWith("data:")) return display;
+  return await cached(display) || (display.startsWith("local:") ? null : display);
+}
+
 export interface ArtworkProps {
   url?: string | null;
   className?: string;
+  kind?: "track" | "album" | "artist";
 }
 
 export function Artwork({
   url,
   className = "",
+  kind,
 }: ArtworkProps) {
   const displayUrl = displayArtworkUrl(url);
   const [failed, setFailed] = useState<string | null>(null);
@@ -120,6 +129,16 @@ export function Artwork({
           referrerPolicy="no-referrer"
           onError={handleError}
         />
+      ) : kind === "artist" || className.includes("artist") ? (
+        <svg
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="artist-fallback-icon"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="7" r="4.2" />
+          <path d="M12 13.5c-4.4 0-8 3-8 7.5h16c0-4.5-3.6-7.5-8-7.5z" />
+        </svg>
       ) : (
         <Music2 size={20} />
       )}

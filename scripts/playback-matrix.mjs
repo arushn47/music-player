@@ -36,7 +36,7 @@ try {
   page.setDefaultTimeout(25000);
   page.on("pageerror", error => report.errors.push(error.message));
   page.on("console", message => { const text = message.text(); if (text.startsWith("[Lumaire playback] ")) { try { report.events.push(JSON.parse(text.slice(19))); } catch {} } });
-  await page.getByRole("heading", { name: "Your library." }).waitFor();
+  await page.getByRole("heading", { name: "Discover new music." }).waitFor();
   assert(page.url().includes("1420"), "Use cargo build (development mode) and npm run dev for this suite");
   const invoke = (command, args = {}) => page.evaluate(([c, a]) => window.__TAURI_INTERNALS__.invoke(c, a), [command, args]);
   const waitPlaying = async () => {
@@ -60,7 +60,7 @@ try {
       return { catalogId: catalog.id, title: catalog.title, sourceId: source.id, trackId: track.id };
     }, catalog);
     await page.reload();
-    await page.getByRole("heading", { name: "Your library." }).waitFor();
+    await page.getByRole("heading", { name: "Discover new music." }).waitFor();
     for (let i = 0; i < 100; i++) {
       if (await page.evaluate(async id => (await import("/src/player/service.ts")).playbackTracks.has(id), result.trackId)) break;
       await delay(100);

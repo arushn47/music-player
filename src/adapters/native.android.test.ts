@@ -1,8 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 const bridge = vi.hoisted(() => ({ invoke: vi.fn() }));
-vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => true, convertFileSrc: (s: string) => s, invoke: bridge.invoke }));
+vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => true, convertFileSrc: (s: string) => s, invoke: bridge.invoke, Channel: class { onmessage = () => {}; } }));
 afterEach(() => { vi.resetModules(); vi.unstubAllGlobals(); bridge.invoke.mockReset(); });
 describe("platform-specific online resolution", () => {
+  it("forwards native download byte progress without changing the source identity", async () => {
+    vi.stubGlobal("navigator", { userAgent: "Windows" });
+    const { library } = await import("./native");
+    const listener = vi.fn();
+    await library.download("youtube:abcdefghijk", listener);
+    const args = bridge.invoke.mock.calls[0][1];
+    const update = { stage: "transferring", received: 1024, total: 4096, bytesPerSecond: 512 };
+    args.onProgress.onmessage(update);
+    expect(listener).toHaveBeenCalledWith(update);
+    expect(args.id).toBe("youtube:abcdefghijk");
+  });
   it("shares successful artist identities and allows retry after failure", async () => {
     vi.stubGlobal("navigator", { userAgent: "Windows" });
     const { library } = await import("./native");
@@ -44,8 +55,14 @@ describe("platform-specific online resolution", () => {
     vi.stubGlobal("navigator", { userAgent: "Windows" });
     bridge.invoke.mockResolvedValue(undefined);
     const { library } = await import("./native");
-    await library.ytdlpInstallEngine();
-    expect(bridge.invoke).toHaveBeenCalledWith("install_youtube_engine");
+    const progress = vi.fn();
+    await library.ytdlpInstallEngine(progress);
+    const channel = bridge.invoke.mock.calls[0][1].onProgress;
+    const update = { stage: "downloading", component: "yt-dlp.exe", received: 1024, total: 4096, attempt: 1 };
+    channel.onmessage(update);
+    expect(progress).toHaveBeenCalledWith(update);
+    await library.ytdlpCancelInstall();
+    expect(bridge.invoke).toHaveBeenLastCalledWith("cancel_youtube_engine_install");
   });
   it("never downloads Windows components on Android", async () => {
     vi.stubGlobal("navigator", { userAgent: "Android" });

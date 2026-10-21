@@ -1,12 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { library } from "../../adapters/native";
 import type { DiscoveryViewProps } from "./DiscoveryView";
-import { ChevronLeft, CircleAlert, Loader2 } from "lucide-react";
-import { Artwork, ArtistLinks } from "../common";
+import { Check, ChevronLeft, CircleAlert, Download, Heart, Loader2, Pause, Play, Shuffle, X } from "lucide-react";
+import type { CatalogAlbum, CatalogTrack } from "../../adapters/native";
+import { Artwork, ArtistLinks, DownloadedBadge, IconButton } from "../common";
+import type { AlbumDownloadProgress } from "../../hooks/useAlbumDownloads";
 import { CatalogTrackList } from "../common/CatalogTrackList";
 import type { CatalogActionHandlers } from "../common/CatalogTrackActions";
 
 interface AlbumViewProps extends CatalogActionHandlers {
+  onPlayCollection: (tracks: CatalogTrack[], shuffle: boolean) => void;
+  onDownloadAlbum: (tracks: CatalogTrack[]) => void;
+  downloadProgress?: AlbumDownloadProgress;
+  onPauseDownload: () => void;
+  onCancelDownload: () => void;
+  onlineAvailable: boolean;
+  favoriteAlbums: { id: string }[];
+  onFavoriteAlbum: (album: CatalogAlbum) => void;
   albumId: string;
   onSaveDiscovery: DiscoveryViewProps["onSaveDiscovery"];
   busy: boolean;
@@ -17,7 +27,7 @@ interface AlbumViewProps extends CatalogActionHandlers {
 
 type AlbumData = Awaited<ReturnType<typeof library.lookupAlbum>>;
 
-export function AlbumView({ albumId, onSaveDiscovery, busy, downloads, onBack, onNavigateArtist, savedTracks, favorites, onCatalogAction }: AlbumViewProps) {
+export function AlbumView({ albumId, onSaveDiscovery, busy, downloads, onBack, onNavigateArtist, savedTracks, favorites, onCatalogAction, onPlayCollection, onDownloadAlbum, downloadProgress, onPauseDownload, onCancelDownload, onlineAvailable, favoriteAlbums, onFavoriteAlbum }: AlbumViewProps) {
   const [data, setData] = useState<AlbumData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -58,6 +68,9 @@ export function AlbumView({ albumId, onSaveDiscovery, busy, downloads, onBack, o
     );
   }
 
+  const favorited = favoriteAlbums.some(album => album.id === data.info.id);
+  const offline = data.tracks.length > 0 && data.tracks.every(track => savedTracks.some(saved => saved.metadataSourceId === track.id && saved.offline && !saved.missing));
+
   return (
     <div className="album-page">
       <div className="catalog-toolbar">
@@ -79,7 +92,31 @@ export function AlbumView({ albumId, onSaveDiscovery, busy, downloads, onBack, o
           <div className="subtitle album-meta">
             {data.info.year != null && <span>{data.info.year}</span>}
             <span>{data.tracks.length} tracks</span>
+            {offline && !data.partial && <DownloadedBadge track={savedTracks.find(saved => saved.metadataSourceId === data.tracks[0].id)} />}
           </div>
+          <div className="album-actions">
+            <button className="primary" disabled={busy || (!onlineAvailable && !offline) || !data.tracks.length} onClick={() => onPlayCollection(data.tracks, false)}><Play size={17} fill="currentColor" />Play album</button>
+            <button className="subtle" disabled={busy || (!onlineAvailable && !offline) || data.tracks.length < 2} onClick={() => onPlayCollection(data.tracks, true)}><Shuffle size={17} />Shuffle</button>
+            <button className="subtle" disabled={offline || !onlineAvailable || !data.tracks.length || downloadProgress?.active} onClick={() => onDownloadAlbum(data.tracks)}>
+              {downloadProgress?.active ? <Loader2 size={17} className="spin" /> : offline ? <Check size={17} /> : <Download size={17} />}
+              {downloadProgress?.active ? `${downloadProgress.paused ? "Paused" : "Downloading"} ${downloadProgress.done}/${downloadProgress.total}` : offline ? "Downloaded" : downloadProgress?.failed.length || downloadProgress?.cancelled ? "Retry download" : "Download album"}
+            </button>
+            <button className={`subtle ${favorited ? "is-active" : ""}`} aria-pressed={favorited} onClick={() => onFavoriteAlbum(data.info)}>
+              <Heart size={17} fill={favorited ? "currentColor" : "none"} />{favorited ? "Favorited" : "Favorite album"}
+            </button>
+          </div>
+          {downloadProgress && <div className="album-download-progress" aria-busy={downloadProgress.active}>
+            <p className="subtitle" role="status">{downloadProgress.active
+              ? downloadProgress.cancelled ? "Cancelling download…" : downloadProgress.paused && downloadProgress.stage === "Waiting" ? `Paused · ${downloadProgress.done} of ${downloadProgress.total} tracks processed` : `Track ${Math.min(downloadProgress.done + 1, downloadProgress.total)} of ${downloadProgress.total} · ${downloadProgress.stage}${downloadProgress.title ? `: ${downloadProgress.title}` : ""}${downloadProgress.paused ? " · Pausing after this track" : ""}`
+              : `${downloadProgress.done - downloadProgress.failed.length} of ${downloadProgress.total} tracks available offline${downloadProgress.cancelled ? " · Cancelled" : downloadProgress.failed.length ? ` · ${downloadProgress.failed.length} failed` : " · Download complete"}`}</p>
+            {downloadProgress.active && <div className="album-download-controls">
+              <IconButton label={downloadProgress.paused ? "Resume album download" : "Pause after current track"} active={downloadProgress.paused} disabled={downloadProgress.cancelled} onClick={onPauseDownload}>{downloadProgress.paused ? <Play size={16} /> : <Pause size={16} />}</IconButton>
+              <IconButton label="Cancel album download" disabled={downloadProgress.cancelled} onClick={onCancelDownload}><X size={16} /></IconButton>
+            </div>}
+            <progress aria-label="Album download progress" value={Math.min(downloadProgress.total, downloadProgress.done + (downloadProgress.active ? (downloadProgress.percent || 0) / 100 : 0))} max={downloadProgress.total} />
+            {downloadProgress.active && <small>{downloadProgress.done} of {downloadProgress.total} tracks processed · You can keep listening while this downloads.</small>}
+            {downloadProgress.failed.length > 0 && <details><summary>{downloadProgress.failed.length} failed · Retry download to try again</summary><ul>{downloadProgress.failed.map((title, index) => <li key={index}>{title}</li>)}</ul></details>}
+          </div>}
         </div>
       </div>
       {data.partial && <p className="subtitle">Tracks found in catalog search. This may be an incomplete album.</p>}

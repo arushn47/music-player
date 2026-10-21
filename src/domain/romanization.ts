@@ -146,6 +146,7 @@ export async function romanizeDocument(
       });
       if (
         doc.romanisationSource === "gemini" ||
+        doc.romanisationSource === "google" ||
         doc.romanisationSource === "imported"
       )
         continue;

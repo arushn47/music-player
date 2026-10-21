@@ -1,6 +1,7 @@
 export { IconButton } from "./IconButton";
 export type { IconButtonProps } from "./IconButton";
 export { Artwork } from "./Artwork";
+export { DownloadedBadge } from "./DownloadedBadge";
 export type { ArtworkProps } from "./Artwork";
 export { TopBar } from "./TopBar";
 export type { TopBarProps } from "./TopBar";

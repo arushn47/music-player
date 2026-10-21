@@ -18,13 +18,14 @@ import {
   Sparkles,
   Pipette,
   RotateCcw,
-  Play,
-  LoaderCircle,
+  Heart,
 } from "lucide-react";
 import { Select } from "../common";
 import { SoftwareLicencesSection } from "./SoftwareLicencesSection";
 import { UpdaterCard } from "./UpdaterCard";
-import type { EngineInstallState, Preferences, Session, Track } from "../../domain/types";
+import { SupportSection } from "./SupportSection";
+import type { Preferences, Session, Track } from "../../domain/types";
+import { EngineSetupCard, type EngineSetupProps } from "../common/EngineSetupCard";
 import {
   ACCENT_PALETTES,
   DEFAULT_ACCENT,
@@ -32,16 +33,13 @@ import {
   normalizeHexColor,
 } from "../../theme";
 
-export interface SettingsViewProps {
+export interface SettingsViewProps extends EngineSetupProps {
   session: Session;
   tracks: Track[];
   downloads: Record<string, string>;
   busy: boolean;
   mobile: boolean;
   ytdlpAvailable: boolean;
-  onInstallYoutubeEngine: () => Promise<void>;
-  engineState: EngineInstallState;
-  engineError: string;
   onRefreshYoutubeEngine: () => Promise<void>;
   onExportLibrary: () => void;
   onImportBackup: () => void;
@@ -58,13 +56,13 @@ export interface SettingsViewProps {
 
 type Category =
   | "appearance"
-  | "playback"
   | "library"
   | "sources"
   | "lyrics"
   | "shortcuts"
   | "history"
   | "storage"
+  | "support"
   | "about";
 
 interface CategoryDef {
@@ -75,13 +73,13 @@ interface CategoryDef {
 
 const categories: CategoryDef[] = [
   { id: "appearance", label: "Appearance", icon: Palette },
-  { id: "playback", label: "Playback", icon: Play },
   { id: "library", label: "Library", icon: Library },
   { id: "sources", label: "Online Sources", icon: Globe2 },
   { id: "lyrics", label: "Lyrics", icon: FileText },
   { id: "shortcuts", label: "Keyboard Shortcuts", icon: Keyboard },
   { id: "history", label: "History", icon: BarChart3 },
   { id: "storage", label: "Storage", icon: HardDrive },
+  { id: "support", label: "Support & contribute", icon: Heart },
   { id: "about", label: "About", icon: Info },
 ];
 
@@ -95,6 +93,9 @@ export function SettingsView({
   onInstallYoutubeEngine,
   engineState,
   engineError,
+  engineProgress,
+  engineCancelling,
+  onCancelYoutubeEngineInstall,
   onRefreshYoutubeEngine,
   onExportLibrary,
   onImportBackup,
@@ -113,7 +114,6 @@ export function SettingsView({
     if (activeCategory === "sources") void onRefreshYoutubeEngine();
   }, [activeCategory, onRefreshYoutubeEngine]);
   const engineInstalled = engineState === "installed";
-  const enginePending = engineState === "installing" || engineState === "checking";
 
   const activeAccent = (
     session.settings.accentColor || DEFAULT_ACCENT
@@ -124,7 +124,7 @@ export function SettingsView({
 
   const FONT_SIZE_STEPS = [18, 20, 22, 24, 26, 28, 30, 32, 34, 38, 42, 46];
   const currentSize = session.settings.lyricSize;
-  const currentPercent = Math.round((currentSize / 28) * 100);
+  const currentPercent = Math.round((currentSize / 32) * 100);
 
   const handleStepSize = (direction: "up" | "down") => {
     if (direction === "up") {
@@ -142,9 +142,9 @@ export function SettingsView({
     const parsed = parseInt(valStr.replace(/[^0-9]/g, ""), 10);
     if (!isNaN(parsed) && parsed >= 50 && parsed <= 200) {
       if (parsed === 100) {
-        onSetting("lyricSize", 28);
+        onSetting("lyricSize", 32);
       } else {
-        const calculated = Math.round((parsed / 100) * 28);
+        const calculated = Math.round((parsed / 100) * 32);
         onSetting("lyricSize", Math.max(18, Math.min(46, calculated)));
       }
     }
@@ -200,6 +200,7 @@ export function SettingsView({
       </nav>
 
       <div className="settings-content">
+        {activeCategory === "support" && <SupportSection />}
         {activeCategory === "appearance" && (
           <div className="settings-category">
             <h2>Appearance</h2>
@@ -440,56 +441,6 @@ export function SettingsView({
           </div>
         )}
 
-        {activeCategory === "playback" && (
-          <div className="settings-category">
-            <h2>Playback</h2>
-            <p className="category-subtitle">
-              Playback follows the collection you start. Play next requests take
-              priority in Up Next.
-            </p>
-            <div className="settings-card-group">
-              <label className="apple-switch-row">
-                <div className="switch-text">
-                  <strong>Shuffle</strong>
-                  <small>
-                    Play the collection in a shuffled order, once per entry.
-                    Previous returns through that same order.
-                  </small>
-                </div>
-                <div className="apple-switch">
-                  <input
-                    type="checkbox"
-                    checked={session.settings.shuffle}
-                    onChange={(event) =>
-                      onSetting("shuffle", event.target.checked)
-                    }
-                  />
-                  <span className="apple-switch-track" />
-                </div>
-              </label>
-              <div className="settings-row">
-                <div className="row-text">
-                  <strong>Repeat</strong>
-                  <small>
-                    Off stops at the end. All loops the queue. One replays the
-                    current song; Next still skips.
-                  </small>
-                </div>
-                <Select
-                  ariaLabel="Repeat mode"
-                  value={session.settings.repeat}
-                  onChange={(value) => onSetting("repeat", value)}
-                  options={[
-                    { value: "off", label: "Off" },
-                    { value: "all", label: "All songs" },
-                    { value: "one", label: "Current song" },
-                  ]}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
         {activeCategory === "library" && (
           <div className="settings-category">
             <h2>Library & Portability</h2>
@@ -514,7 +465,7 @@ export function SettingsView({
                     disabled={busy || mobile}
                     onClick={onExportLibrary}
                   >
-                    <Download size={15} />
+                    <Upload size={15} />
                     Export library
                   </button>
                   <button
@@ -522,7 +473,7 @@ export function SettingsView({
                     disabled={busy || mobile}
                     onClick={onImportBackup}
                   >
-                    <Upload size={15} />
+                    <Download size={15} />
                     Import backup
                   </button>
                 </div>
@@ -579,37 +530,8 @@ export function SettingsView({
                   </span>
                 </div>
 
-                {!mobile && (
-                  <div className="settings-row">
-                    <div className="row-text">
-                      <strong>{engineInstalled ? "YouTube engine installed" : engineState === "installing" ? "Installing YouTube engine" : engineState === "checking" ? "Checking YouTube engine" : engineState === "error" ? "YouTube engine needs attention" : "Install YouTube engine"}</strong>
-                      <small>
-                        {engineInstalled
-                          ? "Ready for discovery and playback. No further download or restart is needed."
-                          : engineState === "installing"
-                            ? "Downloading and verifying components. You can browse Lumaire while this finishes; keep the app open."
-                            : engineState === "checking"
-                              ? "Checking the components installed on this device…"
-                              : "Downloads yt-dlp 2026.08.19 and QuickJS-NG 0.17.0 (~20 MB) from their official GitHub releases. SHA-256 verified; stored privately for Lumaire, with no administrator access or system PATH changes."}
-                      </small>
-                      <small>
-                        <a href="https://github.com/yt-dlp/yt-dlp/releases/tag/2026.08.19" target="_blank" rel="noreferrer">yt-dlp source & licenses</a>
-                        {" · "}
-                        <a href="https://github.com/quickjs-ng/quickjs/releases/tag/v0.17.0" target="_blank" rel="noreferrer">QuickJS source & MIT license</a>
-                      </small>
-                      {engineError && <small role="alert">{engineError}</small>}
-                      {enginePending && <small role="status">{engineState === "installing" ? "Installation in progress…" : "Checking installed components…"}</small>}
-                    </div>
-                    <button
-                      type="button"
-                      className="subtle"
-                      disabled={enginePending || engineInstalled}
-                      onClick={() => void onInstallYoutubeEngine()}
-                    >
-                      {engineInstalled ? <Check size={16} /> : enginePending ? <LoaderCircle size={16} /> : engineState === "error" ? <RotateCcw size={16} /> : <Download size={16} />}
-                      {engineInstalled ? "Installed" : engineState === "installing" ? "Installing…" : engineState === "checking" ? "Checking…" : engineState === "error" ? "Retry installation" : "Install engine"}
-                    </button>
-                  </div>
+                {!mobile && !engineInstalled && (
+                  <EngineSetupCard {...{ engineState, engineError, engineProgress, engineCancelling, onInstallYoutubeEngine, onCancelYoutubeEngineInstall }} />
                 )}
 
                 <div className="settings-row">
@@ -635,10 +557,9 @@ export function SettingsView({
                     <FileText size={20} />
                   </span>
                   <div className="row-text">
-                    <strong>LRCLIB Provider</strong>
+                    <strong>Lyric providers</strong>
                     <small>
-                      Community-powered synchronized and plain lyrics metadata
-                      API
+                      LRCLIB, with lrc.red as a fallback for matched synchronized lyrics
                     </small>
                   </div>
                   <span className="source-status enabled">Active</span>
@@ -891,7 +812,7 @@ export function SettingsView({
                       <button
                         className="subtle size-reset-pill"
                         onClick={() => {
-                          onSetting("lyricSize", 28);
+                          onSetting("lyricSize", 32);
                           setPercentDraft(null);
                         }}
                         title="Reset scale to exactly 100%"
@@ -1110,6 +1031,10 @@ export function SettingsView({
             <p className="settings-footnote" style={{ marginBottom: "20px" }}>
               Only explicitly downloaded, licensed audio is stored here.
               External local files are never deleted by these controls.
+            </p>
+            <p className="settings-footnote">
+              Offline storage: <code>{mobile ? "/data/user/0/app.lumaire.player/downloads" : "%APPDATA%\\app.lumaire.player\\downloads"}</code>.
+              {mobile ? " This is private app storage, not the public Downloads folder. Uninstalling or clearing app data removes these copies." : " These are app-managed files, separate from your original music folders."}
             </p>
 
             {pendingDownloads.length === 0 && offlineTracks.length === 0 ? (

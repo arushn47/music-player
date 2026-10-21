@@ -65,7 +65,7 @@ export function ArtistView({ artistId, onNavigateAlbum, onNavigateArtist, onSave
         <button onClick={onBack} className="subtle"><ChevronLeft size={16} />Back</button>
       </div>
       <div className="page-heading catalog-hero artist-header">
-        <Artwork url={data.info.artworkUrl} className="artist-cover" />
+        <Artwork url={data.info.artworkUrl} className="artist-cover" kind="artist" />
         <div className="artist-info">
           <p className="eyebrow">ARTIST</p>
           <h1>{data.info.name}</h1>

@@ -4,9 +4,18 @@ import type { CatalogTrack } from "../../adapters/native";
 import type { Track } from "../../domain/types";
 import { CatalogTrackActions } from "./CatalogTrackActions";
 import { ArtistLinks } from "./ArtistLinks";
+import { CatalogTrackList } from "./CatalogTrackList";
 
 const track: CatalogTrack = { id: "saavn:QAbmbZ7O", title: "Sensitive", artist: "Artist", album: "Album", artists: [], duration: 224 };
 describe("shared catalog row controls", () => {
+  it("keeps track playback and queueing enabled during a download", () => {
+    const html = renderToStaticMarkup(<CatalogTrackList tracks={[track]} busy={false} downloads={{ [track.id]: "downloading" }} savedTracks={[]} favorites={[]} onCatalogAction={() => {}} onSaveDiscovery={() => {}} />);
+    expect(html).toMatch(/aria-label="Play Sensitive"(?![^>]*disabled)/);
+    expect(html).toMatch(/aria-label="Listen to Sensitive"(?![^>]*disabled)/);
+    expect(html).toContain('aria-label="Downloading"');
+    expect(html).toContain('<button disabled="">Downloading');
+    expect(html).toContain('<button>Play next</button>');
+  });
   it("offers Favorite and the full existing actions for an unsaved result", () => {
     const html = renderToStaticMarkup(<CatalogTrackActions track={track} savedTracks={[]} favorites={[]} disabled={false} onCatalogAction={() => {}} />);
     expect(html).toContain('aria-label="Favorite Sensitive"');

@@ -13,6 +13,42 @@ use std::{
 };
 use tauri::Manager;
 
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadProgress {
+    stage: &'static str,
+    received: u64,
+    total: Option<u64>,
+    bytes_per_second: f64,
+}
+
+fn progress(channel: Option<&tauri::ipc::Channel<DownloadProgress>>, stage: &'static str, received: u64, total: Option<u64>, bytes_per_second: f64) {
+    if let Some(channel) = channel { let _ = channel.send(DownloadProgress { stage, received, total, bytes_per_second }); }
+}
+
+#[cfg(any(target_os = "android", test))]
+fn android_download_source(value: &serde_json::Value) -> Result<(String, &'static str, reqwest::header::HeaderMap)> {
+    let url = value["url"].as_str().ok_or("Android returned no audio download URL.")?;
+    if !download_location_allowed(&reqwest::Url::parse(url).map_err(err)?, true) { return Err("Unsupported download location.".into()); }
+    let extension = match value["container"].as_str() {
+        Some("m4a") => "m4a", Some("mp4") => "mp4",
+        _ => return Err("This recording has no supported offline audio stream.".into()),
+    };
+    let mut headers = reqwest::header::HeaderMap::new();
+    if let Some(values) = value.get("headers") {
+        let values = values.as_object().ok_or("Invalid audio headers.")?;
+        if values.len() > 6 { return Err("Too many audio headers.".into()); }
+        for (name, value) in values {
+            let value = value.as_str().ok_or("Invalid audio header.")?;
+            if !["user-agent", "accept", "accept-language", "referer", "origin", "sec-fetch-mode"].contains(&name.to_ascii_lowercase().as_str()) || value.len() > 4096 || value.contains(['\r', '\n']) {
+                return Err("Unsupported audio header.".into());
+            }
+            headers.insert(reqwest::header::HeaderName::from_bytes(name.as_bytes()).map_err(err)?, reqwest::header::HeaderValue::from_str(value).map_err(err)?);
+        }
+    }
+    Ok((url.to_owned(), extension, headers))
+}
+
 fn jobs() -> &'static Mutex<HashMap<String, Arc<AtomicBool>>> {
     static JOBS: OnceLock<Mutex<HashMap<String, Arc<AtomicBool>>>> = OnceLock::new();
     JOBS.get_or_init(|| Mutex::new(HashMap::new()))
@@ -87,6 +123,18 @@ pub fn cleanup_incomplete(directory: &std::path::Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn android_downloads_use_only_validated_audio_urls_and_scoped_resolver_headers() {
+        let valid = serde_json::json!({"url":"https://rr1.googlevideo.com/audio", "container":"m4a", "headers":{"User-Agent":"fixture","Origin":"https://www.youtube.com"}});
+        let (url, extension, headers) = android_download_source(&valid).unwrap();
+        assert_eq!(url, "https://rr1.googlevideo.com/audio");
+        assert_eq!(extension, "m4a");
+        assert_eq!(headers["user-agent"], "fixture");
+        for (field, value) in [("url", serde_json::json!("https://example.org/audio")), ("container", serde_json::json!("webm")), ("headers", serde_json::json!({"Cookie":"private"})), ("headers", serde_json::json!({"User-Agent":"a\r\nb"}))] {
+            let mut invalid = valid.clone(); invalid[field] = value;
+            assert!(android_download_source(&invalid).is_err());
+        }
+    }
     #[test]
     fn completion_keeps_latest_catalogue_metadata_and_revalidated_commons_credits() {
         let mut db = rusqlite::Connection::open_in_memory().unwrap();
@@ -215,11 +263,27 @@ mod tests {
             let path = std::env::temp_dir().join(format!("{}.part", uuid::Uuid::new_v4()));
             {
                 let _partial = Partial(path.clone());
+                let events = Arc::new(Mutex::new(Vec::new()));
+                let recorded = events.clone();
+                let channel = tauri::ipc::Channel::<DownloadProgress>::new(move |body| {
+                    if let tauri::ipc::InvokeResponseBody::Json(json) = body {
+                        recorded.lock().unwrap().push(serde_json::from_str::<serde_json::Value>(&json).unwrap());
+                    }
+                    Ok(())
+                });
                 let outcome = runtime.block_on(async {
                     let response = reqwest::get(url).await.unwrap();
-                    transfer_audio(response, &path, &AtomicBool::new(cancel)).await
+                    transfer_audio(response, &path, &AtomicBool::new(cancel), Some(&channel)).await
                 });
                 assert_eq!(outcome.is_ok(), success);
+                if success {
+                    let events = events.lock().unwrap();
+                    assert_eq!(events.first().unwrap()["stage"], "transferring");
+                    let last = events.last().unwrap();
+                    assert_eq!(last["stage"], "validating");
+                    assert_eq!(last["received"], last["total"]);
+                    assert!(last["received"].as_u64().unwrap() > 0);
+                }
             }
             assert!(!path.exists());
             server.join().unwrap();
@@ -252,7 +316,7 @@ mod tests {
                 .send()
                 .await
                 .unwrap();
-            transfer_audio(response, &path, &AtomicBool::new(false))
+            transfer_audio(response, &path, &AtomicBool::new(false), None)
                 .await
                 .unwrap();
             assert!(fs::metadata(&path).unwrap().len() > 44);
@@ -273,7 +337,9 @@ pub fn cancel_download(id: String) -> Result<()> {
 }
 
 #[tauri::command]
-pub async fn download_track(app: tauri::AppHandle, id: String) -> Result<Track> {
+pub async fn download_track(app: tauri::AppHandle, webview: tauri::Webview, id: String, on_progress: Option<tauri::ipc::JavaScriptChannelId>) -> Result<Track> {
+    let on_progress = on_progress.map(|channel| channel.channel_on::<_, DownloadProgress>(webview));
+    progress(on_progress.as_ref(), "resolving", 0, None, 0.0);
     let cancel = Arc::new(AtomicBool::new(false));
     {
         let mut jobs = jobs().lock().map_err(err)?;
@@ -312,7 +378,14 @@ pub async fn download_track(app: tauri::AppHandle, id: String) -> Result<Track> 
     // Resolve the selected source in the backend. Never transfer a renderer URL.
     // Commons reuse eligibility is rechecked; YouTube availability is not a license.
     let youtube = source.provider_id == "youtube";
-    let (url, extension) = if youtube {
+    let (url, extension, headers) = if youtube {
+        #[cfg(target_os = "android")]
+        {
+            let audio = crate::android::android_source(app.clone(), "resolve".into(), Some(source.source_id.clone()), None, None, None).await?;
+            android_download_source(&audio)?
+        }
+        #[cfg(not(target_os = "android"))]
+        {
         let audio = crate::ytdlp::download_audio(source.source_id.clone()).await?;
         let extension = match audio.container.as_deref() {
             Some("m4a") => "m4a",
@@ -322,7 +395,8 @@ pub async fn download_track(app: tauri::AppHandle, id: String) -> Result<Track> 
             Some("mp4") => "mp4",
             _ => return Err("This video has no supported offline audio stream.".into()),
         };
-        (audio.stream_url, extension)
+        (audio.stream_url, extension, reqwest::header::HeaderMap::new())
+        }
     } else if source.provider_id == "wikimedia-commons" {
         let media = resolve_commons_audio(source.source_id.clone()).await?;
         if let Some(source) = track.source.as_mut() {
@@ -337,7 +411,7 @@ pub async fn download_track(app: tauri::AppHandle, id: String) -> Result<Track> 
             "audio/flac" => "flac",
             _ => return Err("Unsupported audio format.".into()),
         };
-        (media.url, extension)
+        (media.url, extension, reqwest::header::HeaderMap::new())
     } else {
         return Err("This source does not support offline downloads.".into());
     };
@@ -349,14 +423,16 @@ pub async fn download_track(app: tauri::AppHandle, id: String) -> Result<Track> 
     let partial = Partial(directory.join(format!("{token}.part")));
     let destination = directory.join(format!("{token}.{extension}"));
     let client = reqwest::Client::builder()
+        .default_headers(headers)
         .redirect(reqwest::redirect::Policy::none())
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(180))
         .user_agent("Mozilla/5.0 Lumaire/0.1 offline audio")
         .build()
         .map_err(err)?;
+    progress(on_progress.as_ref(), "connecting", 0, None, 0.0);
     let response = audio_response_for(&client, &url, &cancel, youtube).await?;
-    transfer_audio(response, &partial.0, &cancel).await?;
+    transfer_audio(response, &partial.0, &cancel, on_progress.as_ref()).await?;
     fs::rename(&partial.0, &destination).map_err(err)?;
     let mut complete = Partial(destination.clone());
     let saved_path = destination.to_string_lossy().into_owned();
@@ -522,6 +598,7 @@ async fn transfer_audio(
     mut response: reqwest::Response,
     path: &std::path::Path,
     cancel: &AtomicBool,
+    on_progress: Option<&tauri::ipc::Channel<DownloadProgress>>,
 ) -> Result<()> {
     const MAX: u64 = 200 * 1024 * 1024;
     if response.status() != reqwest::StatusCode::OK
@@ -540,6 +617,8 @@ async fn transfer_audio(
         .map_err(err)?;
     let mut received = 0u64;
     let started = std::time::Instant::now();
+    let mut last_progress = started;
+    progress(on_progress, "transferring", 0, expected, 0.0);
     loop {
         if cancel.load(Ordering::Relaxed) {
             return Err("Download cancelled.".into());
@@ -561,10 +640,15 @@ async fn transfer_audio(
             return Err("Audio exceeds the 200 MB download limit.".into());
         }
         file.write_all(&chunk).map_err(err)?;
+        if last_progress.elapsed() >= Duration::from_millis(200) {
+            progress(on_progress, "transferring", received, expected, received as f64 / started.elapsed().as_secs_f64().max(0.001));
+            last_progress = std::time::Instant::now();
+        }
     }
     if received == 0 || expected.is_some_and(|length| received != length) {
         return Err("The audio download was incomplete.".into());
     }
+    progress(on_progress, "validating", received, expected, received as f64 / started.elapsed().as_secs_f64().max(0.001));
     file.sync_all().map_err(err)?;
     drop(file);
     lofty::probe::Probe::open(path)

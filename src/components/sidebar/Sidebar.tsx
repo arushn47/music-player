@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Activity,
+  ChevronUp,
+  ChevronDown,
   FileText,
   Globe,
   Heart,
@@ -11,14 +13,18 @@ import {
   Settings,
   Settings2,
 } from "lucide-react";
+import { Artwork } from "../common/Artwork";
+import type { Collection } from "../../domain/collections";
 import { IconButton } from "../common/IconButton";
 import type { Session } from "../../domain/types";
 
 export interface SidebarProps {
   view: string;
   setView: (view: string) => void;
+  onHome: () => void;
   collectionsCount: number;
   playlists: Session["playlists"];
+  collections: Collection[];
   hasLyricsDoc: boolean;
   onCreatePlaylist: () => void;
   queueOpen?: boolean;
@@ -28,13 +34,31 @@ export interface SidebarProps {
 export function Sidebar({
   view,
   setView,
+  onHome,
   collectionsCount,
   playlists,
+  collections,
   hasLyricsDoc,
   onCreatePlaylist,
   queueOpen,
   onToggleQueue,
 }: SidebarProps) {
+  const playlistNav = useRef<HTMLElement>(null);
+  const [scrollEdges, setScrollEdges] = useState({ above: false, below: false });
+  useEffect(() => {
+    const nav = playlistNav.current;
+    if (!nav) return;
+    const measure = () => {
+      const above = nav.scrollTop > 1;
+      const below = nav.scrollHeight - nav.clientHeight - nav.scrollTop > 1;
+      setScrollEdges(previous => previous.above === above && previous.below === below ? previous : { above, below });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    nav.addEventListener('scroll', measure, { passive: true });
+    return () => { observer.disconnect(); nav.removeEventListener('scroll', measure); };
+  }, [playlists.length]);
   return (
     <>
       <aside className="sidebar desktop-sidebar">
@@ -44,7 +68,7 @@ export function Sidebar({
         title="Lumaire · Home"
         onClick={(e) => {
           e.preventDefault();
-          setView("library");
+          onHome();
         }}
       >
         <span className="brand-icon">
@@ -75,6 +99,9 @@ export function Sidebar({
 
       <div className="sidebar-caption">YOUR SPACE</div>
       <nav aria-label="Main navigation">
+        <button className={view === "discover" ? "selected" : ""} onClick={() => setView("discover")} title="Discover">
+          <Globe size={19} /><span className="nav-label">Discover</span>
+        </button>
         <button
           className={view === "library" ? "selected" : ""}
           onClick={() => setView("library")}
@@ -83,14 +110,6 @@ export function Sidebar({
           <Library size={19} />
           <span className="nav-label">Library</span>
           <span className="nav-count">{collectionsCount}</span>
-        </button>
-        <button
-          className={view === "discover" ? "selected" : ""}
-          onClick={() => setView("discover")}
-          title="Discover"
-        >
-          <Globe size={19} />
-          <span className="nav-label">Discover</span>
         </button>
         <button
           className={view === "favorites" ? "selected" : ""}
@@ -118,16 +137,6 @@ export function Sidebar({
           <Activity size={19} />
           <span className="nav-label">Tracker</span>
         </button>
-        {onToggleQueue && (
-          <button
-            className={`nav-queue-btn ${queueOpen ? "selected" : ""}`}
-            onClick={onToggleQueue}
-            title={queueOpen ? "Hide queue" : "Show queue"}
-          >
-            <ListMusic size={19} />
-            <span className="nav-label">Queue</span>
-          </button>
-        )}
       </nav>
 
       <div className="sidebar-caption playlist-label">
@@ -137,19 +146,26 @@ export function Sidebar({
         </IconButton>
       </div>
 
-      <nav aria-label="Playlists" className="playlists-nav">
-        {playlists.map((p) => (
+      <div className="playlist-scroll-region" data-scroll-above={scrollEdges.above} data-scroll-below={scrollEdges.below}>
+      <nav ref={playlistNav} aria-label="Playlists" className="playlists-nav">
+        {playlists.map((p) => {
+          const covers = [...new Set(collections.find(collection => collection.id === p.id)?.tracks
+            .map(track => track.artworkUrl).filter((url): url is string => !!url?.trim()) || [])].slice(0, 4);
+          const artwork = covers.length >= 4 ? covers : covers.slice(0, 1);
+          return (
           <button
             key={p.id}
             className={view === p.id ? "selected" : ""}
             onClick={() => setView(p.id)}
             title={p.name}
           >
-            <ListMusic size={18} />
+            <span className={`sidebar-playlist-cover${artwork.length === 4 ? " is-mosaic" : ""}`} aria-hidden="true">
+              {artwork.length ? artwork.map(url => <Artwork key={url} url={url} />) : <ListMusic size={18} />}
+            </span>
             <span className="ellipsis nav-label">{p.name}</span>
             <span className="nav-count">{p.items.length}</span>
           </button>
-        ))}
+        );})}
         {!playlists.length && (
           <p className="sidebar-note">
             A little order for
@@ -158,12 +174,11 @@ export function Sidebar({
           </p>
         )}
       </nav>
+      {scrollEdges.above && <button className="playlist-scroll-cue scroll-up" aria-label="Scroll playlists up" title="More playlists above" onClick={() => playlistNav.current?.scrollBy({ top: -144 })}><ChevronUp size={13} /></button>}
+      {scrollEdges.below && <button className="playlist-scroll-cue scroll-down" aria-label="Scroll playlists down" title="More playlists below" onClick={() => playlistNav.current?.scrollBy({ top: 144 })}><ChevronDown size={13} /></button>}
+      </div>
 
       <div className="sidebar-bottom">
-        <div className="local-note">
-          <span className="small-dot" /> On your device{" "}
-          <span>Private by default</span>
-        </div>
         <button
           className={`nav-settings ${view === "settings" ? "selected" : ""}`}
           onClick={() => setView("settings")}

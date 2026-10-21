@@ -1,0 +1,16 @@
+{
+  "identifier": "support-links",
+  "description": "Open Lumaire's public project and maintainer pages in the default browser.",
+  "windows": ["main"],
+  "permissions": [{
+    "identifier": "opener:allow-open-url",
+    "allow": [
+      { "url": "https://github.com/arushn47" },
+      { "url": "https://github.com/arushn47/music-player" },
+      { "url": "https://github.com/arushn47/music-player/*" },
+      { "url": "https://www.instagram.com/_.arush.menon._/" },
+      { "url": "https://www.linkedin.com/in/arushn47" },
+      { "url": "https://arush.vercel.app/" }
+    ]
+  }]
+}

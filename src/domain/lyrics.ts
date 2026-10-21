@@ -42,7 +42,7 @@ export function parseLyrics(raw: string, fileName = "Lyrics"): LyricDocument {
         }),
       );
     } else if (line.trim()) {
-      if (/^\[.*\]/.test(line))
+      if (/^\[\s*(?:\d|offset:)/i.test(line))
         warnings.push(
           `Line ${index + 1}: unsupported or invalid timestamp; shown as text.`,
         );
@@ -130,6 +130,13 @@ export function normalizeCachedLyrics(
   doc: LyricDocument,
   duration: number,
 ): LyricDocument {
+  // Older parsers mistook section labels such as [Chorus: Singer] for timestamps.
+  const sourceLines = doc.raw.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").split("\n");
+  const cleanedWarnings = doc.warnings.filter(warning => {
+    const match = warning.match(/^Line (\d+): unsupported or invalid timestamp; shown as text\.$/);
+    return !match || /^\[\s*(?:\d|offset:)/i.test(sourceLines[Number(match[1]) - 1] || "");
+  });
+  if (cleanedWarnings.length !== doc.warnings.length) doc = { ...doc, warnings: cleanedWarnings };
   if (!doc.source) return doc; // Preserve explicitly imported local documents.
   const unsynced = !synchronizedLyrics(
     { ...doc, timingMode: "synced" },
@@ -145,6 +152,22 @@ export function normalizeCachedLyrics(
     ...doc,
     warnings,
     timingMode,
+  };
+}
+
+export function upgradeSyncedLyrics(current: LyricDocument, fresh: LyricDocument, duration: number): LyricDocument {
+  if ((!current.source && current.origin !== "provider") || synchronizedLyrics(current, duration) || !synchronizedLyrics(fresh, duration)) return current;
+  const oldLines = current.lines.filter(line => line.text.trim());
+  const newLines = fresh.lines.filter(line => line.text.trim());
+  const aligned = oldLines.length === newLines.length && oldLines.every((line, i) => line.text.normalize("NFKC").trim() === newLines[i].text.normalize("NFKC").trim());
+  if (!aligned) return current.translationSource === "imported" || current.romanisationSource === "imported" ? current : fresh;
+  const remap = <T,>(values: Record<string, T>): Record<string, T> => Object.fromEntries(oldLines.flatMap((line, i) => values[line.id] === undefined ? [] : [[newLines[i].id, values[line.id]]]));
+  return { ...current, ...fresh, userOffset: current.userOffset,
+    romanisation: remap(current.romanisation), translation: remap(current.translation),
+    localRomanisation: current.localRomanisation && remap(current.localRomanisation),
+    lineLanguages: current.lineLanguages && remap(current.lineLanguages),
+    romanisationSource: current.romanisationSource, translationSource: current.translationSource,
+    processedModel: current.processedModel, languageSource: current.languageSource, englishOnly: current.englishOnly,
   };
 }
 

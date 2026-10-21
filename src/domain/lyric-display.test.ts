@@ -1,10 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { defaults } from "./types";
 import { parseLyrics } from "./lyrics";
-import { clearFetchedLyrics, lyricLayers } from "./lyric-display";
+import { clearFetchedLyrics, lyricLayers, lyricSourceLink } from "./lyric-display";
 import { restoreSession } from "./session";
 
 describe("persistent lyric display preferences", () => {
+  it("links verified provider IDs and rejects malformed cached links", () => {
+    const doc = parseLyrics("[00:01]fixture");
+    doc.source = { provider: "lrc.red", recordId: "IND292218474", title: "Song", artist: "Artist", duration: 200 };
+    expect(lyricSourceLink(doc)?.url).toBe("https://lrc.red/s/IND292218474");
+    doc.source.recordId = "../../bad";
+    expect(lyricSourceLink(doc)).toBeUndefined();
+    doc.source = { ...doc.source, provider: "lrclib", recordId: 42 };
+    expect(lyricSourceLink(doc)?.url).toBe("https://lrclib.net/tracks/42");
+    doc.source.recordId = "42";
+    expect(lyricSourceLink(doc)).toBeUndefined();
+  });
   it("controls layer visibility and order without changing source text or timing", () => {
     const doc = parseLyrics("[00:01]வணக்கம்"),
       line = doc.lines[0];

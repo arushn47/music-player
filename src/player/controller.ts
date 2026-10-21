@@ -183,12 +183,12 @@ export class PlaybackController {
     });
     return this.state.playbackId!;
   }
-  failLoading(playbackId: string, error: string) {
+  failLoading(playbackId: string, error: string, autoplay = false) {
     if (this.state.playbackId === playbackId)
-      this.update({ status: "error", error, autoplay: false });
+      this.update({ status: "error", error, autoplay });
   }
   async load(id: string, autoplay = false, position = 0) {
-    if (this.state.trackId === id && this.state.status === "loading") return;
+    if (this.state.trackId === id && this.state.status === "loading" && (!autoplay || this.state.autoplay)) return;
     this.beginLoading(id, autoplay, position);
     const generation = this.generation;
     await this.attachSource(id, generation, false, autoplay, position);

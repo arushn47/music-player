@@ -1,7 +1,7 @@
 {
   "bundle": {
     "resources": {
-      "icons/icon.ico": "Lumaire-1.0.4.ico",
+      "icons/icon.ico": "Lumaire-1.0.5.ico",
       "licenses/sha2-LICENSE-MIT.txt": "licenses/sha2-LICENSE-MIT.txt"
     },
     "windows": {

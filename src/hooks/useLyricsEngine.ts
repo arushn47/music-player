@@ -1,3 +1,4 @@
+import { englishLyrics } from "../domain/lyric-languages";
 import { useEffect, useRef, useState } from "react";
 import { lookupLyrics, type LookupState } from "../adapters/lrclib";
 import { library } from "../adapters/native";
@@ -8,20 +9,23 @@ import {
   GEMINI_PROCESS_RETRY,
   mergeProcessedLyrics,
   processLyrics,
+  processPreferredLyrics,
   type LyricProcessingState,
   type ProcessedLyrics,
 } from "../adapters/lyric-processing";
 import type { LineAlignmentVariant } from "../components/modals";
-import { clearFetchedLyrics } from "../domain/lyric-display";
+import { clearFetchedLyrics, isFetchedLyrics } from "../domain/lyric-display";
 import {
   activeLine,
   alignVariant,
   estimatedFollowLine,
   normalizeCachedLyrics,
+  upgradeSyncedLyrics,
   parseLyrics,
   synchronizedLyrics,
 } from "../domain/lyrics";
 import { romanizeDocument } from "../domain/romanization";
+import { centerLyricLine } from "../components/lyrics/scroll-lyric";
 import type { LyricDocument, Session, Track } from "../domain/types";
 import type { Playback } from "../player/controller";
 
@@ -59,16 +63,42 @@ export function useLyricsEngine({
     status: "idle",
   });
   const [lyricRetry, setLyricRetry] = useState(0);
+  const syncChecks = useRef(new Set<string>());
+  const lookupWaiting = Boolean(track?.source && playback.status === "loading" && playback.duration <= 0);
   const [variant, setVariant] = useState<LineAlignmentVariant | null>(null);
   const [follow, setFollow] = useState(true);
   const [keySaved, setKeySaved] = useState(false);
+  const [romanizing, setRomanizing] = useState(false);
   const [processingState, setProcessingState] = useState<LyricProcessingState>({
     status: "idle",
   });
   const [processRetry, setProcessRetry] = useState(0);
   const attempted = useRef(new Map<string, Promise<ProcessedLyrics>>());
   const forceProcess = useRef(false);
+  const keylessPending = useRef(false);
+  const [keylessState, setKeylessState] = useState<{ docId: string; state: LyricProcessingState } | null>(null);
   const activeRef = useRef<HTMLButtonElement | null>(null);
+
+  async function translateLyrics(language: string) {
+    if (!desktop || !track || !doc?.lines.length || keylessPending.current || processingState.status === "processing") return;
+    const original = doc;
+    const trackId = track.id;
+    const state = (value: LyricProcessingState) => setKeylessState({ docId: original.id, state: value });
+    keylessPending.current = true;
+    state({ status: "processing", message: "Translating…" });
+    try {
+      const { values, provider, model } = await processPreferredLyrics(original, session.settings.geminiModel, language);
+      update(s => {
+        const current = s.lyrics[trackId];
+        if (!current) return s;
+        const merged = mergeProcessedLyrics(current, original, values, model, provider);
+        return merged === current ? s : { ...s, lyrics: { ...s.lyrics, [trackId]: merged } };
+      });
+      state({ status: "complete", provider, message: values.warnings?.join(" ") || "Translation saved on this device." });
+    } catch (error) {
+      state({ status: "error", message: formatError(error) });
+    } finally { keylessPending.current = false; }
+  }
 
   useEffect(() => {
     if (!desktop || !ready || !track || !doc?.lines.length || doc.languageSource) return;
@@ -104,6 +134,7 @@ export function useLyricsEngine({
         });
     };
     const retry = () => {
+      setKeylessState(null);
       attempted.current.clear();
       forceProcess.current = true;
       setProcessRetry((value) => value + 1);
@@ -120,7 +151,7 @@ export function useLyricsEngine({
 
   useEffect(() => {
     setProcessingState({ status: "idle" });
-    if (doc?.englishOnly) {
+    if (doc && englishLyrics(doc)) {
       setProcessingState({ status: "complete" });
       return;
     }
@@ -130,15 +161,17 @@ export function useLyricsEngine({
       !doc?.lines.length ||
       (desktop && !doc.languageSource) ||
       !keySaved ||
-      !session.settings.autoGemini
+      (!session.settings.autoGemini && !forceProcess.current)
     )
       return;
+    if (keylessPending.current) return;
     const model = session.settings.geminiModel;
     if (doc.processedModel === model && doc.languageSource === "gemini" && !forceProcess.current) {
       setProcessingState({ status: "complete" });
       return;
     }
     forceProcess.current = false;
+    setKeylessState(null);
     const requestKey = JSON.stringify([track.id, doc.id, model]);
     const request = attempted.current.get(requestKey) ?? processLyrics(doc, model);
     attempted.current.set(requestKey, request);
@@ -191,15 +224,16 @@ export function useLyricsEngine({
         : estimatedFollowLine(doc, playback.time, lyricDuration)
       : null;
 
+  useEffect(() => {
+    setFollow(true);
+  }, [track?.id]);
+
   // Scroll active line into view
   useEffect(() => {
-    if (follow && view === "lyrics") {
-      activeRef.current?.scrollIntoView({
-        block: "center",
-        behavior: lyricSynced ? "instant" : "smooth",
-      });
+    if (follow && view === "lyrics" && followTarget) {
+      centerLyricLine(activeRef.current, matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth");
     }
-  }, [followTarget, follow, view, lyricSynced]);
+  }, [followTarget, follow, view]);
 
   // Background romanization
   useEffect(() => {
@@ -208,19 +242,26 @@ export function useLyricsEngine({
       !track ||
       !session.settings.romanisation ||
       doc.romanisationSource === "gemini" ||
+      doc.romanisationSource === "google" ||
       doc.romanisationSource === "imported"
-    )
+    ) {
+      setRomanizing(false);
       return;
+    }
     let cancelled = false;
     const id = track.id;
     const original = doc.id;
+    setRomanizing(true);
     void romanizeDocument(doc)
       .then((romanisation) => {
-        if (cancelled || !Object.keys(romanisation).length) return;
+        if (cancelled) return;
+        setRomanizing(false);
+        if (!Object.keys(romanisation).length) return;
         update((currentSession) => {
           const current = currentSession.lyrics[id];
           return current?.id === original &&
             current.romanisationSource !== "gemini" &&
+            current.romanisationSource !== "google" &&
             current.romanisationSource !== "imported"
             ? {
                 ...currentSession,
@@ -249,9 +290,12 @@ export function useLyricsEngine({
             : currentSession;
         });
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setRomanizing(false);
+      });
     return () => {
       cancelled = true;
+      setRomanizing(false);
     };
   }, [
     doc?.id,
@@ -259,6 +303,30 @@ export function useLyricsEngine({
     track?.id,
     session.settings.romanisation,
     doc?.romanisationSource,
+  ]);
+
+  // Auto-translate effect when translation is enabled
+  useEffect(() => {
+    if (
+      !desktop ||
+      !ready ||
+      !track ||
+      !doc?.lines.length ||
+      !session.settings.translation ||
+      englishLyrics(doc) ||
+      Object.keys(doc.translation || {}).length > 0 ||
+      keylessPending.current ||
+      processingState.status === "processing"
+    )
+      return;
+    void translateLyrics("auto");
+  }, [
+    ready,
+    track?.id,
+    doc?.id,
+    doc?.lines.length,
+    session.settings.translation,
+    doc?.translation,
   ]);
 
   // Auto-lookup effect: fires whenever current track changes
@@ -277,29 +345,28 @@ export function useLyricsEngine({
         update((s) => ({ ...s, lyrics: { ...s.lyrics, [id]: cached } }));
       }
       setLyricLookup({ status: "found", doc: cached });
-      return;
+      if (!isFetchedLyrics(cached) || cached.instrumental || synchronizedLyrics(cached, lyricDuration)) return;
     }
-    if (
-      track.source &&
-      playback.status === "loading" &&
-      playback.duration <= 0
-    ) {
-      setLyricLookup({ status: "loading" });
+    const check = JSON.stringify([id, track.title, track.artist, track.album, Math.round(lyricDuration), lyricRetry]);
+    if (cached && syncChecks.current.has(check)) return;
+    if (lookupWaiting) {
+      if (!cached) setLyricLookup({ status: "loading" });
       return;
     }
     let cancelled = false;
     setLyricLookup({ status: "loading" });
     lookupLyrics({ ...track, duration: lyricDuration }).then((result) => {
       if (cancelled) return;
+      if (syncChecks.current.size >= 128) syncChecks.current.clear();
+      syncChecks.current.add(check);
+      update(s => {
+        const current = s.lyrics[id];
+        if (result.status !== "found" || (current && current.id !== originalCached?.id)) return s;
+        const next = current ? upgradeSyncedLyrics(current, result.doc, lyricDuration) : result.doc;
+        return next === current ? s : { ...s, lyrics: { ...s.lyrics, [id]: next } };
+      });
       const attached = sessionRef.current.lyrics[id];
       setLyricLookup(attached ? { status: "found", doc: attached } : result);
-      if (result.status === "found") {
-        update((s) =>
-          s.lyrics[id]
-            ? s
-            : { ...s, lyrics: { ...s.lyrics, [id]: result.doc } },
-        );
-      }
     });
     return () => {
       cancelled = true;
@@ -312,7 +379,7 @@ export function useLyricsEngine({
     ready,
     lyricRetry,
     lyricDuration,
-    playback.status,
+    lookupWaiting,
   ]);
 
   async function attach(kind: "original" | "romanisation" | "translation") {
@@ -459,7 +526,8 @@ export function useLyricsEngine({
 
   return {
     lyricLookup,
-    processingState,
+    processingState: keylessState && (keylessState.state.status === "processing" || keylessState.docId === doc?.id) ? keylessState.state : processingState,
+    translateLyrics,
     variant,
     setVariant,
     follow,
@@ -476,5 +544,6 @@ export function useLyricsEngine({
     regenerate,
     updateOffset,
     retryLookup,
+    romanizing,
   };
 }

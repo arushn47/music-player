@@ -3,6 +3,7 @@ import type { JSX } from "react";
 import type { CatalogTrack } from "../../adapters/native";
 import { ArtistLinks } from "./ArtistLinks";
 import { Artwork } from "./Artwork";
+import { DownloadedBadge } from "./DownloadedBadge";
 import { CatalogTrackActions, type CatalogActionHandlers } from "./CatalogTrackActions";
 
 interface CatalogTrackListProps extends CatalogActionHandlers {
@@ -24,12 +25,14 @@ export function CatalogTrackList({ tracks, busy, downloads, onSaveDiscovery, onN
       </div>
       <div className="track-list" role="list" aria-label="Tracks">
         {tracks.map((track, index) => {
-          const disabled = busy || Boolean(downloads[track.id]);
+          const saved = savedTracks.find(saved => saved.id === track.id || saved.metadataSourceId === track.id);
+          const downloading = downloads[track.id] === "downloading" || Boolean(saved && downloads[saved.id] === "downloading");
+          const disabled = busy;
           const seconds = Number.isFinite(track.duration) ? Math.max(0, Math.floor(track.duration)) : 0;
           return (
             <div className="track-row" role="listitem" key={track.id}>
               <button className="track-play" aria-label={`Play ${track.title}`} disabled={disabled} onClick={() => onSaveDiscovery(track, "play")}>
-                {downloads[track.id] ? <Loader2 size={16} className="spin" /> : <>
+                {<>
                   <span className="track-index">{String(index + 1).padStart(2, "0")}</span>
                   <Play size={15} className="row-play" />
                 </>}
@@ -40,7 +43,7 @@ export function CatalogTrackList({ tracks, busy, downloads, onSaveDiscovery, onN
                   <button className="track-title-button" disabled={disabled} aria-label={`Listen to ${track.title}`} onClick={() => onSaveDiscovery(track, "play")}>
                     <strong dir="auto" title={track.title}>{track.title}</strong>
                   </button>
-                  <small dir="auto"><ArtistLinks artists={track.artists} artistString={track.artist} onNavigateArtist={onNavigateArtist} /></small>
+                  <small dir="auto">{downloading && <Loader2 size={12} className="spin" aria-label="Downloading" />}<DownloadedBadge track={saved} /><ArtistLinks artists={track.artists} artistString={track.artist} onNavigateArtist={onNavigateArtist} /></small>
                 </span>
               </div>
               {onNavigateAlbum && <span className="album ellipsis" title={track.album}>
@@ -48,7 +51,7 @@ export function CatalogTrackList({ tracks, busy, downloads, onSaveDiscovery, onN
               </span>}
               <span className="duration">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</span>
               <div className="track-actions">
-                <CatalogTrackActions track={track} savedTracks={savedTracks} favorites={favorites} onCatalogAction={onCatalogAction} disabled={disabled} />
+                <CatalogTrackActions track={track} savedTracks={savedTracks} favorites={favorites} onCatalogAction={onCatalogAction} disabled={disabled} downloading={downloading} />
               </div>
             </div>
           );

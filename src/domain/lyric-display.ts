@@ -1,5 +1,13 @@
 import type { LyricDocument, LyricLine, Preferences, Session } from "./types";
-import { englishLine, sameLyricText } from "./lyric-languages";
+import { sameLyricText, englishLyrics } from "./lyric-languages";
+
+export function lyricSourceLink(doc: LyricDocument): { name: string; url: string } | undefined {
+  const source = doc.source;
+  if (source?.provider === "lrclib" && typeof source.recordId === "number" && Number.isSafeInteger(source.recordId) && source.recordId > 0)
+    return { name: "LRCLIB", url: `https://lrclib.net/tracks/${source.recordId}` };
+  if (source?.provider === "lrc.red" && typeof source.recordId === "string" && /^[A-Z]{2}[A-Z0-9]{10}$/.test(source.recordId))
+    return { name: "lrc.red", url: `https://lrc.red/s/${source.recordId}` };
+}
 
 export function lyricLayers(
   doc: LyricDocument,
@@ -17,7 +25,7 @@ export function lyricLayers(
     if (settings.originalFirst) layers.push(layer);
     else layers.unshift(layer);
   }
-  if (settings.translation && doc.translation[line.id] && !englishLine(doc, line.id) && !sameLyricText(line.text, doc.translation[line.id]))
+  if (settings.translation && !englishLyrics(doc) && doc.translation[line.id] && !sameLyricText(line.text, doc.translation[line.id]))
     layers.push({ kind: "translation", text: doc.translation[line.id] });
   return layers;
 }

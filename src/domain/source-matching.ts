@@ -7,8 +7,8 @@ const identity = (text: string): string => words(text).replaceAll(" ", "");
 const versions = /\b(cover|remix|live|slowed|sped|nightcore|instrumental|karaoke|acoustic|reprise|remaster(?:ed)?|sped up)\b/gi;
 
 export function sourceTitle(text: string): string {
-  return cleanVideoTitle(text)
-    .replace(/\s*(?:[-–—]\s*)?[([]?from\s+["“].*$/i, "")
+  return cleanVideoTitle(text.replace(/\s+(?:Tamil|Telugu|Hindi|Malayalam|Kannada|Bengali|Punjabi)\s+lyric(?:s|al)?(?=\s*(?:[|｜]|$))/gi, ""))
+    .replace(/\s*(?:[-–—]\s*)?(?:[([]from\s+|from\s+["“]).*$/i, "")
     .replace(/\s+[([]?(?:feat\.?|ft\.?|featuring)\s+.*$/i, "")
     .replace(/\s*(?:[-–—:]\s*)?[([]?(?:(?:full|official)\s+)?(?:video\s+song|lyrical\s+video|full\s+audio|audio\s+song)[)\]]?.*$/i, "")
     .trim();
@@ -67,10 +67,14 @@ export async function matchSource(catalog: CatalogTrack, candidate: YtdlpSearchR
   const queries = metadataQueries(youtubeTrack(candidate));
   const quotedTitle = candidate.title.match(/[「『]([^」』]+)[」』]/)?.[1];
   const pieces = candidate.title.split(/\s*[-–—]\s*/);
-  const compactTitles = pieces.flatMap((_, index) => index > 0 && sourceCredits(catalog).some(credit => identity(credit) === identity(pieces.slice(0, index).join("-"))) ? [sourceTitle(pieces.slice(index).join("-"))] : []);
+  const compactTitles = pieces.flatMap((_, index) => index > 0 && [...sourceCredits(catalog), catalog.album].filter(Boolean).some(credit => identity(credit) === identity(pieces.slice(0, index).join("-"))) ? [sourceTitle(pieces.slice(index).join("-"))] : []);
   const titles = [candidate.track, quotedTitle, sourceTitle(candidate.title), ...compactTitles, ...queries.map(q => sourceTitle(q.title))].filter((t): t is string => Boolean(t));
   let titleMatch = false;
   for (const value of titles) if (closeTitle(title, value) || (/[\u0900-\u0dff]/.test(title) !== /[\u0900-\u0dff]/.test(value) && closeTitle(romanTitle, await searchRoman(value)))) { titleMatch = true; break; }
+  // Catalogs join alternate song names with a dash; label uploads may use pipe segments.
+  const alternateTitles = title.split(/\s+[-–—]\s+/);
+  const segments = candidate.title.split("|").map(sourceTitle);
+  if (!titleMatch && alternateTitles.length === 2 && alternateTitles.every(part => part.trim() && segments.some(segment => closeTitle(part, segment)))) titleMatch = true;
   if (!title || !titleMatch) return reject("title");
   const credits = sourceCredits(catalog);
   const evidence = [candidate.artist || "", candidate.channel || "", candidate.title, ...queries.map(q => q.artist)];
@@ -89,12 +93,13 @@ export async function matchSource(catalog: CatalogTrack, candidate: YtdlpSearchR
     const albumMatch = segments.includes(words(catalog.album));
     artistMatch = albumMatch && credits.some(credit => {
       const parts = words(credit).split(" ");
-      return parts.length >= 3 && parts[0].length >= 5 && segments.includes(parts[0]);
+      return parts.length >= 2 && parts[0].length >= 5 && segments.includes(parts[0]);
     });
   }
   if (!artistMatch) return reject("artist");
   if (candidate.duration === null || !Number.isFinite(candidate.duration) || candidate.duration <= 0) return reject("duration-missing");
   const difference = Math.abs(candidate.duration - catalog.duration);
+  if (catalog.duration > 0 && catalog.duration - candidate.duration > Math.max(5, catalog.duration * 0.02)) return reject("duration");
   const artistChannel = credits.some(credit => identity(canonicalArtistCredit(candidate.channel || "").replace(/\s*-\s*Topic$|VEVO$/i, "")) === identity(credit));
   const video = /\b(?:official (?:music )?video|video song|full video)\b/i.test(candidate.title) && artistChannel;
   const tolerance = video && candidate.duration > catalog.duration ? Math.min(60, Math.max(30, catalog.duration * 0.25)) : Math.max(30, catalog.duration * 0.15);

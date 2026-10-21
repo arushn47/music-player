@@ -20,7 +20,7 @@ pub fn query_title(value: &str) -> String {
     static FEATURED: OnceLock<Regex> = OnceLock::new();
     let value = LABELS.get_or_init(|| Regex::new(r"(?i)[\[(](?:official\s+(?:music\s+)?video|official\s+audio|lyric\s+video|lyrics|audio|hd|hq|4k)[\])]").unwrap()).replace_all(value, "");
     let value = FILM
-        .get_or_init(|| Regex::new(r#"(?i)\s*(?:[-–—]\s*)?[\[(]?from\s+[\"“].*$"#).unwrap())
+        .get_or_init(|| Regex::new(r#"(?i)\s*(?:[-–—]\s*)?(?:[\[(]from\s+|from\s+[\"“]).*$"#).unwrap())
         .replace(&value, "");
     let value = FEATURED
         .get_or_init(|| Regex::new(r"(?i)\s+[\[(]?(?:feat\.?|ft\.?|featuring)\s+.*$").unwrap())
@@ -104,6 +104,19 @@ pub fn script(text: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn film_annotations_match_with_or_without_quotes_and_punctuation_changes() {
+        let expected = title("Veezha Veera");
+        for suffix in [
+            r#"(From "OM Chapter 1: Udhiram - The Blood Wood") [Tamil]"#,
+            "(From OM Chapter 1_ Udhiram - The Blood Wood) [Tamil]",
+            "[From OM Chapter 1 - Udhiram]",
+            r#"- From "OM Chapter 1""#,
+        ] { assert_eq!(title(&format!("Veezha Veera {suffix}")), expected); }
+        assert_ne!(title("Veezha Veera (Live) (From OM Chapter 1)"), expected);
+        assert_ne!(title("Veezha Veera 2 (From OM Chapter 1)"), expected);
+        assert_eq!(query_title("From Me To You"), "From Me To You");
+    }
     #[test]
     fn multilingual_identity_preserves_words_and_handles_catalog_credits() {
         assert!(artists_match("Noor, Khan, Madhurxo", "Noor"));

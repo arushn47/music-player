@@ -143,7 +143,12 @@ export function createAccentTokens(color: string, mode: "dark" | "light") {
     accent: resolved,
     accentHover: toHex(mix(resolvedRgb, toward, 0.14)),
     accentActive: toHex(mix(resolvedRgb, away, 0.12)),
-    accentText: whiteContrast > blackContrast ? "#FFFFFF" : "#10130E",
+    accentText:
+      mode === "light"
+        ? "#FFFFFF"
+        : whiteContrast > blackContrast
+          ? "#FFFFFF"
+          : "#10130E",
     rgb: `${Math.round(resolvedRgb.r)}, ${Math.round(resolvedRgb.g)}, ${Math.round(resolvedRgb.b)}`,
   };
 }
@@ -215,6 +220,7 @@ export function storeTheme(preference: ThemePreference) {
 }
 
 export function applyTheme(preference: ThemePreference) {
+  if (typeof document === "undefined") return;
   const root = document.documentElement;
   const mode = preference.themeMode === "light" ? "light" : "dark";
   const tokens = createThemeTokens(preference.accentColor, mode);
@@ -226,6 +232,10 @@ export function applyTheme(preference: ThemePreference) {
   root.style.setProperty("--accent-active", tokens.accentActive);
   root.style.setProperty("--accent-text", tokens.accentText);
   root.style.setProperty("--accent-rgb", tokens.rgb);
+  root.style.setProperty(
+    "--accent-glow",
+    `rgba(${tokens.rgb}, ${mode === "dark" ? "0.35" : "0.25"})`,
+  );
   root.style.setProperty("--bg", tokens.bg);
   root.style.setProperty("--bg-sidebar", tokens.bgSidebar);
   root.style.setProperty("--bg-transport", tokens.bgTransport);

@@ -19,6 +19,20 @@ const base: Track = {
 } as Track;
 
 describe("lookupLyrics artist placeholder", () => {
+  it("preserves fallback attribution, timing and cache identity", async () => {
+    invoke.mockResolvedValueOnce({ kind: "synced", lrc: "[00:01]வணக்கம்", matched: {
+      provider: "lrc.red", id: "IND292218474", title: "Song", artist: "Artist", album: "Album", duration: 200,
+    } });
+    const result = await lookupLyrics(base);
+    expect(result.status).toBe("found");
+    if (result.status === "found") {
+      expect(result.doc.source?.provider).toBe("lrc.red");
+      expect(result.doc.source?.recordId).toBe("IND292218474");
+      expect(result.doc.fileName).toBe("Song · lrc.red");
+      expect(result.doc.lines[0].time).toBe(1000);
+      expect(result.doc.lines[0].text).toBe("வணக்கம்");
+    }
+  });
   beforeEach(() => {
     invoke.mockReset();
     invoke.mockResolvedValue({ kind: "not_found" });

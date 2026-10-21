@@ -57,6 +57,7 @@ async function launch(seed) {
   assert(page);
   page.setDefaultTimeout(15000);
   page.on("pageerror", (error) => report.errors.push(error.message));
+  await page.getByRole("button", { name: "Open library", exact: true }).click();
   await page
     .getByRole("heading", { name: "Your library.", exact: true })
     .waitFor();

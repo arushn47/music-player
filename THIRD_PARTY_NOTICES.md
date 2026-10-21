@@ -138,6 +138,7 @@ executables.
 | @rollup/rollup-win32-x64-gnu | 4.64.8 | MIT | Yes |
 | @rollup/rollup-win32-x64-msvc | 4.64.8 | MIT | Yes |
 | @tauri-apps/api | 2.12.4 | Apache-2.0 OR MIT | No |
+| @tauri-apps/plugin-opener | 2.7.2 | MIT OR Apache-2.0 | No |
 | @tauri-apps/cli | 2.12.3 | Apache-2.0 OR MIT | Yes |
 | @tauri-apps/cli-darwin-arm64 | 2.12.3 | Apache-2.0 OR MIT | Yes |
 | @tauri-apps/cli-darwin-x64 | 2.12.3 | Apache-2.0 OR MIT | Yes |
@@ -233,3 +234,7 @@ executables.
 | vitest | 3.2.7 | MIT | Yes |
 | why-is-node-running | 2.3.0 | MIT | Yes |
 | yallist | 3.1.1 | ISC | Yes |
+
+## Support link browser integration
+
+Tauri plugin-opener 2.7.2 (MIT OR Apache-2.0) opens approved support links in the default browser. The native Windows opener uses open 5.4.4 (MIT). Sources: https://github.com/tauri-apps/plugins-workspace and https://github.com/Byron/open-rs. Their licence texts are included in THIRD_PARTY_LICENSES.txt.

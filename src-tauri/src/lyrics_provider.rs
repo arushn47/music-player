@@ -20,7 +20,8 @@ struct Record {
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MatchInfo {
-    pub id: u64,
+    pub id: serde_json::Value,
+    pub provider: &'static str,
     pub title: String,
     pub artist: String,
     pub album: String,
@@ -29,7 +30,8 @@ pub struct MatchInfo {
 
 fn match_info(record: &Record) -> Option<MatchInfo> {
     Some(MatchInfo {
-        id: record.id?,
+        id: serde_json::json!(record.id?),
+        provider: "lrclib",
         title: record.track_name.clone(),
         artist: record.artist_name.clone(),
         album: record.album_name.clone(),
@@ -205,7 +207,123 @@ pub async fn fetch(
     album: String,
     duration: f64,
 ) -> Result<LyricResult, String> {
-    fetch_from("https://lrclib.net/api", title, artist, album, duration).await
+    fetch_with_fallback("https://lrclib.net/api", "https://lrc.red", title, artist, album, duration).await
+}
+
+async fn fetch_with_fallback(
+    primary: &str,
+    backup: &str,
+    title: String,
+    artist: String,
+    album: String,
+    duration: f64,
+) -> Result<LyricResult, String> {
+    if !duration.is_finite() || title.len() > 2000 || artist.len() > 2000 || album.len() > 2000 {
+        return Err("Invalid track information for lyrics lookup.".into());
+    }
+    let original = tokio::time::timeout(std::time::Duration::from_secs(30),
+        fetch_from(primary, title.clone(), artist.clone(), album, duration)).await
+        .unwrap_or_else(|_| Err("LRCLIB lookup timed out. Please retry.".into()));
+    if matches!(&original, Ok(LyricResult::Synced { .. } | LyricResult::Instrumental)) {
+        return original;
+    }
+    let fallback = tokio::time::timeout(std::time::Duration::from_secs(18),
+        fetch_red(backup, &title, &artist, duration)).await
+        .unwrap_or_else(|_| Err("lrc.red lookup timed out. Please retry.".into()));
+    match (original, fallback) {
+        (_, Ok(found @ LyricResult::Synced { .. })) => Ok(found),
+        (Ok(plain @ LyricResult::Plain { .. }), _) => Ok(plain),
+        (Err(primary), Err(backup)) => Err(format!("{primary} {backup}")),
+        (Err(error), _) | (_, Err(error)) => Err(error),
+        _ => Ok(LyricResult::NotFound),
+    }
+}
+
+#[derive(Deserialize)]
+struct RedHit {
+    isrc: String,
+    title: String,
+    artist: String,
+    #[serde(default)]
+    album: String,
+    duration: f64,
+}
+
+async fn fetch_red(base: &str, title: &str, artist: &str, duration: f64) -> Result<LyricResult, String> {
+    let prepared = lyric_identity::query_title(title);
+    let (artist, title) = clean_artist_for_lyrics(artist, &prepared);
+    let primary = lyric_identity::primary_artist(&artist);
+    // Without recording duration and artist evidence, search results are too ambiguous.
+    if title.is_empty() || primary.is_empty() || !(1.0..=3600.0).contains(&duration) {
+        return Ok(LyricResult::NotFound);
+    }
+    let response = provider_http::get(&format!("{base}/search.json"), &[("q", format!("{title} {primary}"))]).await?;
+    if !response.status().is_success() {
+        return Err(format!("lrc.red search is unavailable (HTTP {}). Please retry.", response.status()));
+    }
+    let body = bounded_red_text(response).await?;
+    let search: serde_json::Value = serde_json::from_str(&body)
+        .map_err(|_| "lrc.red returned invalid search results.")?;
+    let hits = search.get("hits").and_then(|v| v.as_array())
+        .filter(|hits| hits.len() <= 100).ok_or("lrc.red returned invalid search results.")?;
+    let mut candidates: Vec<RedHit> = hits.iter().filter_map(|hit| serde_json::from_value(hit.clone()).ok())
+        .filter(|hit: &RedHit| {
+            valid_isrc(&hit.isrc) && hit.title.len() <= 2000 && hit.artist.len() <= 2000 && hit.album.len() <= 2000
+                && hit.duration.is_finite() && (hit.duration - duration).abs() <= 2.0
+                && lyric_identity::title(&hit.title) == lyric_identity::title(&title)
+                && (lyric_identity::artists_match(&hit.artist, &artist) || artist_name_extension(&hit.artist, &artist))
+        }).collect();
+    candidates.sort_by(|a, b| (a.duration - duration).abs().total_cmp(&(b.duration - duration).abs()));
+    let mut error = None;
+    let mut seen = std::collections::HashSet::new();
+    for hit in candidates.into_iter().filter(|hit| seen.insert(hit.isrc.clone())).take(3) {
+        let attempt = async {
+            let response = provider_http::get(&format!("{base}/s/{}.lrc", hit.isrc), &[]).await?;
+            if response.status() == reqwest::StatusCode::NOT_FOUND { return Ok(None); }
+            if !response.status().is_success() {
+                return Err(format!("lrc.red lyrics are unavailable (HTTP {}). Please retry.", response.status()));
+            }
+            let raw = bounded_red_text(response).await?;
+            // The current reader is line-synced; enhanced LRC word markers must not become visible text.
+            static WORD_TIMING: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+            let lrc = WORD_TIMING.get_or_init(|| regex::Regex::new(r"<\d{1,3}:[0-5]\d(?:[.:]\d{1,3})?>").unwrap())
+                .replace_all(&raw, "").into_owned();
+            let record = Record { id: None, album_name: hit.album.clone(), track_name: hit.title.clone(),
+                artist_name: hit.artist.clone(), duration: hit.duration, instrumental: false,
+                synced_lyrics: Some(lrc.clone()), plain_lyrics: None };
+            if lrc.trim_start().starts_with('<') || !timing_compatible(&record, duration) || plain_text(&record).is_none() {
+                return Err("lrc.red returned invalid or incompatible lyric timing. Please retry.".into());
+            }
+            Ok(Some(LyricResult::Synced { lrc, matched: Some(MatchInfo {
+                id: serde_json::json!(hit.isrc), provider: "lrc.red", title: hit.title.clone(),
+                artist: hit.artist.clone(), album: hit.album.clone(), duration: hit.duration,
+            }) }))
+        }.await;
+        match attempt {
+            Ok(Some(found)) => return Ok(found),
+            Ok(None) => (),
+            Err(message) => error = Some(message),
+        }
+    }
+    error.map_or(Ok(LyricResult::NotFound), Err)
+}
+
+fn valid_isrc(value: &str) -> bool {
+    value.len() == 12 && value.bytes().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
+        && value.as_bytes()[..2].iter().all(u8::is_ascii_uppercase)
+}
+
+async fn bounded_red_text(mut response: reqwest::Response) -> Result<String, String> {
+    const LIMIT: usize = 512 * 1024;
+    if response.content_length().is_some_and(|length| length > LIMIT as u64) {
+        return Err("lrc.red response is too large.".into());
+    }
+    let mut bytes = Vec::new();
+    while let Some(chunk) = response.chunk().await.map_err(|_| "Could not read lrc.red response. Please retry.")? {
+        if bytes.len() + chunk.len() > LIMIT { return Err("lrc.red response is too large.".into()); }
+        bytes.extend_from_slice(&chunk);
+    }
+    String::from_utf8(bytes).map_err(|_| "lrc.red returned invalid text.".into())
 }
 
 async fn fetch_from(
@@ -283,7 +401,7 @@ async fn fetch_from(
             ));
         }
     }
-    let mut records = search_records(base, &title, &artist)
+    let mut records = search_records(base, &title, &artist, duration)
         .await
         .or_else(|error| {
             if let Some(record) = fallback.take() {
@@ -308,7 +426,7 @@ async fn fetch_from(
     Ok(LyricResult::NotFound)
 }
 
-async fn search_records(base: &str, title: &str, artist: &str) -> Result<Vec<Record>, String> {
+async fn search_records(base: &str, title: &str, artist: &str, duration: f64) -> Result<Vec<Record>, String> {
     let primary = lyric_identity::primary_artist(artist);
     let mut queries = vec![primary];
     if !queries[0].is_empty() {
@@ -320,8 +438,13 @@ async fn search_records(base: &str, title: &str, artist: &str) -> Result<Vec<Rec
         if !artist_query.is_empty() {
             params.push(("artist_name", artist_query));
         }
-        let response = provider_http::get(&format!("{base}/search"), &params).await?;
+        let response = match provider_http::get(&format!("{base}/search"), &params).await {
+            Ok(response) => response,
+            Err(_) if !records.is_empty() => break,
+            Err(error) => return Err(error),
+        };
         if !response.status().is_success() {
+            if !records.is_empty() { break; }
             return Err(format!(
                 "LRCLIB search is unavailable (HTTP {}). Please retry shortly.",
                 response.status()
@@ -339,14 +462,7 @@ async fn search_records(base: &str, title: &str, artist: &str) -> Result<Vec<Rec
                 records.push(record);
             }
         }
-        // Matching identity is enough to select readable text. Only compatible
-        // source durations are eligible for synchronized playback.
-        if records.iter().any(|r| {
-            has_content(r)
-                && synced(r)
-                && lyric_identity::title(&r.track_name) == lyric_identity::title(title)
-                && lyric_identity::artists_match(&r.artist_name, artist)
-        }) {
+        if candidate(&records, title, artist, duration).is_some_and(|r| timing_compatible(r, duration)) {
             break;
         }
     }
@@ -368,6 +484,112 @@ fn has_content(record: &Record) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn red_hit(id: &str, title: &str, artist: &str, duration: f64) -> serde_json::Value {
+        serde_json::json!({"isrc": id, "title": title, "artist": artist, "duration": duration})
+    }
+
+    #[test]
+    fn fallback_rejects_wrong_recordings_and_continues_after_bad_files() {
+        let hits = serde_json::json!({"hits": [
+            red_hit("INAAA2400001", "Song (Live)", "Artist", 200.0),
+            red_hit("INAAA2400002", "Song", "Cover Artist", 200.0),
+            red_hit("INAAA2400003", "Song", "Artist", 220.0),
+            red_hit("../../unsafe", "Song", "Artist", 200.0),
+            {"isrc": "INAAA2400004", "title": "Song"},
+            red_hit("INAAA2400005", "Song", "Artist", 200.0),
+            red_hit("INAAA2400006", "Song", "Artist, Guest", 201.0),
+        ]});
+        let (base, server) = provider_http::tests::server(vec![
+            ("200 OK", hits.to_string()),
+            ("200 OK", "<html>challenge</html>".into()),
+            ("200 OK", "[00:01.00]<00:01.00>வணக்கம் <00:01.50>fixture\n[00:02.00]fixture".into()),
+        ]);
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        let found = runtime.block_on(fetch_red(&base, "Song", "Artist", 200.0)).unwrap();
+        match found {
+            LyricResult::Synced { lrc, matched: Some(info) } => {
+                assert!(lrc.contains("வணக்கம்"));
+                assert!(!lrc.contains('<'));
+                assert!(lrc.contains("[00:01.00]"));
+                assert_eq!(info.provider, "lrc.red");
+                assert_eq!(info.id, serde_json::json!("INAAA2400006"));
+            }
+            _ => panic!("Expected verified fallback"),
+        }
+        let requests = server.join().unwrap();
+        assert_eq!(requests.len(), 3);
+        assert!(requests[1].starts_with("GET /s/INAAA2400005.lrc"));
+        assert!(requests[2].starts_with("GET /s/INAAA2400006.lrc"));
+    }
+
+    #[test]
+    fn provider_chain_keeps_primary_synced_and_recovers_primary_errors() {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        let record = r#"{"id":42,"trackName":"Song","artistName":"Artist","duration":200,"syncedLyrics":"[00:01]fixture"}"#;
+        let (primary, server) = provider_http::tests::server(vec![("200 OK", record.into())]);
+        let found = runtime.block_on(fetch_with_fallback(&primary, "http://127.0.0.1:1", "Song".into(), "Artist".into(), "".into(), 200.0)).unwrap();
+        assert!(matches!(found, LyricResult::Synced { matched: Some(MatchInfo { provider: "lrclib", .. }), .. }));
+        assert_eq!(server.join().unwrap().len(), 1);
+
+        for (status, body) in [("403 Forbidden", "blocked"), ("200 OK", "malformed json")] {
+            let (primary, first) = provider_http::tests::server(vec![(status, body.into())]);
+            let hits = serde_json::json!({"hits": [red_hit("INAAA2400001", "Song", "Artist", 200.0)]});
+            let (backup, second) = provider_http::tests::server(vec![("200 OK", hits.to_string()), ("200 OK", "[00:01]fixture".into())]);
+            let found = runtime.block_on(fetch_with_fallback(&primary, &backup, "Song".into(), "Artist".into(), "".into(), 200.0)).unwrap();
+            assert!(matches!(found, LyricResult::Synced { matched: Some(MatchInfo { provider: "lrc.red", .. }), .. }));
+            first.join().unwrap(); second.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn fallback_misses_and_failures_preserve_plain_text_and_retryable_errors() {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        for primary_plain in [true, false] {
+            let plain = r#"{"id":42,"trackName":"Song","artistName":"Artist","duration":200,"syncedLyrics":null,"plainLyrics":"fixture"}"#;
+            let first_response = if primary_plain { ("200 OK", plain.into()) } else { ("404 Not Found", "".into()) };
+            let (primary, first) = provider_http::tests::server(vec![first_response, ("200 OK", "[]".into()), ("200 OK", "[]".into())]);
+            let (backup, second) = provider_http::tests::server(vec![("403 Forbidden", "blocked".into())]);
+            let found = runtime.block_on(fetch_with_fallback(&primary, &backup, "Song".into(), "Artist".into(), "".into(), 200.0));
+            if primary_plain { assert!(matches!(found, Ok(LyricResult::Plain { .. }))); }
+            else { assert!(found.unwrap_err().contains("lrc.red")); }
+            first.join().unwrap(); second.join().unwrap();
+        }
+        let (primary, first) = provider_http::tests::server(vec![("404 Not Found", "".into()), ("200 OK", "[]".into()), ("200 OK", "[]".into())]);
+        let (backup, second) = provider_http::tests::server(vec![("200 OK", "{\"hits\":[]}".into())]);
+        assert!(matches!(runtime.block_on(fetch_with_fallback(&primary, &backup, "Song".into(), "Artist".into(), "".into(), 200.0)), Ok(LyricResult::NotFound)));
+        first.join().unwrap(); second.join().unwrap();
+    }
+
+    #[test]
+    fn fallback_bounds_text_and_rejects_invalid_timing() {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        for text in ["[99:00]fixture".to_string(), "[00:01]".into(), "no timing".into(), "x".repeat(512 * 1024 + 1)] {
+            let hits = serde_json::json!({"hits": [red_hit("INAAA2400001", "Song", "Artist", 200.0)]});
+            let (base, server) = provider_http::tests::server(vec![("200 OK", hits.to_string()), ("200 OK", text)]);
+            assert!(runtime.block_on(fetch_red(&base, "Song", "Artist", 200.0)).is_err());
+            server.join().unwrap();
+        }
+        assert!(matches!(runtime.block_on(fetch_red("http://127.0.0.1:1", "Song", "", 200.0)), Ok(LyricResult::NotFound)));
+        assert!(matches!(runtime.block_on(fetch_red("http://127.0.0.1:1", "Song", "Artist", 0.0)), Ok(LyricResult::NotFound)));
+    }
+
+    #[test]
+    #[ignore = "explicit lrc.red live check; requires network"]
+    fn live_red_multilingual() {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        for (title, artist, duration) in [
+            ("Yedi", "Dhanush", 201.618),
+            ("Darshana", "Hesham Abdul Wahab", 225.116),
+            ("Inkem Inkem Inkem Kaavaale", "Sid Sriram", 266.715),
+            ("Tum Hi Ho", "Arijit Singh", 261.974),
+            ("Despacito", "Luis Fonsi", 230.467),
+            ("Spring Day", "BTS", 274.0),
+        ] {
+            let result = runtime.block_on(fetch_red("https://lrc.red", title, artist, duration)).unwrap();
+            assert!(matches!(result, LyricResult::Synced { .. }), "{title}");
+        }
+    }
     fn record(title: &str, artist: &str, duration: f64, synced: bool) -> Record {
         Record {
             id: None,
@@ -379,6 +601,27 @@ mod tests {
             synced_lyrics: synced.then(|| "[00:01]test".into()),
             plain_lyrics: Some("test".into()),
         }
+    }
+    #[test]
+    fn veezha_veera_search_accepts_unquoted_film_and_punctuation_variants() {
+        let title = r#"Veezha Veera (From "OM Chapter 1: Udhiram - The Blood Wood") [Tamil]"#;
+        let artists = "Sai Abhyankkar, Arun Srinivasan, Tippu";
+        let mut row = record("Veezha Veera (From OM Chapter 1_ Udhiram - The Blood Wood) [Tamil]", artists, 236.0, true);
+        row.id = Some(39483010);
+        let records = vec![row.clone()];
+        assert!(candidate(&records, title, artists, 238.0).is_some());
+        assert!(matches!(result(row.clone(), 238.0), LyricResult::Synced { .. }));
+        assert!(matches!(result(row, 248.0), LyricResult::Plain { .. }));
+        assert!(candidate(&records, title, "Cover Singer", 238.0).is_none());
+        let (base, server) = provider_http::tests::server(vec![
+            ("404 Not Found", "{}".into()),
+            ("200 OK", serde_json::json!([{"id":39483010,"trackName":records[0].track_name,"artistName":artists,"duration":236,"syncedLyrics":"[00:01]fixture"}]).to_string()),
+        ]);
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        assert!(matches!(runtime.block_on(fetch_from(&base, title.into(), artists.into(), "OM Chapter 1: Udhiram - The Blood Wood".into(), 238.0)).unwrap(), LyricResult::Synced { .. }));
+        let requests = server.join().unwrap();
+        assert!(requests[1].contains("track_name=Veezha+Veera"));
+        assert!(!requests[1].contains("Chapter"));
     }
     #[test]
     fn artist_extension_requires_complete_name_tokens_title_and_duration() {
@@ -395,7 +638,6 @@ mod tests {
         let (base, server) = provider_http::tests::server(vec![
             ("404 Not Found", "{}".into()),
             ("200 OK", r#"[{"id":6555308,"trackName":"GUESS","artistName":"Emiway Bantai","duration":169,"syncedLyrics":"[00:01]fixture"}]"#.into()),
-            ("200 OK", "[]".into()),
         ]);
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -413,7 +655,7 @@ mod tests {
                 .unwrap(),
             LyricResult::Synced { .. }
         ));
-        assert_eq!(server.join().unwrap().len(), 3);
+        assert_eq!(server.join().unwrap().len(), 2);
     }
     #[test]
     fn search_rejects_wrong_artists_and_versions_but_accepts_video_intro_difference() {
@@ -632,6 +874,19 @@ mod tests {
             }
             assert_eq!(server.join().unwrap().len(), 2);
         }
+    }
+
+    #[test]
+    fn wrong_duration_synced_hit_does_not_stop_search_for_compatible_timing() {
+        let (base, server) = provider_http::tests::server(vec![
+            ("200 OK", r#"{"trackName":"Song","artistName":"Artist","duration":200,"plainLyrics":"fixture"}"#.into()),
+            ("200 OK", r#"[{"id":1,"trackName":"Song","artistName":"Artist","duration":230,"syncedLyrics":"[00:01]fixture"}]"#.into()),
+            ("200 OK", r#"[{"id":2,"trackName":"Song","artistName":"Artist","duration":200,"syncedLyrics":"[00:01]fixture"}]"#.into()),
+        ]);
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        let result = runtime.block_on(fetch_from(&base, "Song".into(), "Artist".into(), "".into(), 200.0)).unwrap();
+        match result { LyricResult::Synced { matched: Some(info), .. } => assert_eq!(info.id, serde_json::json!(2)), _ => panic!("Expected compatible synchronized lyrics") }
+        assert_eq!(server.join().unwrap().len(), 3);
     }
 
     #[test]

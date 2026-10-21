@@ -1,12 +1,20 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CatalogTrack, YtdlpSearchResult } from "../adapters/native";
-import { matchSource } from "./source-matching";
+import { matchSource, sourceTitle } from "./source-matching";
 import { resolveCatalogSource } from "./catalog-track";
 
 const song: CatalogTrack = { id: "saavn:12345678", title: 'Evening Sky (From "Film")', artist: "Writer, A. R. Singer, Guest", artists: [{ name: "Writer" }, { name: "A. R. Singer" }, { name: "Guest" }], album: "Film", duration: 210 };
 const video: YtdlpSearchResult = { id: "abcdefghijk", title: "Evening Sky - Video Song | Guest | Film | HD", channel: "Film Label", duration: 216, thumbnail: null };
 
 describe("shared recording identity", () => {
+  it("selects the full Tamil lyric recording instead of a shortened music-video edit", async () => {
+    const catalog = { ...song, title: "Nenjukkul Peidhidum", artist: "Hariharan, Harris Jayaraj", artists: [], album: "Vaaranam Aayiram", duration: 369 };
+    const short = { ...video, id: "FzLpP8VBC6E", title: "Vaaranam Aayiram - Nenjukkul Peidhidum Video Song | Harris Jayaraj | Suriya", duration: 340 };
+    const full = { ...video, id: "sy_-_bczxJA", title: "Vaaranam Aayiram - Nenjukkul Peidhidum Tamil Lyric | Harris Jayaraj | Suriya", duration: 371 };
+    expect(await matchSource(catalog, short)).toMatchObject({ accepted: false, reason: "duration" });
+    expect(await resolveCatalogSource(catalog, vi.fn().mockResolvedValue([short, full]))).toBe(full);
+    expect(await matchSource(catalog, { ...full, title: full.title + " | Remix" })).toMatchObject({ accepted: false });
+  });
   it("uses credits across the complete title, including label uploads and collaborators", async () => {
     expect(await matchSource(song, video)).toMatchObject({ accepted: true });
     expect(await matchSource({ ...song, artist: "Beyoncé", artists: [] }, { ...video, title: "Evening Sky (Official Audio)", artist: "Beyonce" })).toMatchObject({ accepted: true });
@@ -66,4 +74,11 @@ describe("shared recording identity", () => {
     expect(search).not.toHaveBeenCalled();
     expect(await resolveCatalogSource({ ...song, id: "itunes:42" }, vi.fn().mockResolvedValue([video]))).toBe(video);
   });
+});
+
+it('normalizes quoted and unquoted film annotations without confusing song versions or literal From titles', () => {
+  expect(sourceTitle('Veezha Veera (From OM Chapter 1_ Udhiram - The Blood Wood) [Tamil]')).toBe('Veezha Veera');
+  expect(sourceTitle('Veezha Veera (From "OM Chapter 1: Udhiram - The Blood Wood") [Tamil]')).toBe('Veezha Veera');
+  expect(sourceTitle('Veezha Veera (Live) (From OM Chapter 1)')).toBe('Veezha Veera (Live)');
+  expect(sourceTitle('From Me To You')).toBe('From Me To You');
 });

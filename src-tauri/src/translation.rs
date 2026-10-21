@@ -44,10 +44,21 @@ fn aligned_processed(raw: &str, lines: &[Line]) -> Result<Processed> {
     let mut romanisation = HashMap::new();
     let mut line_languages = HashMap::new();
     for value in values {
-        if value.languages.len() > 16 || value.languages.iter().any(|code| code.len() > 35 || !code.bytes().all(|b| b.is_ascii_alphabetic() || b == b'-') || !(2..=3).contains(&code.split('-').next().unwrap_or("").len())) {
-            return Err("Gemini returned invalid language codes.".into());
+        // Language hints are optional metadata; a malformed hint must not discard valid translations.
+        let mut languages = Vec::new();
+        for code in value.languages.into_iter().take(16) {
+            let code = code.trim().replace('_', "-").to_ascii_lowercase();
+            let mut parts = code.split('-');
+            let primary = parts.next().unwrap_or("");
+            if code.len() <= 35 && (2..=3).contains(&primary.len())
+                && primary.bytes().all(|b| b.is_ascii_alphabetic())
+                && parts.all(|part| (2..=8).contains(&part.len()) && part.bytes().all(|b| b.is_ascii_alphanumeric()))
+                && !languages.contains(&code)
+            {
+                languages.push(code);
+            }
         }
-        line_languages.insert(value.id.clone(), value.languages);
+        line_languages.insert(value.id.clone(), languages);
         let source = lines.iter().find(|line| line.id == value.id).unwrap();
         static NON_LATIN: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
         let needs_roman = NON_LATIN
@@ -198,7 +209,7 @@ async fn process_from(
         line_languages: languages.line_languages,
     };
     let context = serde_json::to_string(&lines).map_err(|_| "Invalid lyric input.")?;
-    let lines: Vec<_> = lines.into_iter().filter(|line| result.line_languages[&line.id] != ["eng"]).collect();
+    let lines: Vec<_> = lines.into_iter().filter(|line| result.line_languages[&line.id] != ["eng"] && line.text.chars().any(char::is_alphabetic) && !crate::lyric_languages::section_label(&line.text)).collect();
     for batch in lines.chunks(40) {
         let pronunciation = if romanize {
             "Also return romanisation: easy-to-sing phonetic Latin pronunciation, familiar spelling with aa/ee/oo for long vowels, no scholarly diacritics or syllable-break hyphens. Return languages: an array of BCP-47 language codes for the actual sung languages in EACH line, including Romanized and code-mixed languages. Do not count isolated names, shoutouts or borrowed words as another language. Use [] if uncertain. Preserve already-Latin text exactly, even when it is not English. Never replace the original lyric text."
@@ -300,6 +311,14 @@ mod tests {
     }
 
     #[test]
+    fn english_rap_and_section_headers_return_before_key_validation_or_http() {
+        let lines = ["Run it up, the sun is up", "To when it's down, get your money up", "I put money down on all of us", "On my people now, on what I love", "Ooh, baby, it's dangerous", "Your problems, they just aren't the same to us", "[Chorus: Hanumankind]"]
+            .iter().enumerate().map(|(i, text)| Line { id: i.to_string(), text: text.to_string() }).collect();
+        let result = runtime().block_on(process_from(lines, String::new(), String::new(), "http://127.0.0.1:1", true)).unwrap();
+        assert!(result.translation.is_empty());
+        assert!(result.romanisation.is_empty());
+    }
+    #[test]
     fn combined_processing_preserves_ids_and_already_latin_text() {
         let lines = vec![
             Line {
@@ -331,6 +350,16 @@ mod tests {
         let request = &server.join().unwrap()[0];
         assert!(request.contains("easy-to-sing"));
         assert!(request.contains("romanisation"));
+    }
+
+    #[test]
+    fn language_hints_cannot_discard_valid_translation() {
+        let lines = vec![Line { id: "a".into(), text: "தமிழ்".into() }];
+        let body = r#"[{"id":"a","romanisation":"thamizh","translation":"Tamil","languages":[" Tamil ","TA","en_US","es-419","zh-Hans","ta","en-","<script>"]}]"#;
+        let result = aligned_processed(body, &lines).unwrap();
+        assert_eq!(result.translation["a"], "Tamil");
+        assert_eq!(result.romanisation["a"], "thamizh");
+        assert_eq!(result.line_languages["a"], ["ta", "en-us", "es-419", "zh-hans"]);
     }
 
     #[test]

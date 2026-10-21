@@ -24,6 +24,14 @@ const video: YtdlpSearchResult = {
 };
 
 describe("catalogue metadata and audio sources", () => {
+  it("matches alternate titles across label segments with album and abbreviated artist evidence", async () => {
+    const song = { ...catalog, title: "Arabic Kuthu - Halamithi Habibo", artist: "Anirudh Ravichander, Jonita Gandhi", artists: [{ name: "Anirudh Ravichander", id: null }, { name: "Jonita Gandhi", id: null }], album: "Beast", duration: 279 };
+    const source = { ...video, id: "8FAUEv_E_xQ", title: "Arabic Kuthu | Halamithi Habibo -Lyric Video| Beast| Thalapathy Vijay| Sun Pictures| Nelson| Anirudh", channel: "Sun TV", duration: 283 };
+    await expect(resolveCatalogSource(song, vi.fn().mockResolvedValue([source]))).resolves.toBe(source);
+    for (const title of [source.title.replace("Beast", "Other Film"), source.title.replace("Anirudh", "Other Artist"), source.title.replace("Halamithi Habibo", "Other Song"), source.title + " | Live", source.title + " | Remix"]) {
+      await expect(resolveCatalogSource(song, vi.fn().mockResolvedValue([{ ...source, title }]))).rejects.toThrow("No matching audio source");
+    }
+  });
   it("matches Machayenge's attached artist separator and producer credit", async () => {
     const source = { ...video, title: "EMIWAY- MACHAYENGE  (PROD BY.TONY JAMES)", channel: "Emiway Bantai", duration: 181 };
     await expect(resolveCatalogSource({ ...catalog, title: "Machayenge", artist: "Emiway Bantai", duration: 152 }, vi.fn().mockResolvedValue([source]))).resolves.toBe(source);
