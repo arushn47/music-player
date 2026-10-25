@@ -1,9 +1,9 @@
-## Windows 1.0.6 release preparation — 25 October 2026
+## Windows 1.0.6 published — 25 October 2026
 
 - Windows can ship independently of Android. Versions are 1.0.6; the existing Windows-only workflow builds the signed NSIS installer, signature and latest.json, verifies artifacts and then publishes. No APK is included. Native Android, generated Android and Android script WIP stays outside this release commit.
 - Preserved the exact updater endpoint and public signing key from published 1.0.5. Existing 1.0.5 users can check Settings / About, download and restart to update; 1.0.4 preview requires one manual installer upgrade. User databases are retained.
 - Verification: 410 frontend tests pass, production TypeScript/Vite build passes, release configuration and both checker self-tests pass. Native run: 141 passed, 17 intentionally ignored, nine lyric HTTP fixtures timed out behind their global serialization lock in parallel; the complete lyric module passes serially (19 passed, four ignored), covering every failed fixture. Local HTTP tests need execution outside the restricted sandbox.
-- Pending publication evidence: signed CI build and public update manifest, followed by a real existing-app update check. No Android release or forced update of the user's running desktop app.
+- Published v1.0.6 from c62364b. Windows release workflow 40191130509 passed signed packaging, uploaded-artifact verification and publication. Public latest.json returns 1.0.6; the 22,041,637-byte NSIS installer is reachable and its signature key ID matches published 1.0.5. Exactly three release assets: installer, signature, manifest; no APK. Existing-app download/install/restart is left for the user to try; their running app was not forcibly updated.
 ## Playback controller context menu, Now Playing playlist action, and playlist hover play — 25 October 2026
 
 - **Playback controller right-click context menu:** Right-clicking anywhere within the transport controller bar opens a floating context menu right at the mouse cursor coordinates (`createPortal` directly to body to avoid containing block clipping from backdrop-filter). Features edge detection (opens upwards when near the bottom of viewport) and outside-click/Escape dismissal. The standard left-click on the 3-dot `<details>` menu remains available on the left.
