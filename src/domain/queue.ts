@@ -2,8 +2,10 @@ import { item, type QueueItem, type Session, type Track } from "./types";
 
 export function isQueuedCatalog(track?: Track | null): boolean {
   if (!track) return false;
-  return track.format === "catalog" && track.metadataSourceId === track.id &&
-    (/^saavn:[A-Za-z0-9_-]{8}$/.test(track.id) || (/^itunes:[1-9]\d{0,19}$/.test(track.id) && BigInt(track.id.slice(7)) <= 18446744073709551615n));
+  return track.format === "catalog" && track.metadataSourceId === track.id && isCatalogId(track.id);
+}
+export function isCatalogId(id: string): boolean {
+  return /^saavn:[A-Za-z0-9_-]{8}$/.test(id) || /^musicbrainz:recording:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(id) || (/^itunes:[1-9]\d{0,19}$/.test(id) && BigInt(id.slice(7)) <= 18446744073709551615n);
 }
 
 export function resolveQueueEntry(session: Session, entryId: string, catalogId: string, track: Track): Session {
@@ -11,6 +13,18 @@ export function resolveQueueEntry(session: Session, entryId: string, catalogId: 
   const queueTracks = { ...session.queueTracks, [track.id]: track };
   if (track.id !== catalogId) delete queueTracks[catalogId];
   return { ...session, queue: session.queue.map(entry => entry.trackId === catalogId ? { ...entry, trackId: track.id } : entry), queueTracks };
+}
+
+/** Background verification must never replace the selected occurrence or resurrect removed entries. */
+export function resolveUpcomingCatalog(session: Session, catalogId: string, track: Track): Session {
+  const order = playbackQueue(session);
+  const current = order.findIndex(entry => entry.id === session.currentId);
+  const upcoming = new Set(order.slice(current + 1).filter(entry => entry.trackId === catalogId).map(entry => entry.id));
+  if (!upcoming.size || isQueuedCatalog(track) || track.missing || track.metadataSourceId !== catalogId) return session;
+  const queue = session.queue.map(entry => upcoming.has(entry.id) ? { ...entry, trackId: track.id } : entry);
+  const queueTracks = { ...session.queueTracks, [track.id]: track };
+  if (!queue.some(entry => entry.trackId === catalogId)) delete queueTracks[catalogId];
+  return { ...session, queue, queueTracks };
 }
 
 /** Persist one shuffled sequence so Previous and Up next reflect actual playback. */

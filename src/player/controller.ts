@@ -1,4 +1,5 @@
 import { playbackEvent } from "./diagnostics";
+import { registerAudioElement } from "./audio-analyser";
 
 export type Playback = {
   autoplay?: boolean;
@@ -6,6 +7,8 @@ export type Playback = {
   trackId?: string | null;
   playbackId?: string | null;
   seekVersion?: number;
+  /** Actual media progress counted by Android's playback service while the UI sleeps. */
+  nativeListenedMs?: number;
   status:
     "idle" | "loading" | "playing" | "paused" | "buffering" | "ended" | "error";
   time: number;
@@ -16,7 +19,10 @@ export type Playback = {
 type Resolver = (id: string, retry?: boolean) => Promise<string>;
 
 export class PlaybackController {
-  readonly audio = new Audio();
+  readonly audio: HTMLAudioElement =
+    typeof Audio !== "undefined"
+      ? new Audio()
+      : (null as unknown as HTMLAudioElement);
   private generation = 0;
   private endedHandled = false;
   private preciseClock = false;
@@ -29,6 +35,8 @@ export class PlaybackController {
   state: Playback = { status: "idle", time: 0, duration: 0, error: null };
   onEnded: () => void = () => {};
   constructor(private resolve: Resolver) {
+    if (!this.audio || typeof this.audio.addEventListener !== "function") return;
+    registerAudioElement(this.audio);
     this.audio.preload = "metadata";
     this.audio.addEventListener("timeupdate", () =>
       this.update({ time: this.audio.currentTime }),

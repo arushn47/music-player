@@ -58,7 +58,7 @@ export function historyTrack(record: ListeningRecord): Track {
 const normalized = (value: string) => value.normalize("NFKC").trim().toLocaleLowerCase().replace(/\s+/g, " ");
 export interface ListeningRank {
   key: string; title: string; subtitle: string;
-  artworkUrl: string | null; ms: number; record: ListeningRecord;
+  artworkUrl: string | null; ms: number; plays: number; record: ListeningRecord;
 }
 export function aggregateListening(records: ListeningRecord[], range: HistoryRange, now = Date.now()) {
   const startDay = localDay(rangeStart(range, now));
@@ -68,9 +68,17 @@ export function aggregateListening(records: ListeningRecord[], range: HistoryRan
   const included: ListeningRecord[] = [];
   const add = (group: Map<string, ListeningRank>, key: string, title: string, subtitle: string, ms: number, record: ListeningRecord) => {
     const old = group.get(key);
-    if (old) old.ms += ms;
-    else group.set(key, { key, title, subtitle, ms, artworkUrl: record.artworkUrl, record });
+    if (old) {
+      old.ms += ms;
+      old.plays += 1;
+      if (!old.artworkUrl && record.artworkUrl) {
+        old.artworkUrl = record.artworkUrl;
+        old.record = record;
+      }
+    }
+    else group.set(key, { key, title, subtitle, ms, plays: 1, artworkUrl: record.artworkUrl, record });
   };
+  const artistMeta = new Map<string, { songs: Set<string>; plays: number }>();
   for (const record of records) {
     if (record.listenedMs < MIN_LISTEN_MS) continue;
     const ms = Object.entries(record.days).reduce((sum, [day, time]) => sum + ((range === "all" || day >= startDay) && day <= endDay ? time : 0), 0);
@@ -80,11 +88,26 @@ export function aggregateListening(records: ListeningRecord[], range: HistoryRan
     const artist = record.artist.trim() || "Unknown artist";
     // Explicit collaboration delimiters only; do not split the word 'and' in band names.
     const artists = new Map(artist.split(/\s*[,;&]\s*/u).filter(Boolean).map(name => [normalized(name), name]));
-    for (const [key, name] of artists) add(groups.artists, key, name, "", ms, record);
+    for (const [key, name] of artists) {
+      add(groups.artists, key, name, "", ms, record);
+      const meta = artistMeta.get(key) || { songs: new Set<string>(), plays: 0 };
+      meta.songs.add(record.trackId || record.title);
+      meta.plays++;
+      artistMeta.set(key, meta);
+    }
     const rawAlbum = record.album.trim();
     const album = !rawAlbum || ["youtube", "local collection", "unknown", "unknown album"].includes(normalized(rawAlbum)) ? "Unknown album" : rawAlbum;
     add(groups.albums, `${normalized(artist)}\0${normalized(album)}`, album, artist, ms, record);
     add(groups.tracks, record.trackId, record.title || "Unknown track", artist, ms, record);
+  }
+  for (const [key, rank] of groups.artists) {
+    const meta = artistMeta.get(key);
+    if (meta) {
+      const songCount = meta.songs.size;
+      const playCount = meta.plays;
+      rank.plays = playCount;
+      rank.subtitle = `${songCount} ${songCount === 1 ? "song" : "songs"} · ${playCount} ${playCount === 1 ? "play" : "plays"}`;
+    }
   }
   const sorted = (group: Map<string, ListeningRank>) => [...group.values()].sort((a, b) => b.ms - a.ms || a.title.localeCompare(b.title));
   const daily = new Map<string, number>();
@@ -117,7 +140,7 @@ export function aggregateListening(records: ListeningRecord[], range: HistoryRan
 /** Pure media-progress accounting. Never extrapolates across gaps or seeks. */
 export class ListeningTracker {
   record: ListeningRecord | null = null;
-  private previous: { mono: number; position: number; status: Playback["status"]; seek: number } | null = null;
+  private previous: { mono: number; position: number; status: Playback["status"]; seek: number; native?: number; nativeMono: number } | null = null;
   private instance: string | null = null;
   private flushedMs = -1;
   constructor(private checkpoint: (record: ListeningRecord) => void) {}
@@ -149,12 +172,16 @@ export class ListeningTracker {
     }
     const elapsed = prev ? mono - prev.mono : 0;
     const progress = prev ? (state.time - prev.position) * 1000 : 0;
-    // A gap over 5s could be suspension; a jump beyond elapsed+500ms could be a seek.
-    if (this.record && prev?.status === "playing" && elapsed > 0 && elapsed <= 5000 && progress > 0 && progress <= elapsed + 500 && prev.seek === (state.seekVersion ?? 0)) {
+    const nativeProgress = prev?.native !== undefined && state.nativeListenedMs !== undefined ? state.nativeListenedMs - prev.native : null;
+    const nativeElapsed = prev ? mono - prev.nativeMono : 0;
+    // Native service counters exclude pauses, buffering and seeks; timestamps alone cannot bridge UI suspension.
+    if (this.record && nativeProgress !== null && Number.isFinite(nativeProgress) && nativeProgress > 0 && nativeElapsed > 0 && nativeProgress <= nativeElapsed + 1500) {
+      this.addTime(Math.floor(nativeProgress), wall);
+    } else if (nativeProgress === null && this.record && prev?.status === "playing" && elapsed > 0 && elapsed <= 5000 && progress > 0 && progress <= elapsed + 500 && prev.seek === (state.seekVersion ?? 0)) {
       const credited = Math.floor(Math.min(progress, elapsed));
       this.addTime(credited, wall);
     }
-    this.previous = { mono, position: state.time, status: state.status, seek: state.seekVersion ?? 0 };
+    this.previous = { mono, position: state.time, status: state.status, seek: state.seekVersion ?? 0, native: state.nativeListenedMs, nativeMono: nativeProgress === 0 && prev ? prev.nativeMono : mono };
     if (state.status !== "playing") this.flush();
     if (["ended", "idle", "error"].includes(state.status)) { this.record = null; this.previous = null; }
   }

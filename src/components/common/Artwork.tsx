@@ -45,6 +45,7 @@ export async function artworkImageSource(url: string): Promise<string | null> {
 }
 
 export interface ArtworkProps {
+  onError?: () => void;
   url?: string | null;
   className?: string;
   kind?: "track" | "album" | "artist";
@@ -54,6 +55,7 @@ export function Artwork({
   url,
   className = "",
   kind,
+  onError,
 }: ArtworkProps) {
   const displayUrl = displayArtworkUrl(url);
   const [failed, setFailed] = useState<string | null>(null);
@@ -115,6 +117,7 @@ export function Artwork({
       setFallback(displayUrl);
     } else {
       setFailed(displayUrl);
+      onError?.();
     }
   };
 

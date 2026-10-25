@@ -15,10 +15,12 @@ import {
   needsMetadata,
   repairYoutubeTrack,
 } from "../domain/online-track";
-import { canonicalArtistNames, canonicalTrack, resolveCatalogSource } from "../domain/catalog-track";
+import { canonicalArtistNames, canonicalTrack, catalogQueueTrack, resolveCatalogSource } from "../domain/catalog-track";
 import { matchSource } from "../domain/source-matching";
-import { enqueue, setShuffle, isQueuedCatalog } from "../domain/queue";
+import { enqueue, setShuffle, isQueuedCatalog, resolveUpcomingCatalog } from "../domain/queue";
 import { restoreSession } from "../domain/session";
+import { checkpointListening } from '../domain/home-listening';
+import { stampPlaylistUpdates } from "../domain/playlists";
 import { defaults, item, type EngineInstallProgress, type EngineInstallState, type Session, type Track } from "../domain/types";
 import {
   player,
@@ -71,7 +73,15 @@ export function useLibraryManager() {
     .filter((track) => track.offline)
     .forEach((track) => offlineTracks.add(track.id));
 
-  const update = (fn: (s: Session) => Session) => setSession((s) => fn(s));
+  const update = (fn: (s: Session) => Session) => {
+    const now = Date.now();
+    setSession(s => {
+      const next = fn(s);
+      return next.playlists === s.playlists ? next : {
+        ...next, playlists: stampPlaylistUpdates(s.playlists, next.playlists, now),
+      };
+    });
+  };
 
   const setting = <K extends keyof Session["settings"]>(
     key: K,
@@ -98,7 +108,7 @@ export function useLibraryManager() {
   const persist = () => {
     if (!readyRef.current || suspendPersistence.current) return;
     const s = restoreSession(
-      { ...sessionRef.current, position: player.state.time },
+      playbackSnapshot(),
       tracksRef.current,
     );
     saveChain.current = saveChain.current
@@ -107,6 +117,13 @@ export function useLibraryManager() {
         setError(`Your latest changes could not be saved. ${formatError(e)}`),
       );
   };
+
+  function playbackSnapshot() {
+    const s = sessionRef.current;
+    const state = player.state;
+    const matching = s.queue.find(entry => entry.id === s.currentId)?.trackId === state.trackId;
+    return matching ? { ...checkpointListening(s, tracksRef.current, state.time, state.status === 'ended'), position: state.time } : s;
+  }
 
   const action = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -131,7 +148,7 @@ export function useLibraryManager() {
       }
       player.pause();
       const latest = restoreSession(
-        { ...sessionRef.current, position: player.state.time },
+        playbackSnapshot(),
         tracksRef.current,
       );
       try {
@@ -157,7 +174,7 @@ export function useLibraryManager() {
       if (!readyRef.current) return;
       void library.save(
         restoreSession(
-          { ...sessionRef.current, position: player.state.time },
+          playbackSnapshot(),
           tracksRef.current,
         ),
       );
@@ -202,7 +219,8 @@ export function useLibraryManager() {
             });
           }),
         );
-        const restored = restoreSession(snapshot.session, snapshot.tracks);
+        const normalized = restoreSession(snapshot.session, snapshot.tracks);
+        const restored = checkpointListening(normalized, snapshot.tracks, normalized.position);
         setTracks(snapshot.tracks);
         snapshot.tracks
           .filter((track) => track.offline)
@@ -607,6 +625,21 @@ export function useLibraryManager() {
     mode: "play" | "save" | "next" | "queue",
     onPlayTrack: (t: Track) => void,
   ) {
+    if (mode === "next" || mode === "queue") {
+      const offline = tracksRef.current.find(track => track.metadataSourceId === result.id && track.offline && !track.missing);
+      const queued = offline || catalogQueueTrack(result);
+      update(s => enqueue({ ...s, queueTracks: { ...s.queueTracks, [queued.id]: queued } }, queued.id, mode === "next"));
+      notify(`${mode === "next" ? "Added to play next:" : "Added to queue:"} ${result.title}`);
+      if (!offline) {
+        void resolveDiscovery(result).then(resolved => {
+          update(s => resolveUpcomingCatalog(s, result.id, resolved));
+        }).catch(error => {
+          if (sessionRef.current.queue.some(entry => entry.trackId === result.id))
+            notify(`Could not verify ${result.title}. Playback will retry. ${formatError(error)}`);
+        });
+      }
+      return;
+    }
     if (mode === "play" && player instanceof PlaybackController) {
       if (player.state.trackId === result.id && player.state.status === "loading") return;
       const pending: Track = { id: result.id, title: result.title, artist: result.artist, album: result.album,
@@ -638,22 +671,8 @@ export function useLibraryManager() {
       playbackTracks.set(selected.id, selected);
       if (mode === "save") await saveOnline(selected);
       else if (mode === "play") onPlayTrack(selected);
-      else {
-        update((s) =>
-          enqueue(
-            {
-              ...s,
-              queueTracks: existing
-                ? s.queueTracks
-                : { ...s.queueTracks, [selected.id]: selected },
-            },
-            selected.id,
-            mode === "next",
-          ),
-        );
-      }
       notify(
-        `${mode === "play" ? "Loading" : mode === "save" ? "Saved" : mode === "next" ? "Playing next:" : "Queued"} ${selected.title} - online connection required`,
+        `${mode === "play" ? "Loading" : "Saved"} ${selected.title} - online connection required`,
       );
 
     });

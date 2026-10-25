@@ -1,5 +1,5 @@
 import { defaults, type QueueItem, type Session, type Track } from "./types";
-import { isQueuedCatalog } from "./queue";
+import { isCatalogId, isQueuedCatalog } from "./queue";
 // Backups and database contents are untrusted. Normalize before rendering or playing.
 export function restoreSession(value: unknown, tracks: Track[]): Session {
   const base = defaults();
@@ -60,10 +60,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
         typeof t.artworkUrl === "string" && t.artworkUrl.startsWith("https://")
           ? t.artworkUrl
           : null,
-      ...(typeof t.metadataSourceId === "string" &&
-      (/^saavn:[A-Za-z0-9_-]{8}$/.test(t.metadataSourceId) ||
-      (/^itunes:[1-9]\d{0,19}$/.test(t.metadataSourceId) &&
-      BigInt(t.metadataSourceId.slice(7)) <= 18446744073709551615n))
+      ...(typeof t.metadataSourceId === "string" && isCatalogId(t.metadataSourceId)
         ? { metadataSourceId: t.metadataSourceId }
         : {}),
       source: {
@@ -107,7 +104,11 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
   const p = v.settings ?? base.settings;
   return {
     ...base,
-    favoriteAlbums: Array.isArray(v.favoriteAlbums) ? [...new Map(v.favoriteAlbums.filter(album => album && typeof album.id === "string" && /^(?:saavn:album:[1-9]\d{0,19}|itunes:[1-9]\d{0,19}|saavn:album:search:[^:]{1,1200}:[^:]{1,1200})$/.test(album.id) && [album.title, album.artist].every(text => typeof text === "string" && text.length <= 4000)).slice(0, 500).map(album => [album.id, {
+    favoriteArtists: Array.isArray(v.favoriteArtists) ? [...new Map(v.favoriteArtists.filter(artist => artist && typeof artist.id === "string" && /^(?:musicbrainz:artist:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}|saavn:artist:[1-9]\d{0,19}|itunes:[1-9]\d{0,19}|(?:saavn:)?artist:name:[^:]{1,1200})$/.test(artist.id) && typeof artist.name === "string" && artist.name.trim().length > 0 && artist.name.length <= 4000).slice(0, 500).map(artist => [artist.id, {
+      id: artist.id, name: artist.name,
+      artworkUrl: typeof artist.artworkUrl === "string" && artist.artworkUrl.startsWith("https://") ? artist.artworkUrl : null,
+    }])).values()] : [],
+    favoriteAlbums: Array.isArray(v.favoriteAlbums) ? [...new Map(v.favoriteAlbums.filter(album => album && typeof album.id === "string" && /^(?:musicbrainz:release:[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}|saavn:album:[1-9]\d{0,19}|itunes:[1-9]\d{0,19}|saavn:album:search:[^:]{1,1200}:[^:]{1,1200})$/.test(album.id) && [album.title, album.artist].every(text => typeof text === "string" && text.length <= 4000)).slice(0, 500).map(album => [album.id, {
       id: album.id, title: album.title, artist: album.artist,
       artworkUrl: typeof album.artworkUrl === "string" && album.artworkUrl.startsWith("https://") ? album.artworkUrl : null,
       year: Number.isInteger(album.year) ? album.year : null,
@@ -123,6 +124,12 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
         ]
       : [],
     queueTracks,
+    listeningResumes: Array.isArray(v.listeningResumes) ? v.listeningResumes.slice(0, 12).flatMap(item => {
+      if (!item || typeof item.id !== 'string' || typeof item.title !== 'string' || !['album', 'playlist', 'queue'].includes(item.kind) || !Number.isFinite(item.updatedAt) || !Array.isArray(item.queue)) return [];
+      const restored = restoreSession({ queue: item.queue.slice(0, 1000), queueTracks: item.queueTracks, currentId: item.currentId, position: item.position, shuffleOrder: item.shuffleOrder }, tracks);
+      if (!restored.queue.length || (item.kind === 'queue' && restored.queue.length < 2) || restored.currentId !== item.currentId) return [];
+      return [{ id: item.id.slice(0, 500), title: item.title.slice(0, 500), kind: item.kind, updatedAt: item.updatedAt, shuffle: item.shuffle === true, queue: restored.queue, queueTracks: restored.queueTracks, currentId: item.currentId, position: restored.position, shuffleOrder: restored.shuffleOrder }];
+    }) : [],
     currentId: queue.some((i) => i.id === v.currentId)
       ? v.currentId!
       : (queue[0]?.id ?? null),
@@ -138,6 +145,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
           .map((p) => ({
             ...p,
             name: p.name.slice(0, 100),
+            updatedAt: typeof p.updatedAt === "number" && Number.isFinite(p.updatedAt) && p.updatedAt >= 0 ? p.updatedAt : undefined,
             importSources: Array.isArray(p.importSources) ? p.importSources.filter((source: unknown): source is string => typeof source === "string" && source.length <= 200).slice(0, 100) : undefined,
             items: cleanItems(p.items, savedIds),
           }))

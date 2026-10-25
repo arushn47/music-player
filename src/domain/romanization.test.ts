@@ -70,3 +70,23 @@ describe("romanization quality and alignment", () => {
     expect(roman[doc.lines[0].id]).toContain("z");
   });
 });
+
+
+it("romanizes Malayalam chillus, traditional spellings and Dravidian vowels without leaking script", async () => {
+  const doc = parseLyrics("കാറിൻ തൂവൽ പോലെ മെല്ലെ തഴുകാനേ\nമോഹം പൂത്തേൻ നെഞ്ചിനുള്ളിൽ മഴ പോലെ\nഅവളുടെ കരിമഷി മിഴി ഉണ്ടല്ലോ\nൻ ൻ ന്‍ ൽ ൾ ർ ൺ ൿ");
+  const roman = await romanizeDocument(doc);
+  expect(roman[doc.lines[0].id]).toBe("kaarin thooval pole melle thazhukaane");
+  for (const value of Object.values(roman)) expect(value).not.toMatch(/[\u0d00-\u0d7f\u0300-\u036f]/);
+  expect(roman[doc.lines[3].id]).toBe("n n n l l r n k");
+  doc.romanisation = { [doc.lines[0].id]: "kaarriൻ toovaൽ polè mèllè tazhukaane" };
+  doc.localRomanisation = { ...doc.romanisation };
+  expect((await romanizeDocument(doc))[doc.lines[0].id]).toBe("kaarin thooval pole melle thazhukaane");
+});
+
+
+it("uses the installed Assamese scheme for its distinct consonants", async () => {
+  const doc = parseLyrics("ৰৱ");
+  const value = (await romanizeDocument(doc))[doc.lines[0].id];
+  expect(value).toBeTruthy();
+  expect(value).not.toMatch(/[\u0980-\u09ff]/);
+});

@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { defaults } from "./types";
 import { parseLyrics } from "./lyrics";
 import { clearFetchedLyrics, lyricLayers, lyricSourceLink } from "./lyric-display";
@@ -112,4 +113,13 @@ describe("persistent lyric display preferences", () => {
     expect(cleared.settings).toBe(original.settings);
     expect(original.lyrics.fetched).toBe(fetched);
   });
+  it("scopes external lyrics opening to LRCLIB and lrc.red", () => {
+    const capability = JSON.parse(readFileSync("src-tauri/capabilities/lyrics.json", "utf8"));
+    expect(capability.windows).toEqual(["main"]);
+    expect(capability.permissions[0].identifier).toBe("opener:allow-open-url");
+    const urls = capability.permissions[0].allow.map((entry: { url: string }) => entry.url);
+    expect(urls).toContain("https://lrclib.net/*");
+    expect(urls).toContain("https://lrc.red/*");
+  });
 });
+

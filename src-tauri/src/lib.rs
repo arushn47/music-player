@@ -16,13 +16,20 @@ use uuid::Uuid;
 
 mod android;
 mod artwork_cache;
+mod audio_analysis;
 mod components;
 mod catalog;
+mod catalog_search;
+mod brainz_catalog;
+mod music_metadata;
+mod apple_charts;
 mod collection_io;
 mod nearby;
 mod playlist_link;
 #[cfg(windows)]
 mod lyric_overlay;
+#[cfg(windows)]
+mod taskbar;
 mod downloads;
 mod entity_artwork;
 mod itunes_metadata;
@@ -662,10 +669,7 @@ fn save_remote(db: &Connection, mut track: Track) -> Result<Track> {
     {
         return Err("Invalid online track information.".into());
     }
-    if track.metadata_source_id.as_ref().is_some_and(|id| {
-        !id.strip_prefix("itunes:").is_some_and(|value| value.parse::<u64>().is_ok_and(|n| n > 0 && value == n.to_string()))
-        && !id.strip_prefix("saavn:").is_some_and(|value| value.len() == 8 && value.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-'))
-    }) {
+    if track.metadata_source_id.as_ref().is_some_and(|id| !catalog::valid_catalog_id(id)) {
         return Err("Invalid catalogue identity.".into());
     }
     track.missing = false;
@@ -1408,6 +1412,8 @@ pub fn run() {
                     .collect();
                 import_selected(app.handle(), &mut db, paths).map_err(std::io::Error::other)?;
             }
+            #[cfg(windows)]
+            if let Some(window) = app.get_webview_window("main") { if let Err(error) = taskbar::install(&window) { log::warn!("Taskbar toolbar: {error}"); } }
             app.manage(Store(Mutex::new(db)));
             app.manage(nearby::Nearby::default());
             #[cfg(windows)]
@@ -1421,6 +1427,8 @@ pub fn run() {
             let _ = (window, event);
         })
         .invoke_handler(tauri::generate_handler![
+            #[cfg(windows)]
+            taskbar::taskbar_publish,
             #[cfg(windows)]
             lyric_overlay::lyric_overlay_publish,
             #[cfg(windows)]
@@ -1443,6 +1451,8 @@ pub fn run() {
             listening::clear_listening_history,
             remove_track,
             artwork_cache::cached_artwork,
+            audio_analysis::start_audio_analysis,
+            audio_analysis::stop_audio_analysis,
             entity_artwork::lookup_entity_artwork,
             downloads::download_track,
             downloads::cancel_download,
@@ -1463,6 +1473,7 @@ pub fn run() {
             catalog::recommend_catalog,
             catalog::lookup_artist,
             catalog::lookup_album,
+            catalog::lookup_chart,
             export_library,
             import_library,
             search_commons_audio,
@@ -1471,9 +1482,14 @@ pub fn run() {
             components::install_youtube_engine,
             components::cancel_youtube_engine_install,
             catalog::discover_albums,
+            catalog::discover_page,
+            music_metadata::music_metadata,
+            apple_charts::apple_chart,
             ytdlp::ytdlp_search,
             ytdlp::ytdlp_get_stream,
             android::android_playback,
+            android::android_set_lyrics,
+            android::android_set_theme,
             android::android_source,
             android::android_demo_track
         ])
@@ -1718,6 +1734,9 @@ mod tests {
             let mut saavn = track.clone();
             saavn.metadata_source_id = Some("saavn:QAbmbZ7O".into());
             assert_eq!(save_remote(&db, saavn).unwrap().metadata_source_id.as_deref(), Some("saavn:QAbmbZ7O"));
+            let mut brainz = track.clone();
+            brainz.metadata_source_id = Some("musicbrainz:recording:c4197d72-b3dd-445f-bdb8-a7f6598b5f74".into());
+            assert_eq!(save_remote(&db, brainz).unwrap().metadata_source_id.as_deref(), Some("musicbrainz:recording:c4197d72-b3dd-445f-bdb8-a7f6598b5f74"));
             let mut invalid_saavn = track.clone();
             invalid_saavn.metadata_source_id = Some("saavn:bad/path".into());
             assert!(save_remote(&db, invalid_saavn).is_err());

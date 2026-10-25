@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Heart, ListPlus, RefreshCw } from "lucide-react";
 import { Artwork, IconButton, Select } from "../common";
 import { EntityArtwork } from "../common/EntityArtwork";
@@ -10,6 +10,7 @@ import {
 } from "../../domain/listening";
 
 export interface HistoryViewProps {
+  initialTab?: "stats" | "history";
   onNavigateArtist?: (id: string) => void;
   onNavigateAlbum?: (id: string) => void;
   records: ListeningRecord[];
@@ -42,9 +43,12 @@ function dayTitle(day: string, now: number) {
   });
 }
 
-export function HistoryView({ records, loading, error, mobile, enabled, onNavigateArtist, onNavigateAlbum,
+export function HistoryView({ initialTab = "stats", records, loading, error, mobile, enabled, onNavigateArtist, onNavigateAlbum,
   onReplay, onQueue, onFavorite, favorites, onRefresh }: HistoryViewProps) {
-  const [tab, setTab] = useState<"stats" | "history">("stats");
+  const [tab, setTab] = useState<"stats" | "history">(initialTab);
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
   const [range, setRange] = useState<HistoryRange>("year");
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(0);
@@ -92,11 +96,11 @@ export function HistoryView({ records, loading, error, mobile, enabled, onNaviga
         />
       </div>
     </div>
-    {mobile && <p className="listening-notice">Listening is currently tracked on desktop. Android background listening is not recorded yet.</p>}
+    {mobile && <p className="listening-notice">Listening while the app is open is recorded. Background playback tracking is in development.</p>}
     {!enabled && <p className="listening-notice">Listening activity is paused. Your existing plays are kept. Enable recording in Settings &amp; sources.</p>}
     {error && <div className="listening-notice" role="alert">{error} <button type="button" onClick={onRefresh}>Try again</button></div>}
     <div id="listening-panel" role="tabpanel" aria-labelledby={tab === "stats" ? "listening-stats-tab" : "listening-history-tab"} aria-busy={loading}>
-      {loading && records.length === 0 ? <p className="listening-empty" role="status">Loading listening history…</p> : visible.length === 0 ? <div className="listening-empty"><h2>No listening here yet.</h2><p>{records.length ? "Choose a wider date range to see your listening." : "Play a song on desktop. It will appear after 10 seconds of listening."}</p></div> : <>
+      {loading && records.length === 0 ? <p className="listening-empty" role="status">Loading listening history…</p> : visible.length === 0 ? <div className="listening-empty"><h2>No listening here yet.</h2><p>{records.length ? "Choose a wider date range to see your listening." : "Play a song. It will appear after 10 seconds of listening."}</p></div> : <>
         {tab === "stats" ? <>
         <div className="listening-recap-overview">
           <div className="listening-recap-total"><span className="eyebrow">Time well spent</span><strong>{formatListening(stats.totalMs)}</strong><span>with your music</span></div>
@@ -110,12 +114,12 @@ export function HistoryView({ records, loading, error, mobile, enabled, onNaviga
         <div className="listening-panels">{panels.map(panel => <section className="listening-ranking" key={panel.title} aria-label={panel.title}><h2>{panel.title}</h2><ol>{panel.rows.slice(0, 5).map((row, index) => <li key={row.key}>
           <span className="listening-rank-number">{index + 1}</span>{panel.kind === "track"
             ? <Artwork url={row.artworkUrl} className="listening-artwork" />
-            : <EntityArtwork kind={panel.kind as "artist" | "album"} name={row.title} artist={panel.kind === "album" ? row.subtitle : ""} trackTitle={row.record.title} />}
+            : <EntityArtwork kind={panel.kind as "artist" | "album"} name={row.title} artist={panel.kind === "album" ? row.subtitle : ""} trackTitle={row.record.title} artworkUrl={panel.kind === 'album' && !row.artworkUrl?.includes('ytimg.com') ? row.artworkUrl : undefined} />}
           <div className="listening-rank-detail"><button type="button" disabled={(panel.kind === "album" && !albumReference(row.title, row.subtitle)) || (panel.kind === "artist" && !artistCredits(row.title).length)} onClick={() => {
             if (panel.kind === "artist" && onNavigateArtist) onNavigateArtist(artistReference(row.title));
             else if (panel.kind === "album" && onNavigateAlbum) { const id = albumReference(row.title, row.subtitle); if (id) onNavigateAlbum(id); }
             else onReplay(row.record);
-          }} title={row.title}>{row.title}</button><span title={row.subtitle}><ArtistLinks artistString={row.subtitle} onNavigateArtist={onNavigateArtist} /></span><div className="listening-time-bar" aria-hidden="true"><i style={{ width: `${Math.max(1, row.ms / Math.max(1, panel.rows[0]?.ms ?? 1) * 100)}%` }} /></div></div><span className="listening-duration">{formatListening(row.ms)}</span>
+          }} title={row.title}>{row.title}</button>{panel.kind === "artist" ? <span title={row.subtitle}>{row.subtitle}</span> : <span title={row.subtitle}><ArtistLinks artistString={row.subtitle} onNavigateArtist={onNavigateArtist} /></span>}<div className="listening-time-bar" aria-hidden="true"><i style={{ width: `${Math.max(1, row.ms / Math.max(1, panel.rows[0]?.ms ?? 1) * 100)}%` }} /></div></div><div className="listening-rank-metrics"><span className="listening-duration">{formatListening(row.ms)}</span>{panel.kind === "track" && <span className="listening-plays">{row.plays} {row.plays === 1 ? "play" : "plays"}</span>}</div>
         </li>)}</ol></section>)}</div>
         <div className="listening-recap-bottom">
           <section className="listening-months" aria-label="Monthly listening"><h2>Your months in music</h2><p>Time listened each month within this date range.</p><ol>{stats.insights.monthly.map(month => {

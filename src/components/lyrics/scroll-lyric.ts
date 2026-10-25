@@ -1,5 +1,5 @@
 export function centerLyricLine(line: HTMLElement | null, behavior: ScrollBehavior): void {
-  const container = line?.closest<HTMLElement>(".expanded-lyrics, #main");
+  const container = line?.closest<HTMLElement>(".expanded-lyrics, #main, .mobile-np-lyrics-scroll-wrap");
   if (!line || !container) return;
   const bounds = line.getBoundingClientRect();
   container.scrollTo({

@@ -15,10 +15,17 @@ pub fn title(value: &str) -> String {
 }
 
 pub fn query_title(value: &str) -> String {
+    static PRESENTATION: OnceLock<Regex> = OnceLock::new();
+    static SONG: OnceLock<Regex> = OnceLock::new();
+    let labels = PRESENTATION.get_or_init(|| Regex::new(r"(?i)^(?:(?:full|official)\s+(?:(?:music|lyric(?:al|s)?)\s+)?(?:video|audio)|lyrical(?:\s+video)?)\s*[:–—-]\s*").unwrap());
+    let presentation = labels.is_match(value);
+    let value = labels.replace(value, "");
+    let value = value.split(['|', '｜']).next().unwrap_or(&value);
+    let value = if presentation { SONG.get_or_init(|| Regex::new(r"(?i)\s+song\s*$").unwrap()).replace(value, "") } else { value.into() };
     static LABELS: OnceLock<Regex> = OnceLock::new();
     static FILM: OnceLock<Regex> = OnceLock::new();
     static FEATURED: OnceLock<Regex> = OnceLock::new();
-    let value = LABELS.get_or_init(|| Regex::new(r"(?i)[\[(](?:official\s+(?:music\s+)?video|official\s+audio|lyric\s+video|lyrics|audio|hd|hq|4k)[\])]").unwrap()).replace_all(value, "");
+    let value = LABELS.get_or_init(|| Regex::new(r"(?i)[\[(](?:official\s+(?:music\s+)?video|official\s+audio|lyric\s+video|lyrics|audio|hd|hq|4k)[\])]").unwrap()).replace_all(&value, "");
     let value = FILM
         .get_or_init(|| Regex::new(r#"(?i)\s*(?:[-–—]\s*)?(?:[\[(]from\s+|from\s+[\"“]).*$"#).unwrap())
         .replace(&value, "");
@@ -104,6 +111,12 @@ pub fn script(text: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn video_presentation_is_not_a_lyric_title() {
+        assert_eq!(query_title("Full Video: Samayama Song | Hi Nanna | Nani,Mrunal Thakur"), "Samayama");
+        assert_eq!(query_title("Love Song"), "Love Song");
+        assert_eq!(query_title("Official Video: Song (Live) | Artist"), "Song (Live)");
+    }
     #[test]
     fn film_annotations_match_with_or_without_quotes_and_punctuation_changes() {
         let expected = title("Veezha Veera");

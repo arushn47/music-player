@@ -1,12 +1,83 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CatalogTrack, YtdlpSearchResult } from "../adapters/native";
-import { matchSource, sourceTitle } from "./source-matching";
+import { matchSource, sourceCoreTitle, sourceTitle } from "./source-matching";
 import { resolveCatalogSource } from "./catalog-track";
 
 const song: CatalogTrack = { id: "saavn:12345678", title: 'Evening Sky (From "Film")', artist: "Writer, A. R. Singer, Guest", artists: [{ name: "Writer" }, { name: "A. R. Singer" }, { name: "Guest" }], album: "Film", duration: 210 };
 const video: YtdlpSearchResult = { id: "abcdefghijk", title: "Evening Sky - Video Song | Guest | Film | HD", channel: "Film Label", duration: 216, thumbnail: null };
 
 describe("shared recording identity", () => {
+  it("resolves Claude's Plan from generic Topic search metadata using the recording's verified artist", async () => {
+    const catalog = { ...song, title: "Claude's Plan (Lo-fi Version)", artist: "Jallidevs", artists: [{ name: "Jallidevs" }], album: "Claude's Plan (Lo-fi Version)", duration: 149 };
+    const candidate = { ...video, id: "Jos0Nzvj-2s", title: catalog.title, channel: "Release - Topic", duration: 150, track: null, artist: null };
+    const verify = vi.fn().mockResolvedValue({ track: candidate.title, artist: "Jallidevs", duration: 150 });
+    expect(await resolveCatalogSource(catalog, vi.fn().mockResolvedValue([candidate]), { verify })).toBe(candidate);
+    expect(verify).toHaveBeenCalledTimes(1);
+    expect(candidate.artist).toBe("Jallidevs");
+  });
+  it.each([
+    { artist: "Different performer", duration: 150 },
+    { track: "Claude's Plan (Remix)", artist: "Jallidevs", duration: 150 },
+    { artist: "Jallidevs", duration: 90 },
+    {},
+  ])("still rejects generic Topic recordings when extracted metadata is incompatible or incomplete: %j", async details => {
+    const catalog = { ...song, title: "Claude's Plan (Lo-fi Version)", artist: "Jallidevs", artists: [], duration: 149 };
+    const candidate = { ...video, title: catalog.title, channel: "Release - Topic", duration: 150 };
+    await expect(resolveCatalogSource(catalog, vi.fn().mockResolvedValue([candidate]), { verify: vi.fn().mockResolvedValue(details) })).rejects.toThrow("No matching audio source");
+  });
+  it("avoids extracting generic Topic results with wrong titles, versions, durations or an explicit different artist", async () => {
+    const catalog = { ...song, title: "Claude's Plan (Lo-fi Version)", artist: "Jallidevs", artists: [], duration: 149 };
+    for (const override of [{ title: "Another song" }, { title: catalog.title + " Remix" }, { duration: 90 }, { artist: "Different performer" }]) {
+      const verify = vi.fn();
+      await expect(resolveCatalogSource(catalog, vi.fn().mockResolvedValue([{ ...video, title: catalog.title, channel: "Release - Topic", duration: 150, ...override }]), { verify })).rejects.toThrow("No matching audio source");
+      expect(verify).not.toHaveBeenCalled();
+    }
+  });
+  it.each([150, null])("bounds missing-artist extraction across all search phases with duration %s", async duration => {
+    const catalog = { ...song, title: "Claude's Plan (Lo-fi Version)", artist: "Jallidevs", artists: [], duration: 149 };
+    const candidates = Array.from({ length: 10 }, (_, index) => ({ ...video, id: `candidate0${index}`, title: catalog.title, channel: "Release - Topic", duration }));
+    const verify = vi.fn().mockResolvedValue({ artist: "Different performer" });
+    await expect(resolveCatalogSource(catalog, vi.fn().mockResolvedValue(candidates), { verify })).rejects.toThrow("No matching audio source");
+    expect(verify).toHaveBeenCalledTimes(3);
+  });
+  it.each([
+    ["Nee Paartha Vizhigal (The Touch of Love)", "Nee Partha Vizhigal"],
+    ["The Rhythm of Love Theme (Theme)", "The Rhythm of Love Theme"],
+    ["Po Nee Po (The Pain of Love)", "Po Nee Po"],
+    ["Po Nee Po (Remix - The Scream of Love)", "Po Nee Po (Remix)"],
+  ])("matches descriptive subtitles without changing catalog metadata: %s", async (title, source) => {
+    const catalog = { ...song, title, artist: "Shweta Mohan", artists: [], album: "3", duration: 264 };
+    const candidate = { ...video, title: source, channel: "Shweta Mohan", duration: 265 };
+    expect(await resolveCatalogSource(catalog, vi.fn().mockResolvedValue([candidate]))).toBe(candidate);
+    expect(catalog.title).toBe(title);
+  });
+  it("finds the live Sony lyric result and still rejects the shortened video", async () => {
+    const catalog = { ...song, title: "Nee Paartha Vizhigal (The Touch of Love)", artist: "Anirudh Ravichander, Vijay Yesudas, Shweta Mohan, Dhanush", artists: [], album: "3", duration: 264 };
+    const full = { ...video, id: "sZksJJ0169M", title: "3 - Nee Paartha Vizhigal Tamil Lyric | Dhanush, Shruti | Anirudh", channel: "SonyMusicSouthVEVO", duration: 268 };
+    expect(await matchSource(catalog, full)).toMatchObject({ accepted: true });
+    expect(await matchSource(catalog, { ...full, id: "_IuJsaMqtqc", title: "3 - Nee Paartha Vizhigal Video Song | Dhanush, Shruti | Anirudh Ravichander", duration: 249 })).toMatchObject({ accepted: false, reason: "duration" });
+  });
+  it("tries subtitle-free searches only after full-title searches fail", async () => {
+    const catalog = { ...song, title: "Evening Sky (The Light of Dawn)" };
+    const search = vi.fn(async (query: string) => query.includes("Light of Dawn") ? [] : [video]);
+    expect(await resolveCatalogSource(catalog, search)).toBe(video);
+    expect(search.mock.calls[0][0]).toBe('"Evening Sky (The Light of Dawn)" Writer');
+    expect(search.mock.calls.some(([query]) => query === "Evening Sky Writer")).toBe(true);
+  });
+  it.each(["Live", "Remix", "Reprise", "Instrumental", "Acoustic", "Remastered"])("preserves %s recording identity during subtitle fallback", async version => {
+    const original = { ...song, title: "Evening Sky (The Light of Dawn)" };
+    const variant = { ...video, title: `Evening Sky (${version}) | Guest` };
+    expect(await matchSource(original, variant)).toMatchObject({ accepted: false, reason: "recording-version" });
+    expect(await matchSource({ ...song, title: `Evening Sky (${version} - The Light of Dawn)` }, video)).toMatchObject({ accepted: false, reason: "recording-version" });
+    expect(await matchSource({ ...song, title: `Evening Sky (${version} - The Light of Dawn)` }, variant)).toMatchObject({ accepted: true });
+  });
+  it("keeps unknown annotations, unrelated titles, and artist checks", async () => {
+    expect(sourceCoreTitle("Evening Sky (Part Two)")).toBe("Evening Sky (Part Two)");
+    expect(sourceCoreTitle("Evening Sky (Taylor's Version)")).toBe("Evening Sky (Taylor's Version)");
+    const catalog = { ...song, title: "Evening Sky (The Light of Dawn)" };
+    expect(await matchSource(catalog, { ...video, title: "Other Song | Guest" })).toMatchObject({ accepted: false, reason: "title" });
+    expect(await matchSource(catalog, { ...video, title: "Evening Sky", channel: "Other" })).toMatchObject({ accepted: false, reason: "artist" });
+  });
   it("selects the full Tamil lyric recording instead of a shortened music-video edit", async () => {
     const catalog = { ...song, title: "Nenjukkul Peidhidum", artist: "Hariharan, Harris Jayaraj", artists: [], album: "Vaaranam Aayiram", duration: 369 };
     const short = { ...video, id: "FzLpP8VBC6E", title: "Vaaranam Aayiram - Nenjukkul Peidhidum Video Song | Harris Jayaraj | Suriya", duration: 340 };

@@ -30,9 +30,15 @@ fn retry_delay(status: StatusCode, retry_after: Option<&str>, attempt: u32) -> O
 }
 
 pub async fn get(url: &str, params: &[(&str, String)]) -> Result<reqwest::Response, String> {
+    get_with_cookie(url, params, "").await
+}
+
+pub async fn get_with_cookie(url: &str, params: &[(&str, String)], cookie: &str) -> Result<reqwest::Response, String> {
     let client = client()?;
     for attempt in 0..3 {
-        let response = client.get(url).query(params).send().await;
+        let mut request = client.get(url).query(params);
+        if !cookie.is_empty() { request = request.header(reqwest::header::COOKIE, cookie); }
+        let response = request.send().await;
         match response {
             Ok(response) => {
                 let status = response.status();
@@ -66,6 +72,22 @@ pub async fn get(url: &str, params: &[(&str, String)]) -> Result<reqwest::Respon
         }
     }
     unreachable!()
+}
+
+/// One bounded request for optional enrichment; avoid stacking retries on the page's critical path.
+pub async fn optional_json(url: &str, params: &[(&str, String)]) -> Result<serde_json::Value, String> {
+    let mut response = client()?.get(url).query(params)
+        .header("User-Agent", "Lumaire/1.0.5 (https://github.com/arushn47/music-player)")
+        .timeout(Duration::from_secs(6)).send().await.map_err(|_| "Metadata provider timed out or could not be reached.".to_string())?;
+    if !response.status().is_success() { return Err(format!("Metadata provider returned HTTP {}.", response.status())); }
+    const LIMIT: usize = 2 * 1024 * 1024;
+    if response.content_length().is_some_and(|length| length > LIMIT as u64) { return Err("Metadata response exceeded its limit.".into()); }
+    let mut bytes = Vec::new();
+    while let Some(chunk) = response.chunk().await.map_err(|_| "Metadata response was interrupted.")? {
+        if bytes.len() + chunk.len() > LIMIT { return Err("Metadata response exceeded its limit.".into()); }
+        bytes.extend_from_slice(&chunk);
+    }
+    serde_json::from_slice(&bytes).map_err(|_| "Metadata provider returned invalid JSON.".into())
 }
 
 #[cfg(test)]

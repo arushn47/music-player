@@ -1,0 +1,14 @@
+{
+  "identifier": "lyrics-links",
+  "description": "Open public lyrics source pages in the default browser.",
+  "windows": ["main"],
+  "permissions": [{
+    "identifier": "opener:allow-open-url",
+    "allow": [
+      { "url": "https://lrclib.net" },
+      { "url": "https://lrclib.net/*" },
+      { "url": "https://lrc.red" },
+      { "url": "https://lrc.red/*" }
+    ]
+  }]
+}

@@ -94,7 +94,7 @@ export function useLyricsEngine({
         const merged = mergeProcessedLyrics(current, original, values, model, provider);
         return merged === current ? s : { ...s, lyrics: { ...s.lyrics, [trackId]: merged } };
       });
-      state({ status: "complete", provider, message: values.warnings?.join(" ") || "Translation saved on this device." });
+      state({ status: values.incomplete ? "error" : "complete", provider, message: values.warnings?.join(" ") || "Translation saved on this device." });
     } catch (error) {
       state({ status: "error", message: formatError(error) });
     } finally { keylessPending.current = false; }
@@ -118,7 +118,7 @@ export function useLyricsEngine({
   }, [ready, track?.id, doc?.id, doc?.raw]);
 
   useEffect(() => {
-    if (!desktop || mobile) return;
+    if (!desktop) return;
     let active = true;
     const refreshKey = () => {
       attempted.current.clear();
@@ -188,7 +188,7 @@ export function useLyricsEngine({
             ? s
             : { ...s, lyrics: { ...s.lyrics, [trackId]: merged } };
         });
-        if (active) setProcessingState({ status: "complete" });
+        if (active) setProcessingState({ status: values.incomplete ? "error" : "complete", message: values.warnings?.join(" ") });
       })
       .catch((error) => {
         if (active)

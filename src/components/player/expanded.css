@@ -104,7 +104,6 @@ dialog.expanded-player {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  transition: max-width 0.35s cubic-bezier(0.2, 0, 0, 1);
 }
 .expanded-layout.has-lyrics .expanded-record {
   max-width: min(440px, 46vh);
@@ -171,6 +170,8 @@ dialog.expanded-player {
   max-width: none;
   min-width: 0;
   gap: 14px;
+  padding: 0;
+  margin: 0;
   background: transparent !important;
 }
 .expanded-player .expanded-transport .transport-cover,
@@ -292,20 +293,56 @@ dialog.expanded-player {
   z-index: 85;
 }
 .expanded-transport .seek-bar-top input[type="range"] {
-  height: 4px;
-  border-radius: 999px;
-  transition: height 0.12s ease;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
   cursor: pointer;
 }
-.expanded-transport .seek-bar-top:hover input[type="range"] {
-  height: 6px;
+.expanded-transport .seek-bar-top input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent) var(--seek-percent, 0%),
+    rgba(255, 255, 255, 0.14) var(--seek-percent, 0%),
+    rgba(255, 255, 255, 0.14) 100%
+  );
+  border: none !important;
+}
+.expanded-transport .seek-bar-top input[type="range"]::-webkit-slider-thumb {
+  margin-top: -3.5px;
+}
+.expanded-transport .seek-bar-top input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent) var(--seek-percent, 0%),
+    rgba(255, 255, 255, 0.14) var(--seek-percent, 0%),
+    rgba(255, 255, 255, 0.14) 100%
+  );
+  border: none !important;
 }
 .expanded-times {
   order: 3;
   width: 100%;
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 11.5px;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--text-secondary);
   margin-top: -14px;
@@ -534,47 +571,42 @@ dialog.expanded-player {
 .expanded-volume-control {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
+  position: relative;
   background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px !important;
-  padding: 0 !important;
-  transition: max-width 0.25s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: none;
-  height: 38px !important;
-  min-height: 38px !important;
-  max-width: 38px;
-  box-sizing: border-box !important;
+  border-radius: var(--radius-pill);
+  padding: 0;
+  height: 38px;
+  min-height: 38px;
+  box-sizing: border-box;
   flex-shrink: 0;
-  overflow: hidden;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .expanded-volume-control:hover,
-.expanded-volume-control.is-hovered {
-  max-width: 140px;
+.expanded-volume-control.is-hovered,
+.expanded-volume-control:focus-within {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.22);
-  padding: 0 !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 .expanded-volume-btn {
-  width: 36px !important;
-  height: 36px !important;
-  min-width: 36px !important;
-  min-height: 36px !important;
-  border-radius: 50% !important;
-  display: grid !important;
-  place-items: center !important;
-  background: transparent !important;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: transparent;
   color: var(--text-secondary);
-  border: 0 !important;
+  border: 0;
   cursor: pointer;
   transition: color 0.18s ease;
   flex-shrink: 0;
-  padding: 0 !important;
-  margin: 0 !important;
-  box-sizing: border-box !important;
+  padding: 0;
+  margin: 0;
   transform: none;
 }
 .expanded-volume-btn:hover {
@@ -584,32 +616,32 @@ dialog.expanded-player {
 .expanded-volume-btn:active {
   transform: scale(0.93);
 }
-.expanded-volume-slider-wrap {
+.expanded-volume-control input[type="range"] {
   width: 0;
+  min-width: 0;
+  padding: 0;
+  flex: 0 0 auto;
   opacity: 0;
   pointer-events: none;
-  overflow: hidden;
-  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease;
-  display: flex;
-  align-items: center;
-}
-.expanded-volume-control:hover .expanded-volume-slider-wrap,
-.expanded-volume-control.is-hovered .expanded-volume-slider-wrap {
-  width: 94px;
-  opacity: 1;
-  pointer-events: auto;
-  padding-left: 10px;
-}
-.expanded-volume-slider-wrap input[type="range"] {
-  width: 80px;
+  margin: 0;
   height: 20px;
   cursor: pointer;
   background: transparent;
   border: none;
   box-shadow: none;
   outline: none;
+  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), opacity 0.16s ease, margin 0.22s ease;
 }
-.expanded-volume-slider-wrap input[type="range"]::-webkit-slider-runnable-track {
+.expanded-volume-control:hover input[type="range"],
+.expanded-volume-control.is-hovered input[type="range"],
+.expanded-volume-control:focus-within input[type="range"] {
+  width: 82px;
+  opacity: 1;
+  pointer-events: auto;
+  margin-left: 2px;
+  margin-right: 10px;
+}
+.expanded-volume-control input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: var(--radius-pill);
   border: none;
@@ -622,6 +654,18 @@ dialog.expanded-player {
     rgba(255, 255, 255, 0.16) var(--volume-percent, 72%),
     rgba(255, 255, 255, 0.16) 100%
   );
+}
+.expanded-volume-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  margin-top: -4px;
 }
 
 .expanded-lyrics {
@@ -894,7 +938,7 @@ dialog.expanded-player {
   color: #000000 !important;
   transform: none !important;
 }
-:root[data-theme="light"] .expanded-volume-slider-wrap input[type="range"]::-webkit-slider-runnable-track {
+:root[data-theme="light"] .expanded-volume-control input[type="range"]::-webkit-slider-runnable-track {
   background: linear-gradient(
     to right,
     var(--accent) 0%,
@@ -903,7 +947,7 @@ dialog.expanded-player {
     rgba(0, 0, 0, 0.12) 100%
   ) !important;
 }
-:root[data-theme="light"] .expanded-volume-slider-wrap input[type="range"]::-webkit-slider-thumb {
+:root[data-theme="light"] .expanded-volume-control input[type="range"]::-webkit-slider-thumb {
   background: var(--accent) !important;
   box-shadow: 0 1px 4px var(--accent-glow), 0 1px 3px rgba(0, 0, 0, 0.2) !important;
 }
@@ -953,3 +997,8 @@ dialog.expanded-player {
   }
 }
 
+
+/* Keep transitions on the artwork layer; fading the full dialog repaints its lyrics and backdrop. */
+.expanded-cover { animation: expanded-cover-arrive 140ms ease-out; }
+@keyframes expanded-cover-arrive { from { opacity: .6; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .expanded-cover { animation: none; } }

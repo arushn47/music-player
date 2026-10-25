@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { library } from "../../adapters/native";
 import { resolveEntityArtwork } from "./EntityArtwork";
 
-vi.mock("../../adapters/native", () => ({ library: { lookupArtist: vi.fn(), entityArtwork: vi.fn() } }));
+vi.mock("../../adapters/native", () => ({ library: { lookupAlbum: vi.fn(), lookupArtist: vi.fn(), entityArtwork: vi.fn() } }));
 
 const commons = { url: "commons.webp", sourceUrl: "https://commons.wikimedia.org/wiki/File:Portrait", credit: "Photographer · CC BY" };
 
@@ -26,9 +26,21 @@ describe("Tracker artist portraits", () => {
     expect(await resolveEntityArtwork("artist", "Artist", "", "")).toEqual(commons);
   });
 
-  it("keeps album artwork resolution unchanged", async () => {
+  it("retains album metadata fallback when the album page lookup is unavailable", async () => {
+    vi.mocked(library.lookupAlbum).mockRejectedValue(Error('Unavailable'));
     expect(await resolveEntityArtwork("album", "Album", "Artist", "Track")).toEqual(commons);
     expect(library.entityArtwork).toHaveBeenCalledWith("album", "Album", "Artist", "Track");
     expect(library.lookupArtist).not.toHaveBeenCalled();
+  });
+  it('uses the same album identity and cover as the album page, splitting track collaborations', async () => {
+    vi.mocked(library.lookupAlbum).mockResolvedValue({ info: { id: 'saavn:album:1', title: 'King Of The Streets', artist: 'Emiway Bantai', artists: [], artworkUrl: 'cover.webp' }, tracks: [], partial: false });
+    expect(await resolveEntityArtwork('album', 'King Of The Streets', 'Emiway Bantai, Keri Hilson, D.O.E.', 'Company')).toEqual({ url: 'cover.webp', sourceUrl: '', credit: 'Emiway Bantai · King Of The Streets' });
+    expect(library.lookupAlbum).toHaveBeenCalledWith('saavn:album:search:Emiway%20Bantai:King%20Of%20The%20Streets');
+    expect(library.entityArtwork).not.toHaveBeenCalled();
+  });
+  it('falls back from broken portraits without repeatedly returning the failed image', async () => {
+    vi.mocked(library.lookupArtist).mockResolvedValue({ info: { id: '1', name: 'Artist', artworkUrl: 'broken.webp' }, topTracks: [], albums: [], similarArtists: [] });
+    expect(await resolveEntityArtwork('artist', 'Artist', '', '', ['broken.webp'])).toEqual(commons);
+    expect(await resolveEntityArtwork('artist', 'Artist', '', '', ['broken.webp', commons.url])).toBeNull();
   });
 });

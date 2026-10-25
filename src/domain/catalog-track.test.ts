@@ -24,6 +24,12 @@ const video: YtdlpSearchResult = {
 };
 
 describe("catalogue metadata and audio sources", () => {
+  it('validates MusicBrainz recording identity through the existing source matcher', async () => {
+    const recording = { ...catalog, id: 'musicbrainz:recording:c4197d72-b3dd-445f-bdb8-a7f6598b5f74' };
+    const search = vi.fn().mockResolvedValue([video]);
+    expect((await resolveCatalogSource(recording, search)).id).toBe(video.id);
+    await expect(resolveCatalogSource({ ...recording, id: 'musicbrainz:recording:invalid' }, search)).rejects.toThrow('Invalid catalog');
+  });
   it("matches alternate titles across label segments with album and abbreviated artist evidence", async () => {
     const song = { ...catalog, title: "Arabic Kuthu - Halamithi Habibo", artist: "Anirudh Ravichander, Jonita Gandhi", artists: [{ name: "Anirudh Ravichander", id: null }, { name: "Jonita Gandhi", id: null }], album: "Beast", duration: 279 };
     const source = { ...video, id: "8FAUEv_E_xQ", title: "Arabic Kuthu | Halamithi Habibo -Lyric Video| Beast| Thalapathy Vijay| Sun Pictures| Nelson| Anirudh", channel: "Sun TV", duration: 283 };

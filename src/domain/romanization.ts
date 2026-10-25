@@ -1,3 +1,4 @@
+import { romanizeForeign } from "./foreign-romanization";
 import type { LyricDocument } from "./types";
 
 const scripts: [number, number, string][] = [
@@ -50,7 +51,7 @@ function readableRoman(text: string, script?: string): string {
 export async function romanizeDocument(
   doc: LyricDocument,
 ): Promise<Record<string, string>> {
-  if (!doc.lines.some((line) => /[\u0900-\u0dff]/.test(line.text))) return {};
+  if (!doc.lines.some(line => /(?!\p{Script=Latin})\p{L}/u.test(line.text))) return {};
   const { default: Sanscript } =
     await import("@indic-transliteration/sanscript");
   if (!Sanscript.schemes.lumaire_tamil) {
@@ -79,8 +80,11 @@ export async function romanizeDocument(
     });
     roman.consonants["ळ"] = "ḷ";
     Sanscript.addRomanScheme("lumaire_tamil_roman", roman);
+    const malayalam = structuredClone(roman);
+    malayalam.consonants["ऱ"] = "ṟ";
+    Sanscript.addRomanScheme("lumaire_malayalam_roman", malayalam);
   }
-  for (const [, , script] of scripts) {
+  for (const script of [...scripts.map(([, , name]) => name), "assamese"]) {
     if (script === "tamil" || Sanscript.schemes[`lumaire_${script}`]) continue;
     const scheme = structuredClone(Sanscript.schemes[script]);
     // The upstream Brahmic reader consumes one character at a time. Internal
@@ -95,14 +99,19 @@ export async function romanizeDocument(
     Sanscript.addBrahmicScheme(`lumaire_${script}`, scheme);
   }
   const result: Record<string, string> = {};
+  const japanese = doc.lines.some(item => /[\u3040-\u30ff]/.test(item.text)) || Object.values(doc.lineLanguages ?? {}).flat().some(code => /^(?:ja|jpn)(?:-|$)/i.test(code));
   for (const line of doc.lines) {
     const spoken: string[] = [];
     const academic = line.text.replace(runs, (run) => {
       const code = run.codePointAt(0)!;
-      const script = scripts.find(
+      const script = /[ৰৱ]/.test(run) ? "assamese" : scripts.find(
         ([first, last]) => code >= first && code <= last,
       )?.[2];
       let text = run.replace(/[\u200c\u200d]/g, "").normalize("NFC");
+      if (script === "malayalam") {
+        const chillus: Record<string, string> = { "ൺ": "ണ്", "ൻ": "ന്", "ർ": "ര്", "ൽ": "ല്", "ൾ": "ള്", "ൿ": "ക്", "ൔ": "മ്", "ൕ": "യ്", "ൖ": "ഴ്" };
+        text = text.replace(/[ൺൻർൽൾൿൔൕൖ]/g, letter => chillus[letter]).replaceAll("ൗ", "ൌ");
+      }
       // NFC deliberately leaves several nukta letters decomposed. Sanscript's
       // maps contain their precomposed spelling; restore those exact tokens so
       // Hindi/Bengali/Punjabi diacritics don't leak into the Latin layer.
@@ -125,21 +134,23 @@ export async function romanizeDocument(
         ? Sanscript.t(
             text,
             `lumaire_${script}`,
-            script === "tamil" ? "lumaire_tamil_roman" : "iast",
+            script === "tamil" ? "lumaire_tamil_roman" : script === "malayalam" ? "lumaire_malayalam_roman" : "iast",
           )
         : run;
-      spoken.push(readableRoman(transliterated, script));
+      spoken.push(script === "malayalam"
+        ? readableRoman(transliterated.replace(/ñc/g, "nc").replace(/ē/g, "e").replace(/ō/g, "o").replace(/ṟ/g, "r").replace(/ñ/g, "nj").replace(/t/g, "th"), script)
+        : readableRoman(transliterated, script));
       return transliterated;
     });
     let runIndex = 0;
-    const roman = line.text.replace(runs, () => spoken[runIndex++]);
+    const roman = (await romanizeForeign([line.text.replace(runs, () => spoken[runIndex++])], japanese))[0];
     const existing = doc.romanisation[line.id];
     if (existing) {
       // Repair only an exact old generated value. Different supplied text is
       // preserved; concurrent manual changes are guarded by the caller too.
       const legacy = line.text.replace(runs, (run) => {
         const code = run.codePointAt(0)!;
-        const script = scripts.find(
+        const script = /[ৰৱ]/.test(run) ? "assamese" : scripts.find(
           ([first, last]) => code >= first && code <= last,
         )?.[2];
         return script ? Sanscript.t(run, script, "iast") : run;
@@ -150,7 +161,12 @@ export async function romanizeDocument(
         doc.romanisationSource === "imported"
       )
         continue;
-      if ((existing !== legacy && existing !== academic) || roman === existing)
+      const legacyReadable = line.text.replace(runs, run => {
+        const code = run.codePointAt(0)!;
+        const script = /[ৰৱ]/.test(run) ? "assamese" : scripts.find(([first, last]) => code >= first && code <= last)?.[2];
+        return script ? readableRoman(Sanscript.t(run, script, "iast"), script) : run;
+      });
+      if ((existing !== legacy && existing !== academic && existing !== legacyReadable && existing !== doc.localRomanisation?.[line.id]) || roman === existing)
         continue;
     }
     if (roman !== line.text) result[line.id] = roman;

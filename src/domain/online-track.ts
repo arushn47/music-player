@@ -12,8 +12,11 @@ const channelArtist = (channel: string | null) => {
 };
 
 export function cleanVideoTitle(value: string): string {
+  const presentation = /^(?:(?:full|official)\s+(?:(?:music|lyric(?:al|s)?)\s+)?(?:video|audio)|lyrical(?:\s+video)?)\s*[:–—-]\s*/i;
+  const videoLabel = presentation.test(value);
   return value
     .normalize("NFKC")
+    .replace(presentation, "")
     .replace(
       /[([](?:official (?:music )?video|official audio|lyric video|lyrics|audio|hd|hq|4k)[)\]]/gi,
       "",
@@ -24,6 +27,7 @@ export function cleanVideoTitle(value: string): string {
       /\s+(?:[-–—]\s*)?(?:official\s+(?:music\s+)?(?:video|audio)|(?:official\s+)?lyric(?:s)?(?:\s+video)?|visuali[sz]er)(?:\s*[-–—])?\s*$/i,
       "",
     )
+    .replace(/\s+song\s*$/i, label => videoLabel ? "" : label)
     .replace(/\s+/g, " ")
     .replace(/\s*[([]prod(?:uced)?\.?\s*(?:by\b|[.:])[^)\]]*[)\]]/gi, "")
     .trim();

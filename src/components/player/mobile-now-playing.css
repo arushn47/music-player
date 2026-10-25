@@ -1,0 +1,849 @@
+/* ── Mobile-First Now Playing Screen (YouTube Music UX + Apple Design Polish) ── */
+
+:root,
+.mobile-now-playing,
+.mobile-now-playing[data-theme="dark"],
+:root[data-theme="dark"] .mobile-now-playing {
+  --np-bg: #0d0f0c;
+  --np-scrim-start: rgba(13, 16, 12, 0.72);
+  --np-scrim-end: rgba(10, 12, 9, 0.94);
+  --np-text-primary: #ffffff;
+  --np-text-secondary: rgba(244, 245, 240, 0.65);
+  --np-text-dim: rgba(244, 245, 240, 0.45);
+  --np-drag-pill: rgba(255, 255, 255, 0.32);
+  --np-drag-pill-active: rgba(255, 255, 255, 0.58);
+  --np-pill-bg: rgba(255, 255, 255, 0.08);
+  --np-pill-border: rgba(255, 255, 255, 0.06);
+  --np-pill-active-bg: rgba(255, 255, 255, 0.22);
+  --np-pill-active-text: #ffffff;
+  --np-slider-unplayed: rgba(255, 255, 255, 0.2);
+  --np-card-border: rgba(255, 255, 255, 0.1);
+  --np-card-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+  --np-btn-hover: rgba(255, 255, 255, 0.1);
+  --np-play-btn-bg: #ffffff;
+  --np-play-btn-text: #121512;
+  --np-queue-item-bg: rgba(255, 255, 255, 0.035);
+  --np-queue-item-border: rgba(255, 255, 255, 0.05);
+  --np-queue-current-bg: rgba(255, 255, 255, 0.09);
+  --np-switch-bg-off: rgba(255, 255, 255, 0.18);
+  --np-switch-border: rgba(255, 255, 255, 0.12);
+}
+
+.mobile-now-playing[data-theme="light"],
+:root[data-theme="light"] .mobile-now-playing {
+  --np-bg: #f7f6ee;
+  --np-scrim-start: rgba(247, 246, 238, 0.75);
+  --np-scrim-end: rgba(242, 241, 232, 0.95);
+  --np-text-primary: #1a1d16;
+  --np-text-secondary: #4a5144;
+  --np-text-dim: #788070;
+  --np-drag-pill: rgba(0, 0, 0, 0.22);
+  --np-drag-pill-active: rgba(0, 0, 0, 0.45);
+  --np-pill-bg: rgba(0, 0, 0, 0.06);
+  --np-pill-border: rgba(0, 0, 0, 0.08);
+  --np-pill-active-bg: var(--accent);
+  --np-pill-active-text: var(--accent-text, #ffffff);
+  --np-slider-unplayed: rgba(0, 0, 0, 0.14);
+  --np-card-border: rgba(0, 0, 0, 0.08);
+  --np-card-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+  --np-btn-hover: rgba(0, 0, 0, 0.06);
+  --np-play-btn-bg: var(--accent);
+  --np-play-btn-text: var(--accent-text, #ffffff);
+  --np-queue-item-bg: rgba(0, 0, 0, 0.03);
+  --np-queue-item-border: rgba(0, 0, 0, 0.06);
+  --np-queue-current-bg: rgba(var(--accent-rgb, 196, 220, 163), 0.14);
+  --np-switch-bg-off: rgba(0, 0, 0, 0.15);
+  --np-switch-border: rgba(0, 0, 0, 0.12);
+}
+
+.mobile-now-playing {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  background: var(--np-bg);
+  color: var(--np-text-primary);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: mobileSheetSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+}
+
+@keyframes mobileSheetSlideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-now-playing {
+    animation: mobileSheetFadeIn 0.2s ease forwards;
+  }
+  @keyframes mobileSheetFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* Ambient Backdrop Scrim */
+.mobile-np-scrim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 25%, var(--np-scrim-start) 0%, var(--np-scrim-end) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Top Drag Zone ── */
+.mobile-np-drag-zone {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: calc(env(safe-area-inset-top, 16px) + 14px);
+  padding-top: env(safe-area-inset-top, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+}
+.mobile-np-drag-zone:active {
+  cursor: grabbing;
+}
+.mobile-np-drag-pill {
+  width: 38px;
+  height: 4.5px;
+  border-radius: 999px;
+  background: var(--np-drag-pill);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.mobile-np-drag-zone:active .mobile-np-drag-pill {
+  background: var(--np-drag-pill-active);
+  transform: scaleY(1.2);
+}
+
+/* ── Header Bar ── */
+.mobile-np-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 16px 10px;
+  gap: 12px;
+}
+
+.mobile-np-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--np-text-primary);
+  cursor: pointer;
+  transition: transform 0.1s ease-out, background 0.15s ease;
+}
+.mobile-np-icon-btn:active {
+  transform: scale(0.92);
+  background: var(--np-btn-hover);
+}
+
+/* ── Apple Segmented Pills Switcher ── */
+.mobile-np-segmented-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: var(--np-pill-bg);
+  border: 1px solid var(--np-pill-border);
+  border-radius: 999px;
+  padding: 3px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  gap: 2px;
+}
+
+.mobile-np-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--np-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+.mobile-np-tab.is-active {
+  background: var(--np-pill-active-bg);
+  color: var(--np-pill-active-text);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.mobile-np-tab:active {
+  transform: scale(0.96);
+}
+
+/* ── View 1: Main Song / Player View ── */
+.mobile-np-main-view {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 24px calc(env(safe-area-inset-bottom, 16px) + 38px);
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Centered Artwork */
+.mobile-np-artwork-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 6px 0 12px;
+  margin-bottom: 6px;
+}
+.mobile-np-artwork-card {
+  width: min(78vw, 320px);
+  max-height: 42vh;
+  aspect-ratio: 1;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: var(--np-card-shadow), 0 0 24px var(--accent-glow);
+  border: 1px solid var(--np-card-border);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--np-queue-item-bg);
+}
+.mobile-np-artwork-card.is-playing {
+  transform: scale(1);
+}
+.mobile-np-artwork-card.is-paused {
+  transform: scale(0.95);
+  box-shadow: var(--np-card-shadow), 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Ensure inner cover span and img fill 100% of the artwork card */
+.mobile-np-artwork-card .cover,
+.mobile-np-artwork-card .mobile-np-artwork-img {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: inherit !important;
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.mobile-np-artwork-card img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: inherit !important;
+}
+.mobile-np-artwork-card svg {
+  width: 64px !important;
+  height: 64px !important;
+  color: var(--accent) !important;
+}
+
+/* Identity Row (Title + Artist + Favorite) */
+.mobile-np-identity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+.mobile-np-text-block {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.mobile-np-title {
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  color: var(--np-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-np-artist-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14.5px;
+  color: var(--np-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-np-artist-line .link-button {
+  display: inline;
+  color: inherit;
+  font-size: inherit;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+.mobile-np-artist-line .link-button:active {
+  color: var(--accent);
+}
+.mobile-np-fav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--np-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.12s ease, color 0.15s ease;
+}
+.mobile-np-fav-btn:active {
+  transform: scale(0.85);
+}
+.mobile-np-fav-btn.is-favorite {
+  color: var(--accent);
+}
+
+/* ── Seek Bar Scrubber & Time ── */
+.mobile-np-scrubber-section {
+  width: 100%;
+  margin-bottom: 16px;
+}
+.mobile-np-slider-wrap {
+  position: relative;
+  width: 100%;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+.mobile-np-seek-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+.mobile-np-seek-slider::-webkit-slider-runnable-track {
+  height: 4px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent) var(--seek-percent, 0%),
+    var(--np-slider-unplayed) var(--seek-percent, 0%),
+    var(--np-slider-unplayed) 100%
+  ) !important;
+  border: none !important;
+}
+.mobile-np-seek-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--np-slider-unplayed);
+  border: none;
+}
+.mobile-np-seek-slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.mobile-np-seek-slider::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin-top: -5px !important;
+  border-radius: 50% !important;
+  background: var(--accent) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+  border: 2px solid var(--np-bg) !important;
+  cursor: pointer !important;
+  transition: transform 0.12s ease !important;
+}
+.mobile-np-seek-slider:active::-webkit-slider-thumb {
+  transform: scale(1.3) !important;
+}
+.mobile-np-seek-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  border: 2px solid var(--np-bg);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.mobile-np-seek-slider:active::-moz-range-thumb {
+  transform: scale(1.3);
+}
+
+.mobile-np-time-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--np-text-dim);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.mobile-np-duration-toggle {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  font-variant-numeric: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* ── Transport Controls (YouTube Music + Apple Layout) ── */
+.mobile-np-transport-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 6px;
+  box-sizing: border-box;
+}
+
+.mobile-np-ctrl-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--np-text-primary);
+  cursor: pointer;
+  transition: transform 0.1s ease-out, color 0.15s ease;
+}
+.mobile-np-ctrl-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+.mobile-np-ctrl-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.mobile-np-ctrl-btn.is-active {
+  color: var(--accent);
+}
+.mobile-np-dot-active {
+  position: absolute;
+  bottom: 6px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Large Center Play / Pause Button */
+.mobile-np-play-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: none;
+  background: var(--np-play-btn-bg);
+  color: var(--np-play-btn-text);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease;
+}
+.mobile-np-play-button:active:not(:disabled) {
+  transform: scale(0.91);
+}
+.mobile-np-play-button:disabled {
+  opacity: 0.5;
+}
+.mobile-np-play-button.is-loading {
+  opacity: 0.8;
+}
+
+/* ── View 2: Lyrics View (Authentic Lyric Room Experience) ── */
+.mobile-np-lyrics-tab {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+.mobile-np-lyrics-settings-slot {
+  display: none;
+}
+.mobile-np-lyrics-scroll-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 16px 20px;
+}
+
+/* Ensure lyric settings anchor stays neatly on top right in Mobile Now Playing */
+.mobile-now-playing .lyric-settings-fixed-anchor {
+  width: 100% !important;
+  height: 0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  align-items: center !important;
+  position: sticky !important;
+  top: 6px !important;
+  right: 0 !important;
+  margin-bottom: 0 !important;
+  z-index: 60 !important;
+  pointer-events: none !important;
+}
+.mobile-now-playing .lyric-settings-fixed-anchor .lyric-settings {
+  pointer-events: auto !important;
+  margin-right: 4px !important;
+}
+
+/* Hide clutter header and warnings inside mobile now playing to focus on the lyrics */
+.mobile-now-playing .lyric-room-heading,
+.app.android .mobile-now-playing .lyric-room-heading,
+.mobile-now-playing .page-heading,
+.mobile-now-playing .parser-warning {
+  display: none !important;
+}
+
+.mobile-np-lyrics-scroll-wrap .lyric-room {
+  padding: 0 !important;
+  background: transparent !important;
+  min-height: 100%;
+}
+.mobile-np-lyrics-scroll-wrap .lyric-lines {
+  padding-top: 24px !important;
+  padding-bottom: 240px !important;
+}
+
+/* Floating Action Bar (Translation, Romanization, and Sync button) inside Mobile Now Playing */
+.mobile-np-lyrics-tab .lyric-room-floating-bar,
+.mobile-np-lyrics-scroll-wrap .lyric-room-floating-bar {
+  position: absolute !important;
+  bottom: calc(env(safe-area-inset-bottom, 16px) + 14px) !important;
+  right: 16px !important;
+  z-index: 50 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+}
+
+/* ── View 3: Queue View (Up Next) ── */
+.mobile-np-queue-tab {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding: 10px 16px calc(env(safe-area-inset-bottom, 16px) + 12px);
+}
+
+.mobile-np-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px 10px;
+  border-bottom: 1px solid var(--np-queue-item-border);
+}
+.mobile-np-queue-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mobile-np-queue-title-wrap h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--np-text-primary);
+}
+.mobile-np-queue-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--np-text-secondary);
+  background: var(--np-pill-bg);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.mobile-np-clear-btn {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* ── Autoplay Row (YouTube Music Pattern) ── */
+.mobile-np-autoplay-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+  background: var(--np-queue-item-bg);
+  border: 1px solid var(--np-queue-item-border);
+  border-radius: 14px;
+  gap: 12px;
+}
+.mobile-np-autoplay-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mobile-np-autoplay-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--np-text-primary);
+}
+.mobile-np-autoplay-desc {
+  font-size: 11.5px;
+  color: var(--np-text-secondary);
+  line-height: 1.3;
+}
+.mobile-np-toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 51px;
+  height: 31px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border-radius: 31px;
+  background: rgba(120, 120, 128, 0.32);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+:root[data-theme="light"] .mobile-np-toggle-switch {
+  background: rgba(120, 120, 128, 0.22);
+}
+.mobile-np-toggle-switch.is-on {
+  background: var(--accent);
+}
+.mobile-np-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.12);
+  transition: transform 0.28s cubic-bezier(0.2, 0.85, 0.32, 1.05), width 0.18s ease;
+  pointer-events: none;
+}
+.mobile-np-toggle-switch.is-on .mobile-np-switch-thumb {
+  transform: translateX(20px);
+}
+.mobile-np-toggle-switch:active .mobile-np-switch-thumb {
+  width: 31px;
+}
+.mobile-np-toggle-switch.is-on:active .mobile-np-switch-thumb {
+  transform: translateX(16px);
+}
+
+.mobile-np-undo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--np-pill-bg);
+  padding: 8px 14px;
+  border-radius: 12px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: var(--np-text-primary);
+}
+.mobile-np-undo-bar button {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-np-queue-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 6px;
+}
+
+.mobile-np-queue-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--np-queue-item-bg);
+  border: 1px solid var(--np-queue-item-border);
+  margin-bottom: 8px;
+  transition: background 0.15s ease;
+}
+.mobile-np-queue-item.current {
+  background: var(--np-queue-current-bg);
+  border: 1px solid var(--accent);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.mobile-np-queue-item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.mobile-np-queue-thumb {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mobile-np-queue-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mobile-np-queue-info strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--np-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-np-queue-info small {
+  font-size: 11.5px;
+  color: var(--np-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-np-now-playing-pill {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.mobile-np-queue-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.mobile-np-queue-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--np-text-secondary);
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.15s ease, color 0.15s ease;
+}
+.mobile-np-queue-action-btn:active:not(:disabled) {
+  transform: scale(0.9);
+  background: var(--np-btn-hover);
+  color: var(--np-text-primary);
+}
+.mobile-np-queue-action-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.mobile-np-queue-action-btn.remove:hover {
+  color: #ff6b6b;
+}
+
+.mobile-np-empty-queue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--np-text-dim);
+  text-align: center;
+  gap: 8px;
+}
+.mobile-np-empty-queue p {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--np-text-secondary);
+}
+.mobile-np-empty-queue small {
+  font-size: 12.5px;
+}

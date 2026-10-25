@@ -13,3 +13,5 @@ export { MobileTabBar } from "./MobileTabBar";
 export type { MobileTabBarProps } from "./MobileTabBar";
 export { ArtistLinks } from "./ArtistLinks";
 export type { ArtistLinksProps } from "./ArtistLinks";
+export { AudioWaveform } from "./AudioWaveform";
+export type { AudioWaveformProps } from "./AudioWaveform";

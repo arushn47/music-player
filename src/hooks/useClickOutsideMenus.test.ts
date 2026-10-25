@@ -2,6 +2,32 @@ import { describe, it, expect, vi } from "vitest";
 import { initClickOutsideMenus } from "./useClickOutsideMenus";
 
 describe("initClickOutsideMenus", () => {
+  it("opens on touch hold, suppresses accidental playback, and cancels holds on scrolling", () => {
+    vi.useFakeTimers();
+    const listeners: Record<string, EventListener> = {};
+    const menu = { open: false };
+    const row = { querySelector: () => menu };
+    const target = { closest: (selector: string) => selector === ".track-row" ? row : null };
+    const doc = {
+      addEventListener: vi.fn((name, listener, capture) => { listeners[name + (capture ? "Capture" : "")] = listener; }),
+      removeEventListener: vi.fn(), querySelectorAll: () => [],
+    } as unknown as Document;
+    const cleanup = initClickOutsideMenus(doc);
+    const down = { pointerType: "touch", target, clientX: 10, clientY: 10 } as unknown as PointerEvent;
+    listeners.pointerdown(down);
+    vi.advanceTimersByTime(460);
+    expect(menu.open).toBe(true);
+    const click = { preventDefault: vi.fn(), stopImmediatePropagation: vi.fn() };
+    listeners.clickCapture(click as unknown as MouseEvent);
+    expect(click.preventDefault).toHaveBeenCalled();
+    menu.open = false;
+    listeners.pointerdown(down);
+    listeners.pointermove({ clientX: 10, clientY: 35 } as PointerEvent);
+    vi.advanceTimersByTime(460);
+    expect(menu.open).toBe(false);
+    cleanup();
+    vi.useRealTimers();
+  });
   it("closes open track-menu details when pointerdown fires outside", () => {
     const listeners: Record<string, EventListener> = {};
     const mockDetails = {

@@ -238,3 +238,33 @@ executables.
 ## Support link browser integration
 
 Tauri plugin-opener 2.7.2 (MIT OR Apache-2.0) opens approved support links in the default browser. The native Windows opener uses open 5.4.4 (MIT). Sources: https://github.com/tauri-apps/plugins-workspace and https://github.com/Byron/open-rs. Their licence texts are included in THIRD_PARTY_LICENSES.txt.
+
+
+## Offline lyric romanization engines
+
+These engines run locally and load only when needed. Japanese uses the bundled Kuromoji/IPADIC dictionary (about 17.8 MB compressed); no dictionary CDN or Python installation is needed. The IPADIC copyright and conditions from Kuromoji NOTICE.md are reproduced in THIRD_PARTY_LICENSES.txt. Arabic, Persian, Urdu, Hebrew, Greek and Thai fallbacks are transliterations, not guaranteed contextual pronunciation. Original Latin text is retained.
+
+| Package | Version | Licence | Source |
+|---|---|---|---|
+| @babel/runtime | 7.29.10 | MIT | https://github.com/babel/babel.git |
+| @dehoist/romanize-thai | 1.0.0 | MPL-2.0 | git+https://github.com/Dehoist/Open-Source.git |
+| @romanize/korean | 0.1.3 | MIT | https://github.com/kntng/romanize |
+| @sglkc/kuromoji | 1.1.0 | Apache-2.0 | https://github.com/sglkc/kuromoji.js.git |
+| @sglkc/kuroshiro | 1.0.1 | MIT | https://github.com/sglkc/kuroshiro-ts.git |
+| @sglkc/kuroshiro-analyzer-kuromoji | 1.0.1 | MIT | https://github.com/sglkc/kuroshiro-analyzer-kuromoji-ts.git |
+| async | 2.6.4 | MIT | https://github.com/caolan/async.git |
+| cyrillic-to-translit-js | 3.2.1 | MIT | git+https://github.com/greybax/CyrillicToTranslitJS.git |
+| doublearray | 0.0.2 | MIT | https://github.com/takuyaa/doublearray.git |
+| fflate | 0.8.3 | MIT | https://github.com/101arrowz/fflate |
+| lodash | 4.18.1 | MIT | lodash/lodash |
+| lodash.invert | 4.3.0 | MIT | lodash/lodash |
+| lyric-romanizer | 0.3.1 | MIT | https://github.com/thedavidweng/lyric-romanizer.git |
+| pinyin-pro | 3.29.5 | MIT | git+https://github.com/zh-lx/pinyin-pro.git |
+| tamil-romanizer | 1.0.2 | ISC | github:haroldalan/tamil-romanizer |
+| to-jyutping | 3.1.1 | BSD-2-Clause | git+https://github.com/CanCLID/to-jyutping.git |
+| transliteration | 2.7.0 | MIT | https://github.com/yf-hk/transliteration.git |
+
+
+### Optional MusicBrainz metadata and official Apple charts
+
+Artist/release-group metadata may be retrieved from the public [MusicBrainz API](https://musicbrainz.org/doc/MusicBrainz_API), with source attribution and MusicBrainz request pacing. Apple's public RSS charts identify whether the source is Apple Music Most Played or iTunes Store Top Songs; metadata fallback uses the documented [iTunes Search API](https://performance-partners.apple.com/search-api). No SDK or provider source code is bundled by these integrations. Existing audio sources and audio rights are unchanged. ListenBrainz Fresh Releases was evaluated and is not a production request source. See docs/PROVIDER-EVALUATION.md for the integration limits and coverage observations.

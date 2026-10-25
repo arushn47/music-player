@@ -175,3 +175,11 @@ describe("lookupLyrics artist placeholder", () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 });
+
+
+it("looks up the song title rather than video labels or an unverified uploader", async () => {
+  const track = { ...base, title: "Full Video: Samayama Song | Hi Nanna | Nani", artist: "T-Series Telugu", source: { providerId: "youtube", sourceId: "abcdefghijk", attribution: "T-Series Telugu", pageUrl: "https://www.youtube.com/watch?v=abcdefghijk", license: "", licenseUrl: "" } };
+  invoke.mockResolvedValue({ kind: "not_found" });
+  await lookupLyrics(track);
+  expect(invoke).toHaveBeenCalledWith("fetch_lyrics", expect.objectContaining({ title: "Samayama", artist: "" }));
+});

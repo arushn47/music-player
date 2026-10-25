@@ -1,14 +1,18 @@
+import { toggleNativeFullscreen } from "./adapters/fullscreen";
+import { WindowControls } from "./components/common/WindowControls";
 import { useSyncExternalStore } from "react";
 import { initializeUpdates, getUpdateState, subscribeToUpdates, dismissReleaseNotes, supportsWindowsUpdates } from "./adapters/updater";
+import { MusicLanguageOnboarding } from "./components/modals/MusicLanguageOnboarding";
 import { UpdateDialog } from "./components/modals/UpdateDialog";
 import { downloadProgressText } from "./domain/downloads";
 import { mergePlaylistImport, type PlaylistImportOptions } from "./domain/playlist-import";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Disc3 } from "lucide-react";
+import { Disc3, Minimize2 } from "lucide-react";
 import { desktop, mobile, library, type CatalogTrack } from "./adapters/native";
 import { TopBar, Banners, MobileTabBar } from "./components/common";
 import { PlayerBar } from "./components/player";
 import { ExpandedPlayer } from "./components/player/ExpandedPlayer";
+import { MobileNowPlaying } from "./components/player/MobileNowPlaying";
 import { Sidebar } from "./components/sidebar";
 import { QueuePanel } from "./components/queue";
 import {
@@ -19,7 +23,7 @@ import {
   type PromptDialogData,
 } from "./components/modals";
 import { LyricsView } from "./components/lyrics";
-import { DiscoveryView, SettingsView, LibraryView, ArtistView, AlbumView } from "./components/views";
+import { DiscoveryView, DiscoveryHome, SettingsView, LibraryView, ArtistView, AlbumView, ChartView } from "./components/views";
 import { useAlbumDownloads } from "./hooks/useAlbumDownloads";
 import {
   initialDiscoveryViewState,
@@ -27,6 +31,7 @@ import {
 } from "./components/views/DiscoveryView";
 import { libraryCollections } from "./domain/collections";
 import { restoreSession } from "./domain/session";
+import { lyricLayers } from "./domain/lyric-display";
 import { type Track, type Playlist } from "./domain/types";
 import {
   useLibraryManager,
@@ -41,6 +46,7 @@ import { clearListening } from "./player/listening-service";
 import { reorderUpcoming } from "./domain/queue";
 import { applyTheme, storeTheme } from "./theme";
 import { isTauri } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { emit } from "@tauri-apps/api/event";
 import type { CatalogAction } from "./components/common/CatalogTrackActions";
 import { EngineSetupCard } from "./components/common/EngineSetupCard";
@@ -55,6 +61,8 @@ import { item } from "./domain/types";
 import { collections as collectionAdapter } from "./adapters/collections";
 
 type View =
+  | "home"
+  | "search"
   | "library"
   | "favorites"
   | "lyrics"
@@ -62,6 +70,7 @@ type View =
   | "discover"
   | { type: "artist"; id: string }
   | { type: "album"; id: string }
+  | { type: "chart"; id: string }
   | string;
 
 export function App() {
@@ -111,10 +120,34 @@ export function App() {
     onCancelYoutubeEngineInstall: libraryManager.cancelYoutubeEngineInstall,
   };
 
-  const [view, setRawView] = useState<View>("discover");
-  const [discoverRoute, setDiscoverRoute] = useState<View>("discover");
+  const [view, setRawView] = useState<View>("home");
+  const [discoverRoute, setDiscoverRoute] = useState<View>("home");
   const currentViewRef = useRef<View>(view);
   currentViewRef.current = view;
+
+  const [navHistory, setNavHistory] = useState<View[]>(["home"]);
+  const [navIndex, setNavIndex] = useState(0);
+
+  const canGoBack = navIndex > 0;
+  const canGoForward = navIndex < navHistory.length - 1;
+
+  const goBack = useCallback(() => {
+    if (navIndex > 0) {
+      const prevIndex = navIndex - 1;
+      const prev = navHistory[prevIndex];
+      setNavIndex(prevIndex);
+      setRawView(prev);
+    }
+  }, [navIndex, navHistory]);
+
+  const goForward = useCallback(() => {
+    if (navIndex < navHistory.length - 1) {
+      const nextIndex = navIndex + 1;
+      const next = navHistory[nextIndex];
+      setNavIndex(nextIndex);
+      setRawView(next);
+    }
+  }, [navIndex, navHistory]);
 
   const scrollPositions = useRef(new Map<string, number>());
   const viewKey = (v: View) => (typeof v === "object" ? `${v.type}:${v.id}` : String(v));
@@ -124,19 +157,53 @@ export function App() {
     if (main) {
       scrollPositions.current.set(viewKey(currentViewRef.current), main.scrollTop);
     }
-    setRawView(next);
-  }, []);
+    setRawView((prev) => {
+      const resolved = typeof next === "function" ? (next as (prev: View) => View)(prev) : next;
+      setNavHistory((hist) => [...hist.slice(0, navIndex + 1), resolved]);
+      setNavIndex((i) => i + 1);
+      return resolved;
+    });
+  }, [navIndex]);
 
   const [catalogHistory, setCatalogHistory] = useState<View[]>([]);
+  const [historyTab, setHistoryTab] = useState<"stats" | "history">("stats");
 
-  function selectView(next: View) {
-    if (next === "discover" && typeof view === "object") {
-      setView("discover");
-      setDiscoverRoute("discover");
+  function selectView(next: View, targetHistoryTab: "stats" | "history" = "stats") {
+    if (next === "lyrics" && (mobile || window.innerWidth <= 768)) {
+      setMobilePlayerTab("lyrics"); setExpanded(true); return;
+    }
+    if (next === "history") {
+      setHistoryTab(targetHistoryTab);
+    }
+    const target = next === "discover" ? discoverRoute : next;
+    const currentKey = viewKey(view);
+    const targetKey = viewKey(target);
+    const isSame =
+      currentKey === targetKey ||
+      ((currentKey === "search" || currentKey === "discover") &&
+        (targetKey === "search" || targetKey === "discover"));
+
+    if (isSame) {
+      const main = document.getElementById("main");
+      if (main) {
+        main.scrollTo({ top: 0, behavior: "smooth" });
+        scrollPositions.current.set(currentKey, 0);
+      }
+      if (currentKey === "search" || currentKey === "discover") {
+        setDiscoveryState((prev) => ({ ...prev, scrollTop: 0 }));
+      }
+      return;
+    }
+
+    if ((next === "home" || next === "discover" || next === "search") && typeof view === "object") {
+      scrollPositions.current.set(viewKey(next), 0);
+      setView(next);
+      setDiscoverRoute(next);
       setCatalogHistory([]);
       return;
     }
-    setView(next === "discover" ? discoverRoute : next);
+    scrollPositions.current.set(targetKey, 0);
+    setView(target);
   }
 
   useLayoutEffect(() => {
@@ -152,17 +219,25 @@ export function App() {
     setDiscoverRoute(next);
   }
   function backFromCatalog() {
-    const previous = catalogHistory[catalogHistory.length - 1] ?? "discover";
+    const previous = catalogHistory[catalogHistory.length - 1] ?? "home";
     setView(previous);
-    setDiscoverRoute(typeof previous === "object" ? previous : "discover");
+    setDiscoverRoute(typeof previous === "object" ? previous : "home");
     setCatalogHistory(history => history.slice(0, -1));
   }
   const [query, setQuery] = useState("");
+  const [headerSearchQuery, setHeaderSearchQuery] = useState("");
   const [discoveryState, setDiscoveryState] = useState<DiscoveryViewState>(
     initialDiscoveryViewState,
   );
   const [queueOpen, setQueueOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return 240;
+    const saved = localStorage.getItem("lumaire:sidebar-width");
+    const parsed = saved ? parseInt(saved, 10) : 240;
+    return Number.isFinite(parsed) && parsed >= 180 && parsed <= 440 ? parsed : 240;
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [dialog, setDialog] = useState<PromptDialogData | null>(null);
   const [playlistTarget, setPlaylistTarget] = useState<Track | null>(null);
   const [addMusicPlaylist, setAddMusicPlaylist] = useState<Playlist | null>(null);
@@ -217,15 +292,63 @@ export function App() {
   useEffect(() => { if (updateState.unreadNotes) setUpdatesOpen(true); }, [updateState.unreadNotes]);
   const closeUpdates = () => { dismissReleaseNotes(); setUpdatesOpen(false); };
   const [expanded, setExpanded] = useState(false);
-  const expandOrigin = useRef<DOMRect | null>(null);
-  function openExpanded() { expandOrigin.current = document.querySelector(".cover-expand")?.getBoundingClientRect() || null; setExpanded(true); }
-  function closeExpanded() { setExpanded(false); requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".cover-expand")?.focus()); }
+  const [mobilePlayerTab, setMobilePlayerTab] = useState<"player" | "lyrics" | "queue">("player");
+  function openExpanded() { setMobilePlayerTab("player"); setExpanded(true); }
+  function closeExpanded() { setExpanded(false); requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".cover-expand, .mobile-cover-expand")?.focus()); }
   const [collectionHub, setCollectionHub] = useState<"import" | "devices" | false>(false);
   const followRef = useRef<(f: boolean) => void>(() => {});
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const restoreMaximized = useRef(false);
+  const fullscreenBusy = useRef(false);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (fullscreenBusy.current) return;
+    fullscreenBusy.current = true;
+    try {
+      if (isTauri()) {
+        setIsFullscreen(await toggleNativeFullscreen(getCurrentWindow(), restoreMaximized));
+      } else if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      } else {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+      }
+    } catch (e) {
+      setError(`Could not change fullscreen mode. ${String(e)}`);
+      if (isTauri()) {
+        void getCurrentWindow().isFullscreen().then(setIsFullscreen).catch(() => {});
+      }
+    } finally {
+      fullscreenBusy.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "F11") {
+        e.preventDefault();
+        void toggleFullscreen();
+      } else if (e.key === "Escape" && isFullscreen) {
+        e.preventDefault();
+        void toggleFullscreen();
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [toggleFullscreen, isFullscreen]);
+
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
 
   const playbackEngine = usePlayback({
     resolveQueuedTrack: async (queued) =>
-      resolveDiscovery(await library.lookupCatalog(queued.id)),
+      resolveDiscovery({ ...queued, artists: [] }),
     session,
     update,
     sessionRef,
@@ -265,6 +388,7 @@ export function App() {
     selectQueue,
     playTrack,
     playCollectionTrack,
+    resumeListening,
     togglePlay,
     skip,
     queueTrack,
@@ -275,11 +399,68 @@ export function App() {
     seek,
   } = playbackEngine;
 
+  const pendingTrackActive = Boolean(
+    libraryManager.pendingTrack &&
+    playback.trackId &&
+    libraryManager.pendingTrack.id === playback.trackId,
+  );
+  const activeTrack = pendingTrackActive ? libraryManager.pendingTrack : track;
+
+  // Sync live lyrics to native Android widgets when available
+  useEffect(() => {
+    if (mobile && activeTrack?.id && "setLyrics" in player) {
+      const activeDoc = (activeTrack?.id ? session.lyrics[activeTrack.id] : undefined) || doc;
+      if (!activeDoc) {
+        (player as { setLyrics: (id: string, lines: unknown[]) => void }).setLyrics(
+          activeTrack.id,
+          [],
+        );
+        return;
+      }
+      if (activeDoc.instrumental) {
+        (player as { setLyrics: (id: string, lines: unknown[]) => void }).setLyrics(
+          activeTrack.id,
+          [{ time: 0, text: "♪ Instrumental ♪" }],
+        );
+        return;
+      }
+      const offset = (activeDoc.fileOffset || 0) + (activeDoc.userOffset || 0);
+      const lines = (activeDoc.lines || []).map((l) => {
+        const primaryText = lyricLayers(activeDoc, l, session.settings)[0]?.text || l.text;
+        return {
+          time: l.time !== null && l.time !== undefined ? Math.max(0, Math.round(l.time + offset)) : null,
+          text: primaryText,
+        };
+      });
+      (player as { setLyrics: (id: string, lines: unknown[]) => void }).setLyrics(
+        activeTrack.id,
+        lines,
+      );
+    }
+  }, [
+    activeTrack?.id,
+    doc?.id,
+    doc?.lines,
+    session.lyrics,
+    session.settings,
+    player,
+  ]);
+
+  // Sync appearance theme and accent to native Android widgets
+  useEffect(() => {
+    if (mobile && "setTheme" in player) {
+      (player as { setTheme: (mode: string, accent: string) => void }).setTheme(
+        session.settings.themeMode,
+        session.settings.accentColor,
+      );
+    }
+  }, [mobile, session.settings.themeMode, session.settings.accentColor, player]);
+
   const floatingLyrics = useLyricOverlay(
-    overlaySnapshot(libraryManager.pendingTrack?.id === playback.trackId ? libraryManager.pendingTrack : track,
-      libraryManager.pendingTrack?.id === playback.trackId ? undefined : doc, session.settings, playback.status, lyricsEngine.lyricSynced, lyricsEngine.active, lyricsEngine.lyricLookup.status),
+    overlaySnapshot(activeTrack,
+      pendingTrackActive ? undefined : doc, session.settings, playback.status, lyricsEngine.lyricSynced, lyricsEngine.active, lyricsEngine.lyricLookup.status),
     () => {
-      if (libraryManager.pendingTrack?.id === playback.trackId && playback.status === 'error') libraryManager.retryPendingPlayback(playTrack);
+      if (pendingTrackActive && playback.status === 'error') libraryManager.retryPendingPlayback(playTrack);
       else togglePlay();
     }, skip, setError,
   );
@@ -313,6 +494,11 @@ export function App() {
   function handleQueueTrack(id: string, next = false) {
     queueTrack(id, next);
     setQueueOpen(true);
+  }
+
+  function handleQuickPick(track: Track) {
+    if (track.format === "catalog") handleCatalogTrack({ ...track, artists: [] }, "play");
+    else { libraryManager.clearPendingPlayback(); playTrack(track); }
   }
 
   function handleCatalogTrack(result: CatalogTrack, mode: "play" | "save" | "next" | "queue") {
@@ -437,10 +623,16 @@ export function App() {
     view === "history"
       ? "Tracker"
       : view === "favorites"
-        ? "Your favorites"
-        : collection
-          ? collection.name
-          : "Your library";
+        ? "Liked Songs"
+        : view === "albums"
+          ? "Albums"
+          : view === "artists"
+            ? "Artists"
+            : view === "library"
+              ? "Playlists"
+              : collection
+                ? collection.name
+                : "Your library";
   const rows = playlist
     ? playlist.items.flatMap((entry) => {
         const t = visible.find((candidate) => candidate.id === entry.trackId);
@@ -484,13 +676,13 @@ export function App() {
               onMarkInstrumental={lyricsEngine.markInstrumental}
               onSeek={(seconds) => seek(seconds)}
             />);
-  const playerControls = (<PlayerBar onExpand={mobile ? undefined : openExpanded}
+  const playerControls = (<PlayerBar onExpand={openExpanded}
         autoplayLoading={playbackEngine.autoplayLoading}
         onFloatingLyrics={floatingLyrics.supported ? floatingLyrics.toggle : undefined}
         floatingLyricsOpen={floatingLyrics.open}
         floatingLyricsLocked={floatingLyrics.locked}
         floatingLyricsBusy={floatingLyrics.busy}
-        track={libraryManager.pendingTrack?.id === playback.trackId ? libraryManager.pendingTrack : track}
+        track={activeTrack}
         tracks={tracks}
         playback={playback}
         session={session}
@@ -499,11 +691,13 @@ export function App() {
         view={typeof view === "object" ? "discover" : view}
         setView={selectView}
         mobile={mobile}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
         queueOpen={queueOpen}
         onToggleQueue={() => setQueueOpen((x) => !x)}
         onSeek={(seconds) => seek(seconds)}
         onTogglePlay={() => {
-          if (libraryManager.pendingTrack?.id === playback.trackId && playback.status === "error") libraryManager.retryPendingPlayback(playTrack);
+          if (pendingTrackActive && playback.status === "error") libraryManager.retryPendingPlayback(playTrack);
           else togglePlay();
         }}
         onSkip={skip}
@@ -524,49 +718,124 @@ export function App() {
         onSetting={setting}
       />);
 
+  const handleCreatePlaylist = () =>
+    ask("A new collection", "Playlist name", "", (name) => {
+      const id = crypto.randomUUID();
+      update((s) => ({
+        ...s,
+        playlists: [...s.playlists, { id, name, items: [] }],
+      }));
+      setView(id);
+    });
+
+  const handleSidebarResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    setIsResizingSidebar(true);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const clientX = moveEvent.clientX;
+      if (clientX < 120) {
+        setSidebarCollapsed(true);
+      } else {
+        const clamped = Math.min(Math.max(clientX, 180), 440);
+        setSidebarCollapsed(false);
+        setSidebarWidth(clamped);
+        document.documentElement.style.setProperty("--sidebar-width", `${clamped}px`);
+      }
+    };
+
+    const onPointerUp = (upEvent: PointerEvent) => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      setIsResizingSidebar(false);
+      const finalX = upEvent.clientX;
+      if (finalX >= 120) {
+        const clamped = Math.min(Math.max(finalX, 180), 440);
+        setSidebarWidth(clamped);
+        localStorage.setItem("lumaire:sidebar-width", String(clamped));
+        document.documentElement.style.setProperty("--sidebar-width", `${clamped}px`);
+      }
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+  };
+
+  const handleSidebarResizeReset = () => {
+    setSidebarWidth(240);
+    setSidebarCollapsed(false);
+    localStorage.setItem("lumaire:sidebar-width", "240");
+    document.documentElement.style.setProperty("--sidebar-width", "240px");
+  };
+
   return (
     <div
-      className={`app ${queueOpen ? "with-queue" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${mobile ? "android" : ""}`}
+      className={`app ${queueOpen ? "with-queue" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isResizingSidebar ? "is-resizing" : ""} ${isFullscreen ? "is-fullscreen" : ""} ${mobile ? "android" : ""}`}
+      style={{ "--sidebar-width": `${sidebarWidth}px` } as React.CSSProperties}
     >
+      {isFullscreen && (
+        <button
+          type="button"
+          className="fullscreen-exit-pill"
+          onClick={toggleFullscreen}
+          title="Exit full screen (F11 or Esc)"
+          aria-label="Exit full screen"
+        >
+          <Minimize2 size={13} />
+          <span>Exit full screen</span>
+        </button>
+      )}
       {updatesOpen && <UpdateDialog onClose={closeUpdates} />}
       <a className="skip-link" href="#main">
         Skip to content
       </a>
       <Sidebar
         onHome={() => {
-          scrollPositions.current.set("discover", 0);
-          setView("discover");
+          if (view === "home") {
+            const main = document.getElementById("main");
+            if (main) {
+              main.scrollTo({ top: 0, behavior: "smooth" });
+              scrollPositions.current.set("home", 0);
+            }
+            return;
+          }
+          setHeaderSearchQuery("");
+          setDiscoveryState(initialDiscoveryViewState());
+          scrollPositions.current.set("home", 0);
+          setView("home");
           setDiscoverRoute("discover");
           setCatalogHistory([]);
         }}
         view={typeof view === "object" ? "discover" : view}
+        onOpenSync={() => setCollectionHub("import")}
         setView={selectView}
-        collectionsCount={collections.length}
+        collectionsCount={session.playlists.length}
         playlists={session.playlists}
         collections={collections}
         hasLyricsDoc={Boolean(doc)}
         queueOpen={queueOpen}
-        onToggleQueue={() => setQueueOpen((x) => !x)}
-        onCreatePlaylist={() =>
-          ask("A new collection", "Playlist name", "", (name) => {
-            const id = crypto.randomUUID();
-            update((s) => ({
-              ...s,
-              playlists: [...s.playlists, { id, name, items: [] }],
-            }));
-            setView(id);
-          })
-        }
+        onToggleQueue={() => {
+          if (mobile || window.innerWidth <= 768) { setMobilePlayerTab("queue"); setExpanded(true); }
+          else setQueueOpen((x) => !x);
+        }}
+        onCreatePlaylist={handleCreatePlaylist}
+        onResizeStart={handleSidebarResizeStart}
+        onResizeReset={handleSidebarResizeReset}
       />
       <div className="workspace">
         {!mobile && (
           <TopBar
+            windowControls={desktop ? <WindowControls onError={setError} /> : undefined}
             view={typeof view === "object" ? "discover" : view}
             heading={heading}
             sidebarCollapsed={sidebarCollapsed}
             queueOpen={queueOpen}
             onToggleSidebar={() => setSidebarCollapsed((c) => !c)}
             onToggleQueue={() => setQueueOpen((x) => !x)}
+            onOpenSettings={() => selectView("settings")}
             onOpenUpdates={supportsWindowsUpdates() && updateState.version ? () => setUpdatesOpen(true) : undefined}
             updateLabel={updateState.stage === "ready" ? "Restart to update" : updateState.stage === "downloading" ? `Downloading${updateState.progress === undefined ? "…" : ` ${updateState.progress}%`}` : `Update v${updateState.version}`}
             onOpenImport={() => setCollectionHub("import")}
@@ -575,6 +844,20 @@ export function App() {
             nearbySharing={ready && Boolean(nearby.hostLink)}
             nearbyFollowing={ready && Boolean(nearby.following)}
             onStopFollowing={() => nearby.setFollowing(false)}
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            onGoBack={goBack}
+            onGoForward={goForward}
+            searchQuery={headerSearchQuery}
+            onSearchChange={setHeaderSearchQuery}
+            onSearchSubmit={() => {
+              setDiscoveryState(cur => ({ ...cur, query: headerSearchQuery.trim() }));
+              selectView("search");
+            }}
+            onSelectArtist={id => navigateCatalog({ type: "artist", id })}
+            onSelectAlbum={id => navigateCatalog({ type: "album", id })}
+            onSelectTrack={result => handleCatalogTrack(result, "play")}
+
           />
         )}
         <Banners
@@ -583,7 +866,7 @@ export function App() {
           message={message}
           hasTrack={Boolean(track || libraryManager.pendingTrack)}
           onRetryPlayback={() => {
-            if (libraryManager.pendingTrack?.id === playback.trackId) libraryManager.retryPendingPlayback(playTrack);
+            if (pendingTrackActive) libraryManager.retryPendingPlayback(playTrack);
             else if (track) void player.load(track.id, true, playback.time);
           }}
           onDismissError={() => setError("")}
@@ -609,6 +892,8 @@ export function App() {
           {ready &&
             (view === "library" ||
               view === "favorites" ||
+              view === "albums" ||
+              view === "artists" ||
               playlist ||
               builtin) && (
               <LibraryView
@@ -627,6 +912,8 @@ export function App() {
                 busy={busy}
                 mobile={mobile}
                 desktop={desktop}
+                onCreatePlaylist={handleCreatePlaylist}
+                onOpenImport={() => setCollectionHub("import")}
                 onSetQuery={setQuery}
                 onSelectView={setView}
                 onPlayAll={() => {
@@ -686,6 +973,10 @@ export function App() {
                 onEnrichOnline={(t) => void action(() => enrichOnline(t, true))}
                 onRelinkTrack={(t) => void relink(t, track?.id, playback.time)}
                 onChoosePlaylist={choosePlaylist}
+                onPlayCollection={(collection) => {
+                  const playable = collection.tracks.filter((t) => !t.missing);
+                  if (playable.length) playCollectionTrack(playable, 0, false);
+                }}
                 onOpenAddMusic={(p) => setAddMusicPlaylist(p)}
                 onRemoveFromPlaylist={(playlistId, entryId) => {
                   update((s) => ({
@@ -704,6 +995,7 @@ export function App() {
             )}
           {ready && view === "history" && (
             <HistoryView
+              initialTab={historyTab}
               {...listeningHistory}
               records={listeningHistory.records.map((record) => {
                 const current = listeningTracks.find(
@@ -748,7 +1040,44 @@ export function App() {
           {ready && view === "lyrics" && !expanded && (
 lyricsPanel
           )}
-          {ready && view === "discover" && (
+          {ready && view === "home" && (
+            <div className="home-view-state">
+              <DiscoveryHome
+                resumes={session.listeningResumes}
+                onResume={resumeListening}
+                onPlayQuickPick={handleQuickPick}
+                searches={session.settings.historyEnabled ? [] : []}
+                records={listeningHistory.records.map((record) => {
+                  const artworkUrl = listeningTracks.find(
+                    (track) => track.id === record.trackId,
+                  )?.artworkUrl;
+                  return artworkUrl ? { ...record, artworkUrl } : record;
+                })}
+                savedTracks={tracks}
+                busy={busy}
+                onlineAvailable={ytdlpAvailable}
+                onSearch={(q) => {
+                  setDiscoveryState((cur) => ({ ...cur, query: q }));
+                  selectView("search");
+                }}
+                onClearSearches={clearDiscoverySearches}
+                onReplay={replayHistory}
+                onImportMusic={() => void importMusic(false, () => setView("collection:local"))}
+                onOpenLibrary={() => selectView("library")}
+                onOpenTracker={() => selectView("history", "history")}
+                onNavigateAlbum={(albumId) => navigateCatalog({ type: "album", id: albumId })}
+                onNavigateArtist={(artistId) => navigateCatalog({ type: "artist", id: artistId })}
+                onSaveDiscovery={handleCatalogTrack}
+                onPlayAlbum={playCatalogAlbum}
+                favorites={session.favorites}
+                favoriteArtists={session.favoriteArtists.map(artist => artist.name)}
+                favoriteAlbums={session.favoriteAlbums.map(album => album.title)}
+                downloads={downloads}
+                onCatalogAction={handleCatalogAction}
+              />
+            </div>
+          )}
+          {ready && (view === "search" || view === "discover") && (
             <DiscoveryView
               {...engineSetup}
               recentRecords={listeningHistory.records.map(record => {
@@ -767,6 +1096,7 @@ lyricsPanel
               downloads={downloads}
               onSaveDiscovery={handleCatalogTrack}
               onPlayAlbum={playCatalogAlbum}
+              onPlayCollection={playCatalogCollection}
               savedTracks={tracks}
               favorites={session.favorites}
               onCatalogAction={handleCatalogAction}
@@ -778,6 +1108,7 @@ lyricsPanel
               onQueueRemote={handleQueueRemote}
               onNavigateArtist={(artistId) => navigateCatalog({ type: "artist", id: artistId })}
               onNavigateAlbum={(albumId) => navigateCatalog({ type: "album", id: albumId })}
+              onNavigateChart={(chartId) => navigateCatalog({ type: "chart", id: chartId })}
             />
           )}
           {ready && typeof discoverRoute === "object" && discoverRoute.type === "artist" && (
@@ -785,6 +1116,8 @@ lyricsPanel
               <ArtistView
                 key={discoverRoute.id}
                 artistId={discoverRoute.id}
+                favoriteArtists={session.favoriteArtists}
+                onFavoriteArtist={artist => update(s => ({ ...s, favoriteArtists: s.favoriteArtists.some(saved => saved.id === artist.id) ? s.favoriteArtists.filter(saved => saved.id !== artist.id) : [...s.favoriteArtists, artist] }))}
                 onNavigateAlbum={(albumId) => navigateCatalog({ type: "album", id: albumId })}
                 onNavigateArtist={(artistId) => navigateCatalog({ type: "artist", id: artistId })}
                 onSaveDiscovery={handleCatalogTrack}
@@ -794,6 +1127,7 @@ lyricsPanel
                 busy={busy}
                 downloads={downloads}
                 onBack={backFromCatalog}
+                onPlayAlbum={playCatalogAlbum}
               />
             </div>
           )}
@@ -817,6 +1151,25 @@ lyricsPanel
                 busy={busy}
                 downloads={downloads}
                 onBack={backFromCatalog}
+                onNavigateArtist={(artistId) => navigateCatalog({ type: "artist", id: artistId })}
+              />
+            </div>
+          )}
+          {ready && typeof discoverRoute === "object" && discoverRoute.type === "chart" && (
+            <div hidden={typeof view !== "object"}>
+              <ChartView
+                key={discoverRoute.id}
+                chartId={discoverRoute.id}
+                onPlayCollection={playCatalogCollection}
+                onlineAvailable={ytdlpAvailable}
+                onSaveDiscovery={handleCatalogTrack}
+                savedTracks={tracks}
+                favorites={session.favorites}
+                onCatalogAction={handleCatalogAction}
+                busy={busy}
+                downloads={downloads}
+                onBack={backFromCatalog}
+                onNavigateAlbum={(albumId) => navigateCatalog({ type: "album", id: albumId })}
                 onNavigateArtist={(artistId) => navigateCatalog({ type: "artist", id: artistId })}
               />
             </div>
@@ -868,7 +1221,7 @@ lyricsPanel
                         const restored = restoreSession(
                           snapshot.session,
                           snapshot.tracks,
-                        );
+                         );
                         setTracks(snapshot.tracks);
                         setSession(restored);
                         const c = restored.queue.find(
@@ -926,10 +1279,19 @@ lyricsPanel
           onUndoRemoval={undoRemoval}
           onClearQueue={clearQueue}
           onNavigateArtist={id => navigateCatalog({ type: "artist", id })}
+          currentTrack={activeTrack}
+          playback={playback}
+          onTogglePlay={() => {
+            if (pendingTrackActive && playback.status === "error") libraryManager.retryPendingPlayback(playTrack);
+            else togglePlay();
+          }}
+          onFavorite={favorite}
+          isFavorite={Boolean(activeTrack && session.favorites.includes(activeTrack.id))}
+          onChoosePlaylist={choosePlaylist}
         />
       )}
-      {(!expanded || mobile) && playerControls}
-      {expanded && !mobile && (
+      {!expanded && playerControls}
+      {expanded && (!mobile && (typeof window === "undefined" || window.innerWidth > 768)) && (
         <ExpandedPlayer
           follow={lyricsEngine.follow}
           setFollow={lyricsEngine.setFollow}
@@ -940,10 +1302,45 @@ lyricsPanel
           controls={playerControls}
           lyrics={lyricsPanel}
           onClose={closeExpanded}
-          origin={expandOrigin.current}
           doc={doc}
           session={session}
           onSetting={setting}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
+        />
+      )}
+      {expanded && (mobile || (typeof window !== "undefined" && window.innerWidth <= 768)) && (
+        <MobileNowPlaying
+          initialTab={mobilePlayerTab}
+          track={activeTrack || track}
+          tracks={tracks}
+          session={session}
+          playback={playback}
+          onClose={closeExpanded}
+          onTogglePlay={() => {
+            if (pendingTrackActive && playback.status === "error") libraryManager.retryPendingPlayback(playTrack);
+            else togglePlay();
+          }}
+          onSkip={skip}
+          onSeek={(seconds) => seek(seconds)}
+          onFavorite={favorite}
+          onSetting={setting}
+          onNavigateArtist={(id) => {
+            closeExpanded();
+            navigateCatalog({ type: "artist", id });
+          }}
+          onChoosePlaylist={choosePlaylist}
+          onSelectQueue={(id, play) => selectQueue(id, play)}
+          onReorderUpcoming={(id, delta) =>
+            update((s) => reorderUpcoming(s, id, delta))
+          }
+          onRemoveQueue={(id) => removeQueue(id)}
+          onClearQueue={clearQueue}
+          onUndoRemoval={undoRemoval}
+          undo={undo}
+          lyrics={lyricsPanel}
+          doc={doc}
+          sessionVolume={session.settings.volume ?? 0.72}
         />
       )}
       {collectionHub && (
@@ -959,8 +1356,8 @@ lyricsPanel
       <MobileTabBar
         view={typeof view === "object" ? "discover" : view}
         setView={selectView}
-        hasLyricsDoc={Boolean(doc)}
       />
+      {ready && <MusicLanguageOnboarding />}
       <dialog
         ref={dialogRef}
         className={playlistTarget || addMusicPlaylist ? "save-playlist-modal" : ""}

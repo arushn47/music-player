@@ -31,7 +31,7 @@ describe("saved library and listening session stay independent", () => {
     expect(restored.queueTracks[remote.id].title).toBe(remote.title);
     expect(libraryCollections([], restored.playlists)).toEqual([]);
   });
-  it.each(["itunes:123456789", "itunes:18446744073709551615", "saavn:QAbmbZ7O"])("restores catalogue provenance %s without changing the queued audio source or credits", (metadataSourceId) => {
+  it.each(["itunes:123456789", "itunes:18446744073709551615", "saavn:QAbmbZ7O", "musicbrainz:recording:c4197d72-b3dd-445f-bdb8-a7f6598b5f74"])("restores catalogue provenance %s without changing the queued audio source or credits", (metadataSourceId) => {
     const catalogued = { ...remote, metadataSourceId };
     const playing = playSelection(defaults(), catalogued, false);
     const restored = restoreSession(JSON.parse(JSON.stringify(playing)), []);

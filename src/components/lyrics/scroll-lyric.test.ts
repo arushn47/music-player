@@ -2,14 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 import { centerLyricLine } from "./scroll-lyric";
 
 describe("lyric scroll containment", () => {
-  it.each([".expanded-lyrics", "#main"])("centers only the owning %s pane in either direction", () => {
+  it.each([".expanded-lyrics", "#main", ".mobile-np-lyrics-scroll-wrap"])("centers only the owning %s pane in either direction", () => {
     const scrollTo = vi.fn();
     const pane = { scrollTop: 500, clientHeight: 600, getBoundingClientRect: () => ({ top: 100 }), scrollTo };
     const closest = vi.fn(() => pane);
     let top = 700;
     const line = { closest, getBoundingClientRect: () => ({ top, height: 40 }) } as unknown as HTMLElement;
     centerLyricLine(line, "smooth");
-    expect(closest).toHaveBeenCalledWith(".expanded-lyrics, #main");
+    expect(closest).toHaveBeenCalledWith(".expanded-lyrics, #main, .mobile-np-lyrics-scroll-wrap");
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 820, behavior: "smooth" });
     top = 0;
     centerLyricLine(line, "instant");

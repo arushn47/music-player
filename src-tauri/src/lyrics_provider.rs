@@ -233,8 +233,18 @@ async fn fetch_with_fallback(
     match (original, fallback) {
         (_, Ok(found @ LyricResult::Synced { .. })) => Ok(found),
         (Ok(plain @ LyricResult::Plain { .. }), _) => Ok(plain),
-        (Err(primary), Err(backup)) => Err(format!("{primary} {backup}")),
-        (Err(error), _) | (_, Err(error)) => Err(error),
+        (Err(primary), Err(backup)) => {
+            log::warn!("Lyrics providers failed: {primary}; {backup}");
+            Err("Couldn't load lyrics from LRCLIB or lrc.red. Check your connection or retry.".into())
+        },
+        (Err(error), _) => {
+            log::warn!("LRCLIB failed; lrc.red found no verified match: {error}");
+            Err("LRCLIB couldn't complete the lookup, and lrc.red found no matching lyrics. Please retry.".into())
+        },
+        (_, Err(error)) => {
+            log::warn!("LRCLIB found no verified match; lrc.red failed: {error}");
+            Err("LRCLIB found no matching lyrics, and lrc.red couldn't complete the lookup. Please retry.".into())
+        },
         _ => Ok(LyricResult::NotFound),
     }
 }
@@ -358,22 +368,20 @@ async fn fetch_from(
         params.push(("duration", format!("{duration:.0}")));
     }
     let mut fallback = None;
+    let mut invalid_exact = false;
     let mut status = reqwest::StatusCode::NOT_FOUND;
     if !lyric_identity::primary_artist(&artist).is_empty() {
         let response = provider_http::get(&format!("{base}/get"), &params).await?;
         status = response.status();
         if status.is_success() {
-            let record: Record = response
-                .json()
-                .await
-                .map_err(|_| "LRCLIB returned an invalid lyric record.")?;
-            if has_content(&record)
-                && candidate(std::slice::from_ref(&record), &title, &artist, duration).is_some()
-            {
-                if timing_compatible(&record, duration) {
-                    return Ok(result(record, duration));
-                }
-                fallback = Some(record);
+            match response.json::<Record>().await {
+                Ok(record) => {
+                    if has_content(&record) && candidate(std::slice::from_ref(&record), &title, &artist, duration).is_some() {
+                        if timing_compatible(&record, duration) { return Ok(result(record, duration)); }
+                        fallback = Some(record);
+                    }
+                },
+                Err(_) => invalid_exact = true,
             }
         } else if status.is_server_error() {
             // The exact endpoint and search can have different cache/load paths.
@@ -420,6 +428,7 @@ async fn fetch_from(
             .unwrap();
         return Ok(result(records.swap_remove(index), duration));
     }
+    if invalid_exact { return Err("LRCLIB couldn't read the exact record and search found no verified match. Please retry.".into()); }
     if status.is_server_error() {
         return Err(format!("LRCLIB exact lookup was unavailable (HTTP {status}) and search found no verified match. Please retry."));
     }
@@ -433,6 +442,7 @@ async fn search_records(base: &str, title: &str, artist: &str, duration: f64) ->
         queries.push(String::new());
     }
     let mut records = Vec::new();
+    let mut parse_error = None;
     for artist_query in queries {
         let mut params = vec![("track_name", lyric_identity::query_title(title))];
         if !artist_query.is_empty() {
@@ -450,10 +460,12 @@ async fn search_records(base: &str, title: &str, artist: &str, duration: f64) ->
                 response.status()
             ));
         }
-        let found: Vec<Record> = response
-            .json()
-            .await
-            .map_err(|_| "LRCLIB returned invalid search results.")?;
+        let found = match response.json::<serde_json::Value>().await
+            .map_err(|_| "LRCLIB couldn't read the search response. Please retry.".to_string())
+            .and_then(search_rows) {
+                Ok(found) => found,
+                Err(error) => { parse_error = Some(error); continue; },
+            };
         for record in found {
             if !records
                 .iter()
@@ -466,6 +478,19 @@ async fn search_records(base: &str, title: &str, artist: &str, duration: f64) ->
             break;
         }
     }
+    if records.is_empty() { if let Some(error) = parse_error { return Err(error); } }
+    Ok(records)
+}
+
+fn search_rows(value: serde_json::Value) -> Result<Vec<Record>, String> {
+    let rows = value.as_array().filter(|rows| rows.len() <= 1000)
+        .ok_or("LRCLIB couldn't read the search response. Please retry.")?;
+    // Community records can have null/malformed metadata; they must not poison valid neighbors.
+    let records: Vec<Record> = rows.iter().filter_map(|row| serde_json::from_value(row.clone()).ok())
+        .filter(|record: &Record| record.duration.is_finite() && (0.0..=86400.0).contains(&record.duration)
+            && record.track_name.len() <= 4000 && record.artist_name.len() <= 4000 && record.album_name.len() <= 4000)
+        .collect();
+    if !rows.is_empty() && records.is_empty() { return Err("LRCLIB search contained no readable lyric records. Please retry.".into()); }
     Ok(records)
 }
 
@@ -489,6 +514,41 @@ mod tests {
         serde_json::json!({"isrc": id, "title": title, "artist": artist, "duration": duration})
     }
 
+    #[test]
+    fn null_duration_neighbors_do_not_hide_aaraadhikes_matching_recording() {
+        let malformed = serde_json::json!({"id":36684639,"trackName":"Aaraadhike","artistName":"Sooraj Santhosh","duration":null,"syncedLyrics":"[00:01]fixture"});
+        let valid = serde_json::json!({"id":32091745,"trackName":"Aaraadhike","artistName":"Sooraj Santhosh","albumName":"Ambili (Original Motion Picture Soundtrack)","duration":357,"syncedLyrics":"[00:01]fixture"});
+        let rows = search_rows(serde_json::json!([malformed, valid])).unwrap();
+        let found = candidate(&rows, "Aaraadhike", "Sooraj Santhosh, Madhuvanthi Narayan", 357.0).unwrap();
+        assert_eq!(found.id, Some(32091745));
+        assert!(timing_compatible(found, 357.0));
+        assert!(search_rows(serde_json::json!([{"duration":null}])).is_err());
+        assert!(search_rows(serde_json::json!([])).unwrap().is_empty());
+    }
+    #[test]
+    fn malformed_exact_and_artist_search_can_recover_via_title_search() {
+        let found = r#"[{"id":32091745,"trackName":"Aaraadhike","artistName":"Sooraj Santhosh","duration":357,"syncedLyrics":"[00:01]fixture"},{"duration":null}]"#;
+        let (base, server) = provider_http::tests::server(vec![("200 OK", "{\"duration\":null}".into()), ("200 OK", "{\"error\":true}".into()), ("200 OK", found.into())]);
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        let result = runtime.block_on(fetch_with_fallback(&base, "http://127.0.0.1:1", "Aaraadhike".into(), "Sooraj Santhosh, Madhuvanthi Narayan".into(), "Ambili".into(), 357.0)).unwrap();
+        assert!(matches!(result, LyricResult::Synced { matched: Some(MatchInfo { provider: "lrclib", .. }), .. }));
+        let requests = server.join().unwrap();
+        assert_eq!(requests.len(), 3);
+        assert!(!requests[2].contains("artist_name"));
+    }
+    #[test]
+    #[ignore = "explicit Aaraadhike public-provider regression; requires network"]
+    fn live_aaraadhike_matches_357_second_recording() {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        let result = runtime.block_on(fetch("Aaraadhike".into(), "Sooraj Santhosh, Madhuvanthi Narayan".into(), "Ambili (Original Motion Picture Soundtrack)".into(), 357.0)).unwrap();
+        match result {
+            LyricResult::Synced { matched: Some(matched), .. } => {
+                assert!((matched.duration - 357.0).abs() <= 2.0);
+                println!("Matched provider={}, record={}, duration={}", matched.provider, matched.id, matched.duration);
+            },
+            _ => panic!("Expected synchronized lyrics for the verified Aaraadhike recording"),
+        }
+    }
     #[test]
     fn fallback_rejects_wrong_recordings_and_continues_after_bad_files() {
         let hits = serde_json::json!({"hits": [
@@ -533,7 +593,9 @@ mod tests {
         assert_eq!(server.join().unwrap().len(), 1);
 
         for (status, body) in [("403 Forbidden", "blocked"), ("200 OK", "malformed json")] {
-            let (primary, first) = provider_http::tests::server(vec![(status, body.into())]);
+            let mut responses = vec![(status, body.into())];
+            if status == "200 OK" { responses.extend([("200 OK", "[]".into()), ("200 OK", "[]".into())]); }
+            let (primary, first) = provider_http::tests::server(responses);
             let hits = serde_json::json!({"hits": [red_hit("INAAA2400001", "Song", "Artist", 200.0)]});
             let (backup, second) = provider_http::tests::server(vec![("200 OK", hits.to_string()), ("200 OK", "[00:01]fixture".into())]);
             let found = runtime.block_on(fetch_with_fallback(&primary, &backup, "Song".into(), "Artist".into(), "".into(), 200.0)).unwrap();

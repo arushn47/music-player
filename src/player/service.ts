@@ -7,11 +7,22 @@ import { playbackEvent } from "./diagnostics";
 
 const preparedStreams = new Map<string, { stream: YtdlpStreamInfo; expires: number }>();
 const attemptedSources = new Map<string, Set<string>>();
+const streamRequests = new Map<string, Promise<YtdlpStreamInfo>>();
+async function preparedStream(id: string): Promise<YtdlpStreamInfo> {
+  const cached = preparedStreams.get(id);
+  if (cached && cached.expires > Date.now()) return cached.stream;
+  const pending = streamRequests.get(id);
+  if (pending) return pending;
+  const request = library.ytdlpGetStream(id).then(stream => {
+    if (preparedStreams.size >= 128) preparedStreams.delete(preparedStreams.keys().next().value!);
+    preparedStreams.set(id, { stream, expires: Date.now() + 120000 });
+    return stream;
+  }).finally(() => streamRequests.delete(id));
+  streamRequests.set(id, request);
+  return request;
+}
 export async function prepareCatalogCandidate(candidate: YtdlpSearchResult): Promise<Partial<YtdlpSearchResult>> {
-  const prepared = preparedStreams.get(candidate.id);
-  const stream = prepared && prepared.expires > Date.now() ? prepared.stream : await library.ytdlpGetStream(candidate.id);
-  if (preparedStreams.size >= 128) preparedStreams.delete(preparedStreams.keys().next().value!);
-  preparedStreams.set(candidate.id, { stream, expires: Date.now() + 120000 });
+  const stream = await preparedStream(candidate.id);
   return { duration: stream.duration || candidate.duration, track: stream.track || candidate.track, artist: stream.artist || candidate.artist };
 }
 
@@ -41,9 +52,7 @@ export const player = mobile
       let stream: YtdlpStreamInfo;
       try {
         if (retry) throw new Error("The previous audio URL failed to load. Retry playback or choose another recording.");
-        const prepared = preparedStreams.get(videoId);
-        preparedStreams.delete(videoId);
-        stream = prepared && prepared.expires > Date.now() ? prepared.stream : await library.ytdlpGetStream(videoId);
+        stream = await preparedStream(videoId);
       } catch (error) {
         const track = playbackTracks.get(id);
         if (!track?.metadataSourceId) throw error;
@@ -51,7 +60,6 @@ export const player = mobile
         const candidate = await resolveCatalogSource(catalog, library.ytdlpSearch, { exclude: attempted, verify: prepareCatalogCandidate });
         attempted.add(candidate.id);
         stream = preparedStreams.get(candidate.id)!.stream;
-        preparedStreams.delete(candidate.id);
       }
       playbackEvent({ trackId: id, stage: "stream-ready", candidateId: [...attempted].at(-1) });
       if (stream.track?.trim() && stream.artist?.trim()) {

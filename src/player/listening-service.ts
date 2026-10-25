@@ -49,7 +49,6 @@ export async function startListening(
   enabled: () => boolean,
   onError: (error: unknown) => void,
 ) {
-  if (mobile) return () => {};
   report = onError;
   generation = (await listeningStore.load()).generation;
   const own = new ListeningTracker(record => {

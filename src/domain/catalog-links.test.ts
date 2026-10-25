@@ -22,3 +22,8 @@ describe("catalog navigation references", () => {
     expect(albumReference("Album", "Unknown artist")).toBeNull();
   });
 });
+
+
+it("splits comma, ampersand and and-separated legacy collaborations into individual artist references", () => {
+  expect(artistCredits("Hasan Raheem, Abdullah and Talal Qureshi & Guest").map(artist => artist.name)).toEqual(["Hasan Raheem", "Abdullah", "Talal Qureshi", "Guest"]);
+});

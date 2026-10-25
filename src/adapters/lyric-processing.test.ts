@@ -1,3 +1,4 @@
+import * as romanization from "../domain/romanization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseLyrics } from "../domain/lyrics";
 import { mergeProcessedLyrics, processLyrics, processKeylessLyrics, processPreferredLyrics } from "./lyric-processing";
@@ -6,6 +7,15 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: bridge.invoke, isTauri: () => t
 beforeEach(() => bridge.invoke.mockReset());
 
 describe("background Gemini result ownership", () => {
+  it("keeps valid partial translations without caching the song as complete", () => {
+    const doc = parseLyrics("[00:01]தமிழ்\n[00:02]வணக்கம்");
+    const id = doc.lines[0].id;
+    const merged = mergeProcessedLyrics(doc, doc, { romanisation: {}, translation: { [id]: "Tamil" }, incomplete: true }, "model");
+    expect(merged.translation).toEqual({ [id]: "Tamil" });
+    expect(merged.processedModel).toBeUndefined();
+    expect(merged.translation[doc.lines[1].id]).toBeUndefined();
+  });
+
   it("prioritizes a saved key over Google cached results and never falls back after a Gemini error", async () => {
     const original = parseLyrics("[00:01]தமிழ்");
     const doc = { ...original, processedModel: "google-web:auto", translationSource: "google" as const, translation: { [original.lines[0].id]: "Tamil" } };
@@ -111,4 +121,28 @@ it('does not invoke either translation provider for a confirmed English song, ev
   await processLyrics(doc, "model");
   await processKeylessLyrics(doc, "auto");
   expect(bridge.invoke).not.toHaveBeenCalled();
+});
+
+
+it("keeps valid Gemini translations and fills incomplete pronunciation locally from original text", async () => {
+  const doc = parseLyrics("[00:01]കാറിൻ തൂവൽ\n[00:02]Hello");
+  const id = doc.lines[0].id;
+  bridge.invoke.mockResolvedValue({ romanisation: {}, translation: { [id]: "Like a feather" }, warnings: ["Incomplete pronunciation"] });
+  const values = await processLyrics(doc, "model");
+  expect(values.translation[id]).toBe("Like a feather");
+  expect(values.romanisation[id]).toBe("kaarin thooval");
+  expect(bridge.invoke.mock.calls[0][1].lines[0].text).toBe("കാറിൻ തൂവൽ");
+});
+
+
+it("does not discard valid Gemini translations when the offline worker fails", async () => {
+  const doc = parseLyrics("[00:01]你好");
+  const id = doc.lines[0].id;
+  bridge.invoke.mockResolvedValue({ romanisation: {}, translation: { [id]: "Hello" }, warnings: ["Incomplete pronunciation"] });
+  const fallback = vi.spyOn(romanization, "romanizeDocument").mockRejectedValueOnce(new Error("worker failed"));
+  try {
+    const values = await processLyrics(doc, "failure-model");
+    expect(values.translation[id]).toBe("Hello");
+    expect(values.warnings?.join(" ")).toContain("valid translations were kept");
+  } finally { fallback.mockRestore(); }
 });

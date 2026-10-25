@@ -1,6 +1,6 @@
 import { AmbientBackground } from "../common/AmbientBackground";
 import { cloneElement, useEffect, useRef, useState, type ReactNode, type ReactElement } from "react";
-import { X, FileText, Volume2, VolumeX, Languages, Subtitles, RefreshCw, Loader2 } from "lucide-react";
+import { X, FileText, Volume2, VolumeX, RefreshCw, Maximize2, Minimize2 } from "lucide-react";
 import { centerLyricLine } from "../lyrics/scroll-lyric";
 import { Artwork } from "../common/Artwork";
 import { type PlayerBarProps } from "./PlayerBar";
@@ -12,7 +12,6 @@ export function ExpandedPlayer({
   controls,
   lyrics,
   onClose,
-  origin,
   doc,
   session: propSession,
   onSetting: propOnSetting,
@@ -22,11 +21,12 @@ export function ExpandedPlayer({
   translateLyrics,
   processingState,
   romanizing = false,
+  isFullscreen: propIsFullscreen,
+  onToggleFullscreen: propOnToggleFullscreen,
 }: {
   controls: ReactElement<PlayerBarProps>;
   lyrics: ReactNode;
   onClose: () => void;
-  origin: DOMRect | null;
   doc?: LyricDocument | null;
   session?: Session;
   onSetting?: <K extends keyof Preferences>(key: K, value: Preferences[K]) => void;
@@ -36,60 +36,27 @@ export function ExpandedPlayer({
   translateLyrics: (language: string) => Promise<void>;
   processingState?: LyricProcessingState;
   romanizing?: boolean;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const closing = useRef(false);
   const [showLyrics, setShowLyrics] = useState(true);
   const session = propSession ?? controls.props.session;
   const onSetting = propOnSetting ?? controls.props.onSetting;
+  const isFullscreen = propIsFullscreen ?? controls.props.isFullscreen;
+  const onToggleFullscreen = propOnToggleFullscreen ?? controls.props.onToggleFullscreen;
   const sessionVolume = session?.settings?.volume ?? 0.72;
   const [hoverVolume, setHoverVolume] = useState(false);
   const lastVol = useRef(sessionVolume > 0 ? sessionVolume : 0.72);
 
-  const transform = () => {
-    const rect = dialog.current?.querySelector(".expanded-cover")?.getBoundingClientRect();
-    return rect && origin
-      ? `translate(${origin.x - rect.x}px, ${origin.y - rect.y}px) scale(${origin.width / rect.width}, ${origin.height / rect.height})`
-      : "scale(.96)";
-  };
-
-  const close = () => {
-    if (closing.current) return;
-    closing.current = true;
-    const element = dialog.current!;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      onClose();
-      return;
-    }
-    element.querySelector(".expanded-cover")?.animate(
-      [
-        { transform: "none", transformOrigin: "top left" },
-        { transform: transform(), transformOrigin: "top left", opacity: 0 },
-      ],
-      { duration: 190, easing: "ease-in", fill: "forwards" },
-    );
-    void element
-      .animate([{ opacity: 1 }, { opacity: 0 }], { duration: 190, fill: "forwards" })
-      .finished.then(onClose)
-      .catch(onClose);
-  };
-
   useEffect(() => {
     const element = dialog.current!;
     element.showModal();
-    const targetLine = element.querySelector<HTMLElement>(".lyric-line.is-active") || element.querySelector<HTMLElement>(".lyric-line");
-    centerLyricLine(targetLine, "instant");
-    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      element.querySelector(".expanded-cover")?.animate(
-        [
-          { transform: transform(), transformOrigin: "top left" },
-          { transform: "none", transformOrigin: "top left" },
-        ],
-        { duration: 350, easing: "cubic-bezier(.16,1,.3,1)" },
-      );
-      element.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 220 });
-    }
-    return () => element.close();
+    const frame = requestAnimationFrame(() => {
+      const targetLine = element.querySelector<HTMLElement>(".lyric-line.is-active") || element.querySelector<HTMLElement>(".lyric-line");
+      centerLyricLine(targetLine, "instant");
+    });
+    return () => { cancelAnimationFrame(frame); element.close(); };
   }, []);
 
   const isPlaying = controls.props.playback?.status === "playing";
@@ -102,7 +69,7 @@ export function ExpandedPlayer({
       aria-label="Now playing"
       onCancel={(event) => {
         event.preventDefault();
-        close();
+        onClose();
       }}
     >
       <AmbientBackground artwork={track?.artworkUrl} />
@@ -112,7 +79,7 @@ export function ExpandedPlayer({
           autoFocus
           className="icon-button expanded-close"
           aria-label="Close expanded player"
-          onClick={close}
+          onClick={onClose}
         >
           <X size={20} />
         </button>
@@ -161,62 +128,14 @@ export function ExpandedPlayer({
           aria-label="Back to sync"
           onClick={() => setFollow(true)}
         ><RefreshCw size={15} /></button>}
-        {showLyrics && doc && !doc.instrumental && (() => {
-          const isTranslating = Boolean(session?.settings?.translation && processingState?.status === "processing");
-          const isRomanizing = Boolean(session?.settings?.romanisation && (romanizing || (processingState?.status === "processing" && !Object.keys(doc.romanisation || {}).length)));
-          return (
-            <>
-              <button
-                type="button"
-                className={`expanded-action-btn ${session?.settings?.romanisation ? "is-active" : ""}`}
-                aria-pressed={session?.settings?.romanisation}
-                title={isRomanizing ? "Romanizing lyrics…" : session?.settings?.romanisation ? "Turn off romanization" : "Turn on romanization"}
-                aria-label="Toggle romanization"
-                onClick={() => onSetting?.("romanisation", !session?.settings?.romanisation)}
-              >
-                {isRomanizing ? <Loader2 size={15} className="spin" /> : <Languages size={15} />}
-              </button>
-              <button
-                type="button"
-                className={`expanded-action-btn ${session?.settings?.translation ? "is-active" : ""}`}
-                aria-pressed={session?.settings?.translation}
-                title={isTranslating ? "Translating lyrics…" : session?.settings?.translation ? "Turn off translation" : "Turn on translation"}
-                aria-label="Toggle translation"
-                onClick={() => {
-                  onSetting?.("translation", !session?.settings?.translation);
-                  if (!session?.settings?.translation) void translateLyrics("auto");
-                }}
-              >
-                {isTranslating ? <Loader2 size={15} className="spin" /> : <Subtitles size={15} />}
-              </button>
-            </>
-          );
-        })()}
 
         <div
           className={`expanded-volume-control ${hoverVolume ? "is-hovered" : ""}`}
           onMouseEnter={() => setHoverVolume(true)}
           onMouseLeave={() => setHoverVolume(false)}
         >
-          <div className="expanded-volume-slider-wrap">
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={sessionVolume}
-              aria-label="Volume"
-              style={{
-                "--volume-percent": `${Math.min(100, Math.max(0, sessionVolume * 100))}%`,
-              } as React.CSSProperties}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                if (val > 0) lastVol.current = val;
-                onSetting?.("volume", val);
-              }}
-            />
-          </div>
           <button
+            type="button"
             className="expanded-volume-btn"
             aria-label={sessionVolume === 0 ? "Unmute" : "Mute"}
             onClick={() => {
@@ -230,7 +149,35 @@ export function ExpandedPlayer({
           >
             {sessionVolume === 0 ? <VolumeX size={17} /> : <Volume2 size={17} />}
           </button>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={sessionVolume}
+            aria-label="Volume"
+            style={{
+              "--volume-percent": `${Math.min(100, Math.max(0, sessionVolume * 100))}%`,
+            } as React.CSSProperties}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              if (val > 0) lastVol.current = val;
+              onSetting?.("volume", val);
+            }}
+          />
         </div>
+
+        {onToggleFullscreen && (
+          <button
+            type="button"
+            className={`expanded-action-btn ${isFullscreen ? "is-active" : ""}`}
+            title={isFullscreen ? "Exit full screen (F11)" : "Full screen (F11)"}
+            aria-label={isFullscreen ? "Exit full screen (F11)" : "Full screen (F11)"}
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
+        )}
       </div>
     </dialog>
   );

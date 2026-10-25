@@ -3,14 +3,21 @@ import type { Preferences } from "./domain/types";
 export type ThemePreference = Pick<Preferences, "themeMode" | "accentColor">;
 
 export const THEME_STORAGE_KEY = "lumaire:appearance:v1";
-export const DEFAULT_ACCENT = "#C4DCA3";
+export const DEFAULT_ACCENT = "#A78BFA";
 
 export const ACCENT_PALETTES = [
+  {
+    id: "sonora",
+    name: "Sonora Lavender",
+    description: "Muted lavender with deep violet audio glow.",
+    color: DEFAULT_ACCENT,
+    swatches: ["#EDE9FE", "#A78BFA", "#7C3AED", "#2E1065"],
+  },
   {
     id: "lumaire",
     name: "Lumaire Sage",
     description: "The original, calm olive glow.",
-    color: DEFAULT_ACCENT,
+    color: "#C4DCA3",
     swatches: ["#EDF2E8", "#C4DCA3", "#6F865B", "#263020"],
   },
   {

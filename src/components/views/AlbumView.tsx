@@ -1,3 +1,4 @@
+import { MusicMetadataDetails } from "../common/MusicMetadataDetails";
 import React, { useEffect, useState } from "react";
 import { library } from "../../adapters/native";
 import type { DiscoveryViewProps } from "./DiscoveryView";
@@ -127,6 +128,8 @@ export function AlbumView({ albumId, onSaveDiscovery, busy, downloads, onBack, o
           <CatalogTrackList savedTracks={savedTracks} favorites={favorites} onCatalogAction={onCatalogAction} tracks={data.tracks} busy={busy} downloads={downloads} onSaveDiscovery={onSaveDiscovery} onNavigateArtist={onNavigateArtist} />
         </section>
       )}
+
+      <MusicMetadataDetails key={data.info.id} kind="album" title={data.info.title} artist={data.info.artist} />
     </div>
   );
 }

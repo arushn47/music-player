@@ -92,6 +92,8 @@ pub async fn call(
 pub struct DisplayMetadata {
     title: String,
     artist: String,
+    #[serde(default)]
+    pub artwork_url: Option<String>,
 }
 
 #[cfg(any(target_os = "android", test))]
@@ -99,6 +101,7 @@ fn validate_display_metadata(metadata: &DisplayMetadata) -> crate::Result<()> {
     if metadata.title.trim().is_empty()
         || metadata.title.chars().count() > 4000
         || metadata.artist.chars().count() > 4000
+        || metadata.artwork_url.as_ref().is_some_and(|u| u.chars().count() > 4000)
     {
         return Err("Invalid playback display metadata.".into());
     }
@@ -191,6 +194,13 @@ pub async fn android_playback(
                     .map(|t| t.artist.clone())
                     .unwrap_or_default()
                     .into();
+                let artwork = display_metadata
+                    .as_ref()
+                    .and_then(|m| m.artwork_url.clone())
+                    .or_else(|| track.as_ref().and_then(|t| t.artwork_url.clone()));
+                if let Some(art) = artwork {
+                    args["artwork"] = art.into();
+                }
                 if let Some(metadata) = display_metadata {
                     args["title"] = metadata.title.into();
                     args["artist"] = metadata.artist.into();
@@ -225,6 +235,64 @@ pub async fn android_playback(
     {
         let _ = (action, id, position, autoplay, value, display_metadata);
         Err("Android playback is available only in the Android app.".into())
+    }
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct WidgetLyricLine {
+    pub time: Option<i64>,
+    pub text: String,
+}
+
+#[tauri::command]
+pub async fn android_set_lyrics(
+    _app: tauri::AppHandle,
+    track_id: String,
+    lines: Vec<WidgetLyricLine>,
+) -> crate::Result<()> {
+    #[cfg(target_os = "android")]
+    {
+        call(
+            &_app,
+            "setLyrics",
+            serde_json::json!({
+                "trackId": track_id,
+                "lines": lines,
+            }),
+        )
+        .await?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = (track_id, lines);
+        Ok(())
+    }
+}
+
+#[tauri::command]
+pub async fn android_set_theme(
+    _app: tauri::AppHandle,
+    theme_mode: String,
+    accent_color: String,
+) -> crate::Result<()> {
+    #[cfg(target_os = "android")]
+    {
+        call(
+            &_app,
+            "setTheme",
+            serde_json::json!({
+                "themeMode": theme_mode,
+                "accentColor": accent_color,
+            }),
+        )
+        .await?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = (theme_mode, accent_color);
+        Ok(())
     }
 }
 
@@ -305,7 +373,8 @@ mod tests {
         assert!(validate_display_metadata(&valid).is_ok());
         assert!(validate_display_metadata(&DisplayMetadata {
             title: "Song".into(),
-            artist: String::new()
+            artist: String::new(),
+            artwork_url: None,
         })
         .is_ok());
         for (title, artist) in [
@@ -313,7 +382,12 @@ mod tests {
             ("அ".repeat(4001), "Artist".to_string()),
             ("Song".to_string(), "A".repeat(4001)),
         ] {
-            assert!(validate_display_metadata(&DisplayMetadata { title, artist }).is_err());
+            assert!(validate_display_metadata(&DisplayMetadata {
+                title,
+                artist,
+                artwork_url: None,
+            })
+            .is_err());
         }
     }
     #[test]

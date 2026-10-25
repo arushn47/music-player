@@ -13,6 +13,19 @@ function fixture() {
   return { tracker, writes, sample };
 }
 describe("real listening accounting", () => {
+  it('recovers ranking artwork from later records without changing listening totals', () => {
+    const { tracker, sample } = fixture();
+    for (let second = 0; second <= 20; second++) sample(second);
+    const original = tracker.record!;
+    const missing = { ...original, id: 'missing', artworkUrl: null };
+    const covered = { ...original, id: 'covered', artworkUrl: 'https://c.saavncdn.com/album.jpg' };
+    for (const rows of [[missing, covered], [covered, missing]]) {
+      const stats = aggregateListening(rows, 'all', wall + 30000);
+      expect(stats.albums[0].artworkUrl).toBe(covered.artworkUrl);
+      expect(stats.tracks[0].artworkUrl).toBe(covered.artworkUrl);
+      expect(stats.totalMs).toBe(original.listenedMs * 2);
+    }
+  });
   it("keeps catalogue covers and recovers old missing artwork only from verified video identity", () => {
     const { tracker, sample } = fixture();
     sample(0);
@@ -98,7 +111,11 @@ describe("listening recap aggregation", () => {
   it("applies threshold then ranks by filtered day time with full collaborator credit", () => {
     const result = aggregateListening([record("one", {"2026-10-19": 30000}), record("two", {"2026-10-19": 15000}), record("short", {"2026-10-19": 9000})], "30", wall);
     expect(result.totalMs).toBe(45000); expect(result.artists.map(a => a.ms)).toEqual([45000, 45000]);
+    expect(result.artists[0].subtitle).toBe("2 songs · 2 plays");
     expect(result.tracks.map(t => t.key)).toEqual(["one", "two"]); expect(result.albums[0].ms).toBe(45000);
+    expect(result.tracks[0].plays).toBe(1);
+    const repeated = aggregateListening([record("one", {"2026-10-19": 30000}), { ...record("one", {"2026-10-19": 15000}), id: "second" }], "30", wall);
+    expect(repeated.tracks[0].plays).toBe(2);
   });
   it("filters per-day segments, uses inclusive local-calendar ranges and excludes future dates", () => {
     const result = aggregateListening([record("one", {"2026-10-12": 20000, "2026-10-13": 1000, "2026-10-19": 20000, "2026-10-20": 20000})], "7", wall);

@@ -16,11 +16,11 @@
   --ambient-secondary: color-mix(in srgb, var(--bg) calc(100% - var(--cover-weight)), rgb(var(--cover-secondary)) var(--cover-weight));
   background: radial-gradient(ellipse at 15% 10%, var(--ambient-primary), transparent 75%),
     radial-gradient(ellipse at 90% 75%, var(--ambient-secondary), transparent 75%), var(--bg);
-  filter: blur(20px);
   animation: ambient-arrive 650ms ease-in-out both;
 }
 :root[data-theme="light"] .ambient-background { --cover-weight: 32%; }
-.expanded-player > .ambient-background { z-index: -2; }
+.expanded-player > .ambient-background { z-index: -2; --cover-weight: 44%; }
+:root[data-theme="light"] .expanded-player > .ambient-background { --cover-weight: 32%; }
 .expanded-player:has(> .ambient-background)::after { background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--bg) 28%, transparent)); }
 @keyframes ambient-arrive { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ambient-layer { animation: none; } }

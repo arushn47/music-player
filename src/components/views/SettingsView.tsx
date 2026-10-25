@@ -12,6 +12,8 @@ import {
   BarChart3,
   HardDrive,
   Info,
+  ChevronLeft,
+  ChevronRight,
   Sun,
   Moon,
   Check,
@@ -21,10 +23,12 @@ import {
   Heart,
 } from "lucide-react";
 import { Select } from "../common";
+import { MusicPreferences } from "../common/MusicLanguagePicker";
 import { SoftwareLicencesSection } from "./SoftwareLicencesSection";
 import { UpdaterCard } from "./UpdaterCard";
 import { SupportSection } from "./SupportSection";
 import type { Preferences, Session, Track } from "../../domain/types";
+import { mobile } from "../../adapters/native";
 import { EngineSetupCard, type EngineSetupProps } from "../common/EngineSetupCard";
 import {
   ACCENT_PALETTES,
@@ -55,6 +59,7 @@ export interface SettingsViewProps extends EngineSetupProps {
 }
 
 type Category =
+  | "music"
   | "appearance"
   | "library"
   | "sources"
@@ -73,6 +78,7 @@ interface CategoryDef {
 
 const categories: CategoryDef[] = [
   { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "music", label: "Music preferences", icon: Globe },
   { id: "library", label: "Library", icon: Library },
   { id: "sources", label: "Online Sources", icon: Globe2 },
   { id: "lyrics", label: "Lyrics", icon: FileText },
@@ -106,7 +112,21 @@ export function SettingsView({
   onRetryDownload,
   onDeleteOffline,
 }: SettingsViewProps) {
-  const [activeCategory, setActiveCategory] = useState<Category>("appearance");
+  const [activeCategory, setActiveCategory] = useState<Category | null>(mobile ? null : "appearance");
+  useEffect(() => {
+    if (mobile) document.getElementById("main")?.scrollTo({ top: 0 });
+  }, [mobile, activeCategory]);
+  useEffect(() => {
+    if (!mobile || activeCategory === null) return;
+    const marker = Date.now();
+    history.pushState({ ...history.state, mobileSettings: marker }, "");
+    const back = (event: PopStateEvent) => { if (event.state?.mobileSettings !== marker) setActiveCategory(null); };
+    window.addEventListener("popstate", back);
+    return () => {
+      window.removeEventListener("popstate", back);
+      if (history.state?.mobileSettings === marker) history.back();
+    };
+  }, [mobile, activeCategory]);
   const [customHex, setCustomHex] = useState("");
   const [hexError, setHexError] = useState("");
   const [percentDraft, setPercentDraft] = useState<string | null>(null);
@@ -180,7 +200,7 @@ export function SettingsView({
   const offlineTracks = tracks.filter((track) => track.offline);
 
   return (
-    <section className="settings-redesign">
+    <section className={`settings-redesign ${activeCategory === null ? "settings-index" : "settings-detail"}`}>
       <nav className="settings-sidebar" aria-label="Settings categories">
         <h1 className="settings-title">Settings</h1>
         {categories.map((cat) => {
@@ -194,12 +214,15 @@ export function SettingsView({
             >
               <Icon size={18} />
               <span>{cat.label}</span>
+              <ChevronRight size={18} className="mobile-settings-chevron" />
             </button>
           );
         })}
       </nav>
 
       <div className="settings-content">
+        <button type="button" className="mobile-settings-back" onClick={() => setActiveCategory(null)}><ChevronLeft size={20} />Settings</button>
+        {activeCategory === "music" && <div className="settings-category"><h2>Music preferences</h2><MusicPreferences /></div>}
         {activeCategory === "support" && <SupportSection />}
         {activeCategory === "appearance" && (
           <div className="settings-category">
@@ -689,30 +712,32 @@ export function SettingsView({
             <div className="settings-section">
               <h3 className="section-label">Behavior</h3>
               <div className="settings-card-group">
-                <label className="apple-switch-row">
-                  <div className="switch-text">
-                    <strong>Automatic pronunciation & translation</strong>
-                    <small>
-                      With a Gemini key saved in Lyric room → Lyrics settings,
-                      send each selected song’s lyrics for pronunciation and
-                      English meaning. Cached results are reused.
-                    </small>
-                  </div>
-                  <div className="apple-switch">
-                    <input
-                      type="checkbox"
-                      checked={session.settings.autoGemini}
-                      onChange={(event) =>
-                        onSetting("autoGemini", event.target.checked)
-                      }
-                    />
-                    <span className="apple-switch-track" />
-                  </div>
-                </label>
+                {!mobile && (
+                  <label className="apple-switch-row">
+                    <div className="switch-text">
+                      <strong>Automatic pronunciation & translation (Gemini)</strong>
+                      <small>
+                        With a Gemini key saved in Lyric room → Lyrics settings,
+                        send each selected song’s lyrics for pronunciation and
+                        English meaning. Cached results are reused.
+                      </small>
+                    </div>
+                    <div className="apple-switch">
+                      <input
+                        type="checkbox"
+                        checked={session.settings.autoGemini}
+                        onChange={(event) =>
+                          onSetting("autoGemini", event.target.checked)
+                        }
+                      />
+                      <span className="apple-switch-track" />
+                    </div>
+                  </label>
+                )}
                 <label className="apple-switch-row">
                   <div className="switch-text">
                     <strong>Auto-open lyrics</strong>
-                    <small>Open lyrics room when playback begins</small>
+                    <small>{mobile ? "Open player lyrics when playback begins" : "Open lyrics room when playback begins"}</small>
                   </div>
                   <div className="apple-switch">
                     <input

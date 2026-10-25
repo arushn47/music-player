@@ -3,17 +3,18 @@ import {
   Clock,
   Loader2,
   Play,
+  RefreshCw,
   Search,
   X,
 } from "lucide-react";
 import { library, type CatalogTrack, type CatalogArtist, type CatalogAlbum } from "../../adapters/native";
 import type { Track } from "../../domain/types";
 import type { ListeningRecord } from "../../domain/listening";
-import { clearDiscoverySearches, discoveryPreferences, rememberDiscoverySearch } from "../../adapters/discovery-home";
-import { DiscoveryHome } from "./DiscoveryHome";
+import { clearDiscoverySearches, discoveryPreferences, rememberDiscoverySearch, removeDiscoverySearch } from "../../adapters/discovery-home";
 import { Artwork, IconButton } from "../common";
 import { EngineSetupCard, type EngineSetupProps } from "../common/EngineSetupCard";
 import { CatalogTrackActions, type CatalogActionHandlers } from "../common/CatalogTrackActions";
+import { DiscoverShelves } from "./DiscoverShelves";
 import type { CommonsDiscoveryState } from "./CommonsDiscovery";
 
 export interface DiscoveryViewState {
@@ -43,6 +44,7 @@ export const initialDiscoveryViewState = (): DiscoveryViewState => ({
 });
 
 export interface DiscoveryViewProps extends CatalogActionHandlers, EngineSetupProps {
+  onPlayCollection: (tracks: CatalogTrack[], shuffle: boolean) => void;
   onPlayAlbum: (id: string) => Promise<void>;
   state: DiscoveryViewState;
   onStateChange: (
@@ -62,6 +64,7 @@ export interface DiscoveryViewProps extends CatalogActionHandlers, EngineSetupPr
   onQueueRemote: (track: Track, next: boolean) => void;
   onNavigateArtist?: (artistId: string) => void;
   onNavigateAlbum?: (albumId: string) => void;
+  onNavigateChart?: (chartId: string) => void;
   recentRecords: ListeningRecord[];
   historyEnabled: boolean;
   onReplay: (record: ListeningRecord) => void;
@@ -71,6 +74,133 @@ export interface DiscoveryViewProps extends CatalogActionHandlers, EngineSetupPr
 
 const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
+
+interface ExploreCategory {
+  name: string;
+  image: string;
+  color: string;
+}
+
+const MOODS_MOMENTS: ExploreCategory[] = [
+  {
+    name: "Chill",
+    image: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=500&auto=format&fit=crop&q=80",
+    color: "#3d5a80",
+  },
+  {
+    name: "Commute",
+    image: "https://images.unsplash.com/photo-1509749837427-ac94a2553d0e?w=500&auto=format&fit=crop&q=80",
+    color: "#725b44",
+  },
+  {
+    name: "Energize",
+    image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80",
+    color: "#8338ec",
+  },
+  {
+    name: "Feel good",
+    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&auto=format&fit=crop&q=80",
+    color: "#2a9d8f",
+  },
+  {
+    name: "Focus",
+    image: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=500&auto=format&fit=crop&q=80",
+    color: "#264653",
+  },
+  {
+    name: "Gaming",
+    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&auto=format&fit=crop&q=80",
+    color: "#5e503f",
+  },
+  {
+    name: "Party",
+    image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&auto=format&fit=crop&q=80",
+    color: "#9d0208",
+  },
+  {
+    name: "Romance",
+    image: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=500&auto=format&fit=crop&q=80",
+    color: "#932f6d",
+  },
+  {
+    name: "Sad",
+    image: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=500&auto=format&fit=crop&q=80",
+    color: "#34495e",
+  },
+  {
+    name: "Sleep",
+    image: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=500&auto=format&fit=crop&q=80",
+    color: "#1c2541",
+  },
+  {
+    name: "Workout",
+    image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500&auto=format&fit=crop&q=80",
+    color: "#b0572e",
+  },
+];
+
+const GENRES: ExploreCategory[] = [
+  {
+    name: "Pop",
+    image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80",
+    color: "#e01e5a",
+  },
+  {
+    name: "Rock",
+    image: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=500&auto=format&fit=crop&q=80",
+    color: "#a01a1e",
+  },
+  {
+    name: "Hip hop",
+    image: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=500&auto=format&fit=crop&q=80",
+    color: "#ca6702",
+  },
+  {
+    name: "Jazz",
+    image: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=500&auto=format&fit=crop&q=80",
+    color: "#bb3e03",
+  },
+  {
+    name: "Classical",
+    image: "https://images.unsplash.com/photo-1520523839898-507121c179cf?w=500&auto=format&fit=crop&q=80",
+    color: "#4a4e69",
+  },
+  {
+    name: "Electronic",
+    image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&auto=format&fit=crop&q=80",
+    color: "#3a0ca3",
+  },
+  {
+    name: "Indie",
+    image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=500&auto=format&fit=crop&q=80",
+    color: "#2b9348",
+  },
+  {
+    name: "Soul",
+    image: "https://images.unsplash.com/photo-1485579149621-3123dd979885?w=500&auto=format&fit=crop&q=80",
+    color: "#8a5027",
+  },
+  {
+    name: "R&B",
+    image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=500&auto=format&fit=crop&q=80",
+    color: "#7209b7",
+  },
+  {
+    name: "Folk",
+    image: "https://images.unsplash.com/photo-1445307806294-bff7f67ff225?w=500&auto=format&fit=crop&q=80",
+    color: "#588157",
+  },
+  {
+    name: "Metal",
+    image: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&auto=format&fit=crop&q=80",
+    color: "#2b2d42",
+  },
+  {
+    name: "Blues",
+    image: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=500&auto=format&fit=crop&q=80",
+    color: "#1d3557",
+  },
+];
 
 export function DiscoveryView({
   savedTracks, favorites, onCatalogAction,
@@ -82,12 +212,14 @@ export function DiscoveryView({
   downloads,
   onSaveDiscovery,
   onPlayAlbum,
+  onPlayCollection,
   onChoosePlaylist,
   onDownloadTrack,
   onSaveCommons,
   onQueueRemote,
   onNavigateArtist,
   onNavigateAlbum,
+  onNavigateChart,
   recentRecords,
   historyEnabled,
   onReplay,
@@ -100,15 +232,18 @@ export function DiscoveryView({
   const searchGeneration = useRef(0);
   const [recentSearches, setRecentSearches] = useState(() => discoveryPreferences().searches);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [discoverRevision, setDiscoverRevision] = useState(0);
+  const [discoverLoading, setDiscoverLoading] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) {
         setSearchFocused(false);
+        searchWrapRef.current?.querySelector("input")?.blur();
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside, true);
+    return () => document.removeEventListener("mousedown", handleClickOutside, true);
   }, []);
 
   useEffect(() => {
@@ -135,7 +270,7 @@ export function DiscoveryView({
 
   const handleSearch = (requested = query) => {
     const trimmed = requested.trim().slice(0, 200);
-    if (!trimmed || searching) return;
+    if (!trimmed) return;
     if (historyEnabled) setRecentSearches(rememberDiscoverySearch(trimmed));
     rootRef.current?.closest("main")?.scrollTo({ top: 0 });
     const generation = ++searchGeneration.current;
@@ -168,6 +303,17 @@ export function DiscoveryView({
       });
   };
 
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      onStateChange(current => ({ ...current, searching: false, searchedQuery: "", results: [], artists: [], albums: [], error: "", entityError: "" }));
+      return;
+    }
+    onStateChange(current => ({ ...current, searching: true }));
+    const timer = window.setTimeout(() => handleSearch(trimmed), 350);
+    return () => { window.clearTimeout(timer); searchGeneration.current++; };
+  }, [query]);
+
   return (
     <div
       ref={rootRef}
@@ -181,63 +327,80 @@ export function DiscoveryView({
               Discover<span className="heading-dot">.</span>
             </h1>
             <p className="subtitle">
-              Search songs, artists, albums, or explore curated playlists and trending releases.
+              Find your next favorite. Search music, explore new releases, or follow your mood.
             </p>
           </div>
         </div>
 
         <div className="discover-search-central" ref={searchWrapRef}>
-          <label className={`discover-search-bar ${searchFocused ? "is-focused" : ""}`}>
-            <Search size={16} className="discover-search-icon" />
-            <input
-              aria-label="Search music"
-              placeholder="Search songs, artists, albums…"
-              maxLength={200}
-              value={query}
-              disabled={searching}
-              onFocus={() => setSearchFocused(true)}
-              onChange={(e) =>
-                onStateChange((current) => ({
-                  ...current,
-                  query: e.target.value,
-                }))
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  setSearchFocused(false);
-                  handleSearch();
-                } else if (e.key === "Escape") {
-                  setSearchFocused(false);
-                }
-              }}
-            />
-            {searching ? (
-              <Loader2 size={15} className="spin" style={{ color: "var(--accent)" }} />
-            ) : query ? (
-              <button
-                type="button"
-                className="search-clear-button"
-                aria-label="Clear search"
-                onClick={() => {
-                  searchGeneration.current++;
+          <div className="discover-search-row">
+            <label className={`discover-search-bar ${searchFocused ? "is-focused" : ""}`}>
+              <Search size={16} className="discover-search-icon" />
+              <input
+                aria-label="Search music"
+                placeholder="Search songs, artists, albums…"
+                maxLength={200}
+                value={query}
+                onFocus={() => setSearchFocused(true)}
+                onChange={(e) =>
                   onStateChange((current) => ({
                     ...current,
-                    query: "",
-                    searching: false,
-                    results: [],
-                    artists: [],
-                    albums: [],
-                    searchedQuery: "",
-                    entityError: "",
-                    error: "",
-                  }));
+                    query: e.target.value,
+                  }))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    setSearchFocused(false);
+                    handleSearch();
+                  } else if (e.key === "Escape") {
+                    setSearchFocused(false);
+                  }
                 }}
+              />
+              {searching ? (
+                <Loader2 size={15} className="spin" style={{ color: "var(--accent)" }} />
+              ) : query ? (
+                <button
+                  type="button"
+                  className="search-clear-button"
+                  aria-label="Clear search"
+                  onClick={() => {
+                    searchGeneration.current++;
+                    onStateChange((current) => ({
+                      ...current,
+                      query: "",
+                      searching: false,
+                      results: [],
+                      artists: [],
+                      albums: [],
+                      searchedQuery: "",
+                      entityError: "",
+                      error: "",
+                    }));
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              ) : null}
+            </label>
+            {!searchedQuery && (
+              <button
+                type="button"
+                className="subtle discover-refresh-btn"
+                disabled={discoverLoading}
+                onClick={() => setDiscoverRevision((r) => r + 1)}
+                title="Refresh Discover"
+                aria-label="Refresh Discover"
               >
-                <X size={14} />
+                {discoverLoading ? (
+                  <Loader2 size={16} className="spin" />
+                ) : (
+                  <RefreshCw size={16} />
+                )}
               </button>
-            ) : null}
-          </label>
+            )}
+          </div>
 
           {searchFocused && historyEnabled && recentSearches.length > 0 && !query.trim() && (
             <div className="discover-search-popover">
@@ -257,19 +420,34 @@ export function DiscoveryView({
               </div>
               <div className="discover-popover-items">
                 {recentSearches.map((item) => (
-                  <button
-                    type="button"
-                    key={item}
-                    className="discover-popover-item"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      setSearchFocused(false);
-                      handleSearch(item);
-                    }}
-                  >
-                    <Clock size={13} className="discover-popover-icon" />
-                    <span className="discover-popover-text ellipsis">{item}</span>
-                  </button>
+                  <div key={item} className="discover-popover-row">
+                    <button
+                      type="button"
+                      className="discover-popover-item"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setSearchFocused(false);
+                        handleSearch(item);
+                      }}
+                    >
+                      <Clock size={13} className="discover-popover-icon" />
+                      <span className="discover-popover-text ellipsis">{item}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="discover-popover-remove"
+                      title={`Remove "${item}"`}
+                      aria-label={`Remove ${item} from recent searches`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const next = removeDiscoverySearch(item);
+                        setRecentSearches(next);
+                      }}
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -294,28 +472,38 @@ export function DiscoveryView({
         )}
 
         {!searchedQuery && !searching && !error && (
-          <DiscoveryHome
-            searches={historyEnabled ? recentSearches : []}
-            records={historyEnabled ? recentRecords : []}
-            savedTracks={savedTracks}
-            busy={busy}
-            onlineAvailable={ytdlpAvailable}
-            onSearch={handleSearch}
-            onClearSearches={() => {
-              clearDiscoverySearches();
-              setRecentSearches([]);
-            }}
-            onReplay={onReplay}
-            onImportMusic={onImportMusic}
-            onOpenLibrary={onOpenLibrary}
-            onNavigateAlbum={onNavigateAlbum}
-            onNavigateArtist={onNavigateArtist}
-            onSaveDiscovery={onSaveDiscovery}
-            onPlayAlbum={onPlayAlbum}
-            favorites={favorites}
-            downloads={downloads}
-            onCatalogAction={onCatalogAction}
-          />
+          <div className="explore-sections">
+            <DiscoverShelves busy={busy} ytdlpAvailable={ytdlpAvailable} downloads={downloads} onSaveDiscovery={onSaveDiscovery} onNavigateAlbum={onNavigateAlbum} onNavigateArtist={onNavigateArtist} onNavigateChart={onNavigateChart} savedTracks={savedTracks} favorites={favorites} onCatalogAction={onCatalogAction} onPlayAlbum={onPlayAlbum} onPlayCollection={onPlayCollection} revision={discoverRevision} onLoadingChange={setDiscoverLoading} />
+            {[
+              { title: "Moods & moments", items: MOODS_MOMENTS },
+              { title: "Genres", items: GENRES },
+            ].map((section) => (
+              <section key={section.title} aria-label={section.title} className="discover-editorial-section">
+                <h2>{section.title}</h2>
+                <div className="explore-grid">
+                  {section.items.map((item) => (
+                    <button
+                      type="button"
+                      className="explore-card"
+                      key={item.name}
+                      style={{ backgroundColor: item.color }}
+                      onClick={() => onStateChange((current) => ({ ...current, query: item.name }))}
+                    >
+                      <img
+                        src={item.image}
+                        alt=""
+                        className="explore-card-img"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="explore-card-overlay" />
+                      <span className="explore-card-title">{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
         )}
 
         {!searching && searchedQuery && (
@@ -386,7 +574,7 @@ export function DiscoveryView({
                       url={t.artworkUrl}
                       className={`color-${index % 5}`}
                     />
-                    <span>
+                    <span className="track-meta-text">
                       <button className="track-title-button" aria-label={`Listen to ${music.title}`} disabled={busy || !ytdlpAvailable} onClick={() => onSaveDiscovery(t, "play")}>
                         <strong dir="auto" title={t.title}>{music.title}</strong>
                       </button>

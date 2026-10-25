@@ -9,7 +9,8 @@ import {
 
 describe("theme colour handling", () => {
   it("normalizes complete and shorthand HEX values", () => {
-    expect(normalizeHexColor("c4dca3")).toBe(DEFAULT_ACCENT);
+    expect(normalizeHexColor("a78bfa")).toBe(DEFAULT_ACCENT);
+    expect(normalizeHexColor("c4dca3")).toBe("#C4DCA3");
     expect(normalizeHexColor("#abc")).toBe("#AABBCC");
     expect(normalizeHexColor("not-a-colour")).toBeNull();
   });

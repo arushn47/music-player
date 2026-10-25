@@ -1,5 +1,9 @@
 import React from "react";
 import {
+  Activity,
+  Download,
+  Ellipsis,
+  FolderInput,
   FolderOpen,
   Heart,
   Link2,
@@ -17,10 +21,13 @@ import { Artwork, DownloadedBadge, IconButton } from "../common";
 import { Collections } from "./Collections";
 import { ArtistLinks } from "../common/ArtistLinks";
 import { AlbumLink } from "../common/AlbumLink";
+import { CloseTrackMenu } from "../common/CloseTrackMenu";
 
 export interface LibraryViewProps {
   onNavigateArtist?: (id: string) => void;
   onNavigateAlbum?: (id: string) => void;
+  onCreatePlaylist?: () => void;
+  onOpenImport?: () => void;
   view: string;
   heading: string;
   playlist?: Playlist;
@@ -54,13 +61,14 @@ export interface LibraryViewProps {
   onChoosePlaylist: (track: Track) => void;
   onRemoveFromPlaylist?: (playlistId: string, entryId: string) => void;
   onOpenAddMusic?: (playlist: Playlist) => void;
+  onPlayCollection?: (collection: Collection) => void;
 }
 
 const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 
 export function LibraryView({
-  onNavigateArtist, onNavigateAlbum,
+  onNavigateArtist, onNavigateAlbum, onCreatePlaylist, onOpenImport,
   view,
   heading,
   playlist,
@@ -94,6 +102,7 @@ export function LibraryView({
   onChoosePlaylist,
   onRemoveFromPlaylist,
   onOpenAddMusic,
+  onPlayCollection,
 }: LibraryViewProps) {
   const isPlaylistOrFavorites = Boolean(playlist) || view === "favorites";
   const totalSeconds = rows.reduce((acc, { t }) => acc + (t.duration || 0), 0);
@@ -112,12 +121,41 @@ export function LibraryView({
     )
   ).slice(0, 4);
 
+  const libraryAlbums = session.favoriteAlbums.filter(album =>
+    `${album.title} ${album.artist}`.toLowerCase().includes(query.toLowerCase()));
+  const libraryArtists = session.favoriteArtists.filter(artist =>
+    artist.name.toLowerCase().includes(query.toLowerCase()));
+  const libraryRoot = ["library", "favorites", "albums", "artists"].includes(view);
+
   return (
     <>
+      {libraryRoot && (
+        <div className="mobile-library-navigation">
+          <div className="mobile-library-heading">
+            <h1>Library<span className="heading-dot">.</span></h1>
+            <IconButton label="Listening history" onClick={() => onSelectView("history")}><Activity size={21} /></IconButton>
+          </div>
+          <nav className="mobile-library-filters" aria-label="Library sections">
+            {[["library", "Playlists"], ["favorites", "Songs"], ["albums", "Albums"], ["artists", "Artists"]].map(([destination, label]) => (
+              <button type="button" key={destination} aria-current={view === destination ? "page" : undefined}
+                onClick={() => { onSetQuery(""); onSelectView(destination); }}>{label}</button>
+            ))}
+          </nav>
+          <div className="mobile-library-shortcuts">
+            <button type="button" onClick={() => onSelectView("collection:local")}><FolderOpen size={16} />On this device</button>
+            <button type="button" onClick={() => onSelectView("collection:downloads")}><Download size={16} />Downloads</button>
+            {onOpenImport && <button type="button" onClick={onOpenImport}><FolderInput size={16} />Sync & import</button>}
+          </div>
+        </div>
+      )}
       {isPlaylistOrFavorites ? (
-        <div className="page-heading catalog-hero collection-header">
-          <div className="collection-cover album-cover">
-            {coverArtworks.length >= 4 ? (
+        <div className={`page-heading catalog-hero collection-header ${view === "favorites" ? "mobile-library-songs" : ""}`}>
+          <div className={`collection-cover album-cover ${view === "favorites" ? "is-liked-songs" : ""}`}>
+            {view === "favorites" ? (
+              <div className="liked-songs-cover">
+                <Heart size={44} fill="#ffffff" color="#ffffff" />
+              </div>
+            ) : coverArtworks.length >= 4 ? (
               <div className="playlist-mosaic-grid">
                 {coverArtworks.map((url, i) => (
                   <Artwork key={i} url={url} />
@@ -127,17 +165,17 @@ export function LibraryView({
               <Artwork url={coverArtworks[0]} className="playlist-cover-single" />
             ) : (
               <div className="playlist-cover-empty">
-                <Music2 size={48} />
+                <Music2 size={44} />
               </div>
             )}
           </div>
 
           <div className="album-info">
             <p className="eyebrow">
-              {view === "favorites" ? "COLLECTION" : "PLAYLIST"}
+              {view === "favorites" ? "PLAYLIST" : "PLAYLIST"}
             </p>
             <h1>
-              {heading}
+              {view === "favorites" ? "Liked Songs" : heading}
             </h1>
             <div className="subtitle album-meta">
               <span>{rows.length} {rows.length === 1 ? "track" : "tracks"}</span>
@@ -183,8 +221,11 @@ export function LibraryView({
               </button>
               {(playlist || view === "favorites") && (
                 <details className="track-menu collection-menu">
-                  <summary aria-label="Collection options">•••</summary>
+                  <summary aria-label="Collection options" title="Collection options">
+                    <Ellipsis size={18} aria-hidden="true" />
+                  </summary>
                   <div className="menu-popover">
+                    <CloseTrackMenu />
                     <button type="button" onClick={() => onImportMusic(false)}>
                       <FolderOpen size={14} /> Import local files
                     </button>
@@ -205,32 +246,64 @@ export function LibraryView({
           </div>
         </div>
       ) : (
-        <div className="page-heading">
+        <div className={`page-heading ${libraryRoot ? "library-root-heading" : ""}`}>
           <div>
-            <p className="eyebrow">MUSIC, AT YOUR OWN PACE</p>
+            <p className="eyebrow">YOUR LIBRARY</p>
             <h1>
-              {heading}
+              {view === "library" ? "Playlists" : heading}
               <span className="heading-dot">.</span>
             </h1>
             <p className="subtitle">
-              Your music. Your words. A little closer.
+              {view === "library"
+                ? "Your playlists, mixes, and custom collections."
+                : view === "artists"
+                  ? "Favorite and saved artists."
+                  : view === "albums"
+                    ? "Albums saved in your library."
+                    : "Your music. Your words. A little closer."}
             </p>
           </div>
           <div className="heading-actions">
-            {view !== "library" && rows.length > 0 && (
+            {view === "library" && (
+              <>
+                {onOpenImport && (
+                  <button
+                    type="button"
+                    className="subtle"
+                    disabled={busy}
+                    onClick={onOpenImport}
+                    title="Import playlists from Spotify, YouTube, Apple Music or files"
+                  >
+                    <FolderInput size={15} />
+                    Import
+                  </button>
+                )}
+                <button
+                  className="primary"
+                  disabled={busy}
+                  onClick={() => (onCreatePlaylist ? onCreatePlaylist() : onImportMusic(false))}
+                >
+                  <Plus size={16} />
+                  New playlist
+                </button>
+              </>
+            )}
+            {view !== "library" && view !== "artists" && view !== "albums" && rows.length > 0 && (
               <button className="subtle" onClick={onPlayAll}>
                 <Play size={16} />
                 Play collection
               </button>
             )}
-            <button
-              className="primary"
-              disabled={busy}
-              onClick={() => onImportMusic(false)}
-            >
-              <Plus size={17} />
-              {busy ? "Working…" : "Add music"}
-            </button>
+            {view !== "library" && view !== "artists" && view !== "albums" && (
+              <button
+                className="primary"
+                disabled={busy}
+                onClick={() => onImportMusic(false)}
+              >
+                <Plus size={17} />
+                {busy ? "Working…" : "Add music"}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -240,7 +313,19 @@ export function LibraryView({
           <Search size={17} />
           <input
             aria-label="Search local library"
-            placeholder={playlist ? `Find in ${heading}…` : "Find a song, artist, or album"}
+            placeholder={
+              view === "artists"
+                ? "Search artists…"
+                : view === "albums"
+                  ? "Search albums…"
+                  : view === "library"
+                    ? "Search playlists…"
+                    : view === "favorites"
+                      ? "Find in Liked Songs…"
+                      : playlist
+                        ? `Find in ${heading}…`
+                        : "Find a song, artist, or album"
+            }
             value={query}
             onChange={(e) => onSetQuery(e.target.value)}
           />
@@ -256,9 +341,15 @@ export function LibraryView({
           )}
         </label>
         <span className="muted">
-          {visible.length} {visible.length === 1 ? "track" : "tracks"}
+          {view === "artists"
+            ? `${libraryArtists.length} ${libraryArtists.length === 1 ? "artist" : "artists"}`
+            : view === "albums"
+              ? `${libraryAlbums.length} ${libraryAlbums.length === 1 ? "album" : "albums"}`
+              : view === "library"
+                ? `${collections.filter((c) => c.playlist).length} ${collections.filter((c) => c.playlist).length === 1 ? "playlist" : "playlists"}`
+                : `${visible.length} ${visible.length === 1 ? "track" : "tracks"}`}
         </span>
-        {!mobile && !isPlaylistOrFavorites && (
+        {!mobile && view !== "artists" && view !== "albums" && view !== "library" && !isPlaylistOrFavorites && (
           <button
             className="subtle"
             disabled={busy}
@@ -270,26 +361,73 @@ export function LibraryView({
         )}
       </section>
 
-      {view === "favorites" && session.favoriteAlbums.length > 0 && <section aria-label="Favorite albums" className="favorite-albums">
-        <h2>Favorite albums</h2>
-        <div className="catalog-card-grid">
-          {session.favoriteAlbums.map(album => <button className="album-card" key={album.id} aria-label={`Open album ${album.title}`} onClick={() => onNavigateAlbum?.(album.id)}>
-            <Artwork url={album.artworkUrl} className="album-card-cover" />
-            <div className="album-card-info">
-              <span className="album-title">{album.title}</span>
-              <span className="album-year">{album.artist}</span>
-            </div>
-          </button>)}
-        </div>
-      </section>}
-      {view === "library" ? (
+      {view === "albums" ? (
+        <section aria-label="Albums in your library" className="albums-grid discover-albums">
+          {libraryAlbums.length ? (
+            libraryAlbums.map((album) => (
+              <div
+                className="album-card discover-album-card"
+                key={album.title + album.artist}
+                onClick={() => {
+                  if (album.id) {
+                    onNavigateAlbum?.(album.id);
+                  } else {
+                    onSetQuery(album.title);
+                  }
+                }}
+                role="button"
+                onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.currentTarget.click(); } }}
+                tabIndex={0}
+                aria-label={`Open album ${album.title}`}
+              >
+                <div className="album-card-cover-wrap">
+                  <Artwork url={album.artworkUrl} className="album-card-cover" />
+                </div>
+                <div className="album-card-info">
+                  <div className="album-title" title={album.title}>{album.title}</div>
+                  <div className="album-year" title={album.artist}>{album.artist}</div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="subtitle" style={{ padding: "20px 0" }}>No albums found in your library.</p>
+          )}
+        </section>
+      ) : view === "artists" ? (
+        <section aria-label="Artists in your library" className="discover-portrait-grid">
+          {libraryArtists.length ? (
+            libraryArtists.map((artist) => (
+              <div
+                className="portrait-card"
+                key={artist.id}
+                onClick={() => onNavigateArtist?.(artist.id)}
+                role="button"
+                onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.currentTarget.click(); } }}
+                tabIndex={0}
+                aria-label={`Open artist ${artist.name}`}
+              >
+                <div className="portrait-card-cover-wrap" style={{ borderRadius: "50%" }}>
+                  <Artwork url={artist.artworkUrl} className="portrait-card-cover" />
+                </div>
+                <div className="portrait-card-info" style={{ textAlign: "center" }}>
+                  <div className="portrait-card-title" title={artist.name}>{artist.name}</div>
+                  <div className="portrait-card-artist">Favorite artist</div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="subtitle" style={{ padding: "20px 0" }}>No artists found in your library.</p>
+          )}
+        </section>
+      ) : view === "library" ? (
         <Collections
-          collections={collections}
+          collections={collections.filter(collection => collection.playlist)}
           query={query}
           open={(id) => {
             onSelectView(id);
             onSetQuery("");
           }}
+          onPlayCollection={onPlayCollection}
         />
       ) : !tracks.length ? (
         <section className="welcome">
@@ -376,7 +514,6 @@ export function LibraryView({
         </div>
       ) : (
         <>
-          {view === "favorites" && <h2 className="favorite-songs-title">Favorite songs</h2>}
           <div className="track-header">
             <span>#</span>
             <span>TRACK / ARTIST</span>
@@ -412,8 +549,8 @@ export function LibraryView({
                     url={t.artworkUrl}
                     className={`color-${index % 5}`}
                   />
-                  <span>
-                    <button className="track-title-button" aria-label={`Listen to ${t.title}`} onClick={() => onPlayTrackInList(t, index)}><strong dir="auto">{t.title}</strong></button>
+                  <span className="track-meta-text">
+                    <button className="track-title-button" aria-label={`Listen to ${t.title}`} onClick={() => onPlayTrackInList(t, index)}><strong dir="auto" title={t.title}>{t.title}</strong></button>
                     <small dir="auto">
                       <DownloadedBadge track={t} />
                       <ArtistLinks artistString={t.artist} onNavigateArtist={onNavigateArtist} />
@@ -447,10 +584,12 @@ export function LibraryView({
                     />
                   </IconButton>
                   <details className="track-menu">
-                    <summary aria-label={`Actions for ${t.title}`}>
-                      •••
+                    <summary aria-label={`Actions for ${t.title}`} title="Track actions">
+                      <Ellipsis size={18} aria-hidden="true" />
                     </summary>
                     <div className="menu-popover">
+                      <CloseTrackMenu />
+                      <button type="button" className="mobile-track-favorite" onClick={() => onFavorite(t.id)}>{session.favorites.includes(t.id) ? "Remove from liked songs" : "Add to liked songs"}</button>
                       <button
                         disabled={
                           busy ||

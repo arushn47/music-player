@@ -1,3 +1,4 @@
+import { cleanVideoTitle } from "../domain/online-track";
 /**
  * Native lyrics lookup: LRCLIB first, with lrc.red fallback.
  *
@@ -73,11 +74,14 @@ async function fetchLyrics(track: Track): Promise<LookupState> {
   if (!isTauri()) return { status: "idle" };
 
   try {
+    const uploaderOnly = track.source?.providerId === "youtube" && !track.metadataSourceId
+      && track.artist === track.source.attribution && /^(?:full|official)\s+(?:music\s+)?video\s*:/i.test(track.title)
+      && !track.title.toLowerCase().includes(track.artist.toLowerCase());
     const result = await invoke<LyricResult>("fetch_lyrics", {
-      title: track.title,
+      title: track.source?.providerId === "youtube" ? cleanVideoTitle(track.title) : track.title,
       // Local imports use "Unknown artist", YouTube imports "Unknown Artist".
       // Treat both as "no artist" so the Rust side can fall back to the title.
-      artist: /^unknown artist$/i.test(track.artist.trim()) ? "" : track.artist,
+      artist: uploaderOnly || /^unknown artist$/i.test(track.artist.trim()) ? "" : track.artist,
       album: /^(youtube|local collection|unknown album)$/i.test(
         track.album.trim(),
       )

@@ -1,13 +1,14 @@
 {
   "name": "lumaire",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:e2e": "node scripts/desktop-test.mjs",
+    "test:mobile-ui": "node scripts/mobile-ui-test.mjs",
     "test:phase4-ui": "node scripts/phase4-ui-test.mjs",
     "test:translation-live": "node scripts/translation-test.mjs",
     "tauri": "node scripts/tauri.mjs",
@@ -16,6 +17,7 @@
     "desktop:installer": "node scripts/tauri.mjs build --bundles nsis",
     "android:doctor": "node scripts/android.mjs doctor",
     "android:init": "node scripts/android.mjs init",
+    "android:install": "node scripts/android.mjs install",
     "android:build": "node scripts/android.mjs build --debug --target aarch64",
     "android:dev": "node scripts/android.mjs dev",
     "test:android": "node scripts/android-test.mjs",
@@ -27,8 +29,10 @@
     "@tauri-apps/plugin-opener": "^2.7.2",
     "@tauri-apps/plugin-updater": "^2.14.0",
     "lucide-react": "^0.468.0",
+    "lyric-romanizer": "0.3.1",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "transliteration": "2.7.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.8.0",

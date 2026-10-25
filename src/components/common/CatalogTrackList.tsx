@@ -39,7 +39,7 @@ export function CatalogTrackList({ tracks, busy, downloads, onSaveDiscovery, onN
               </button>
               <div className="track-meta">
                 <Artwork url={track.artworkUrl} />
-                <span>
+                <span className="track-meta-text">
                   <button className="track-title-button" disabled={disabled} aria-label={`Listen to ${track.title}`} onClick={() => onSaveDiscovery(track, "play")}>
                     <strong dir="auto" title={track.title}>{track.title}</strong>
                   </button>

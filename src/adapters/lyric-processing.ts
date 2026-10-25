@@ -1,3 +1,4 @@
+import { romanizeDocument } from "../domain/romanization";
 import { invoke } from "@tauri-apps/api/core";
 import type { LyricDocument } from "../domain/types";
 import { languageCodes, englishLyrics } from "../domain/lyric-languages";
@@ -15,6 +16,7 @@ export type ProcessedLyrics = {
   translation: Record<string, string>;
   lineLanguages?: Record<string, string[]>;
   warnings?: string[];
+  incomplete?: boolean;
 };
 const pending = new Map<string, Promise<ProcessedLyrics>>();
 
@@ -23,7 +25,7 @@ export async function processPreferredLyrics(doc: LyricDocument, model: string, 
   provider: "gemini" | "google";
   model: string;
 }> {
-  const keyed = !mobile && await invoke<boolean>("gemini_key_status");
+  const keyed = await invoke<boolean>("gemini_key_status");
   const provider = keyed ? "gemini" : "google";
   return {
     values: keyed && doc.processedModel === model && doc.languageSource === "gemini"
@@ -59,6 +61,14 @@ export function processLyrics(
   const request = invoke<ProcessedLyrics>("process_lyrics", {
     lines: doc.lines.map(({ id, text }) => ({ id, text })),
     model,
+  }).then(async values => {
+    if (!values.warnings?.length) return values;
+    try {
+      const local = await romanizeDocument({ ...doc, romanisation: {}, romanisationSource: undefined });
+      return { ...values, romanisation: { ...local, ...values.romanisation } };
+    } catch {
+      return { ...values, warnings: [...values.warnings, "Offline pronunciation could not load; valid translations were kept."] };
+    }
   }).finally(() => pending.delete(key));
   pending.set(key, request);
   return request;
@@ -114,7 +124,7 @@ export function mergeProcessedLyrics(
       current.romanisationSource === "imported" ? "imported" : Object.keys(values.romanisation).length ? provider : current.romanisationSource,
     translationSource:
       current.translationSource === "imported" ? "imported" : Object.keys(values.translation).length ? provider : current.translationSource,
-    processedModel: model,
+    processedModel: values.incomplete ? undefined : model,
     lineLanguages,
     languageSource: values.lineLanguages ? provider : current.languageSource,
     englishOnly: values.lineLanguages ? textual.length > 0 && textual.every(line => {

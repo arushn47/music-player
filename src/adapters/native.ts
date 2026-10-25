@@ -53,6 +53,9 @@ export interface CanonicalMetadata {
 }
 
 export interface CatalogTrack {
+  playCount?: number | null;
+  genre?: string | null;
+  language?: string | null;
   id: string;
   title: string;
   artist: string;
@@ -83,6 +86,55 @@ export interface CatalogAlbum {
   artworkUrl?: string | null;
   year?: number | null;
   trackCount?: number | null;
+}
+
+export interface MusicMetadata {
+  provider: string;
+  sourceUrl: string;
+  name: string;
+  credits: string[];
+  releaseDate: string | null;
+  country: string | null;
+  entityType: string | null;
+  disambiguation: string | null;
+}
+export interface AppleChart {
+  country: string;
+  source: string;
+  updatedAt: string | null;
+  entries: { id: string; title: string; artist: string; artworkUrl: string | null }[];
+  stale: boolean;
+  warning: string | null;
+}
+
+export interface DiscoverPage {
+  newAlbums: CatalogAlbum[];
+  newSingles: CatalogTrack[];
+  trending: CatalogTrack[];
+  trendingItems?: TrendingItem[];
+  charts?: CatalogChart[];
+  topSongs: CatalogTrack[];
+  chartTitle: string;
+  warnings: string[];
+}
+
+export type TrendingItem =
+  | { kind: "song"; item: CatalogTrack }
+  | { kind: "album"; item: CatalogAlbum }
+  | { kind: "playlist"; item: { id: string; title: string; subtitle: string; artworkUrl?: string | null; url: string } };
+
+export interface CatalogChart {
+  id: string;
+  title: string;
+  subtitle: string;
+  artworkUrl?: string | null;
+  trackCount?: number | null;
+}
+export interface ChartDetails {
+  info: CatalogChart;
+  tracks: CatalogTrack[];
+  partial: boolean;
+  warning?: string;
 }
 
 export interface CatalogEntities {
@@ -124,6 +176,9 @@ export interface LibraryPort {
   ytdlpInstallEngine(onProgress?: (progress: EngineInstallProgress) => void): Promise<void>;
   ytdlpCancelInstall(): Promise<void>;
   discoverAlbums(language: string): Promise<CatalogAlbum[]>;
+  discoverPage(languages: string[]): Promise<DiscoverPage>;
+  musicMetadata(kind: "artist" | "album", title: string, artist: string): Promise<MusicMetadata | null>;
+  appleChart(country: string, refresh: boolean): Promise<AppleChart>;
   ytdlpSearch(query: string, maxResults?: number, catalog?: boolean): Promise<YtdlpSearchResult[]>;
   ytdlpGetStream(videoId: string): Promise<YtdlpStreamInfo>;
   searchCatalog(query: string, limit?: number): Promise<CatalogTrack[]>;
@@ -132,6 +187,7 @@ export interface LibraryPort {
   lookupCatalog(id: string): Promise<CatalogTrack>;
   lookupArtist(id: string): Promise<{ info: CatalogArtist; topTracks: CatalogTrack[]; albums: CatalogAlbum[]; similarArtists: CatalogArtist[] }>;
   lookupAlbum(id: string): Promise<{ info: CatalogAlbum; tracks: CatalogTrack[]; partial: boolean }>;
+  lookupChart(id: string): Promise<ChartDetails>;
   lookupMetadata(
     title: string,
     artist: string,
@@ -208,6 +264,9 @@ export const library: LibraryPort = desktop
       },
       ytdlpCancelInstall: () => invoke("cancel_youtube_engine_install"),
       discoverAlbums: (language) => invoke("discover_albums", { language }),
+      discoverPage: (languages) => invoke("discover_page", { languages }),
+      musicMetadata: (kind, title, artist) => invoke("music_metadata", { kind, title, artist }),
+      appleChart: (country, refresh) => invoke("apple_chart", { country, refresh }),
       ytdlpSearch: (query, maxResults, catalog = false) =>
         mobile
           ? invoke<{ results: YtdlpSearchResult[] }>("android_source", { operation: "search", query, maxResults }).then((r) => r.results)
@@ -222,6 +281,7 @@ export const library: LibraryPort = desktop
       lookupArtist,
       searchCatalogEntities: (query) => invoke("search_catalog_entities", { query }),
       lookupAlbum: (id) => invoke("lookup_album", { id }),
+      lookupChart: (id) => invoke("lookup_chart", { id }),
       entityArtwork: (kind, name, artist, trackTitle) =>
         invoke("lookup_entity_artwork", { kind, name, artist, trackTitle }),
     }
@@ -245,6 +305,9 @@ export const library: LibraryPort = desktop
       ytdlpInstallEngine: needDesktop,
       ytdlpCancelInstall: needDesktop,
       discoverAlbums: needDesktop,
+      discoverPage: needDesktop,
+      musicMetadata: needDesktop,
+      appleChart: needDesktop,
       ytdlpSearch: async () => [],
       ytdlpGetStream: needDesktop,
       lookupMetadata: async () => null,
@@ -254,5 +317,6 @@ export const library: LibraryPort = desktop
       lookupArtist: needDesktop,
       searchCatalogEntities: needDesktop,
       lookupAlbum: needDesktop,
+      lookupChart: needDesktop,
       entityArtwork: async () => null,
     };

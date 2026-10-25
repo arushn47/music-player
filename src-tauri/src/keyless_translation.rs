@@ -2,7 +2,7 @@ use crate::{translation::Line, Result};
 use serde_json::Value;
 use std::{collections::HashMap, time::Duration};
 
-const TRANSLATE: &str = "https://translate.googleapis.com/translate_a/single";
+const TRANSLATE: &str = "https://translate.google.com/translate_a/single";
 const RECOVER: &str = "https://inputtools.google.com/request";
 
 #[derive(Debug, serde::Serialize, Default)]
@@ -118,7 +118,7 @@ async fn translate(
         .post(endpoint)
         .header("Accept", "application/json")
         .form(&[
-            ("client", "dict-chrome-ex"),
+            ("client", "at"),
             ("sl", language),
             ("tl", "en"),
             ("dt", "t"),
@@ -225,10 +225,9 @@ async fn process_from(
     }
     let client = reqwest::Client::builder()
         .http1_only()
-        .user_agent("Lumaire/1.0.4")
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
         .connect_timeout(Duration::from_secs(4))
         .timeout(Duration::from_secs(12))
-        .redirect(reqwest::redirect::Policy::none())
         .build()
         .map_err(|_| "Could not start translation.")?;
     let mut grouped: Vec<(String, Vec<String>)> = Vec::new();

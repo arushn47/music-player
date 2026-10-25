@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { AndroidPlaybackController } from "./android";
 import type { Playback } from "./controller";
+import { ListeningTracker, type ListeningRecord } from "../domain/listening";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 const playing: Playback = {
@@ -24,6 +25,31 @@ afterEach(() => {
 });
 
 describe("Android native playback ownership", () => {
+  it("retains playback identity across native clock updates so real listening is recorded", async () => {
+    const track = { id: "youtube:abcdefghijk", title: "A song", artist: "Artist", album: "Album", duration: 40, fileName: "song", format: "webm", missing: false };
+    vi.mocked(invoke).mockResolvedValue({ ...playing, id: track.id, time: 0 });
+    const player = new AndroidPlaybackController();
+    const rows: ListeningRecord[] = [];
+    const tracker = new ListeningTracker(row => rows.push(row));
+    const unsubscribe = player.subscribe(state => tracker.sample(state, track, true, state.time * 1000, 1700000000000 + state.time * 1000));
+    await player.load(track.id, true);
+    const id = player.state.playbackId;
+    expect(id).toBeTruthy();
+    for (let seconds = 1; seconds <= 12; seconds++) {
+      vi.mocked(invoke).mockResolvedValue({ ...playing, id: track.id, time: seconds });
+      await vi.advanceTimersByTimeAsync(500);
+      expect(player.state.playbackId).toBe(id);
+    }
+    tracker.flush();
+    expect(rows.at(-1)?.listenedMs).toBe(12000);
+    player.seek(30);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(player.state.seekVersion).toBe(1);
+    expect(player.state.playbackId).toBe(id);
+    await player.load("another", true);
+    expect(player.state.playbackId).not.toBe(id);
+    unsubscribe();
+  });
   it("shows pending catalog identity, stops old audio and keeps unavailable collection entries skippable", async () => {
     vi.mocked(invoke).mockResolvedValue(playing);
     const player = new AndroidPlaybackController();
@@ -145,4 +171,63 @@ describe("Android native playback ownership", () => {
     expect(ended).toHaveBeenCalledTimes(1);
     unsubscribe();
   });
+
+  it("handles widget next and previous pending actions from native playback state", async () => {
+    vi.mocked(invoke).mockResolvedValue({
+      ...playing,
+      pendingAction: "next",
+    });
+    const player = new AndroidPlaybackController();
+    const next = vi.fn();
+    const prev = vi.fn();
+    player.onNext = next;
+    player.onPrevious = prev;
+    const unsubscribe = player.subscribe(() => {});
+    await vi.advanceTimersByTimeAsync(600);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(prev).not.toHaveBeenCalled();
+
+    vi.mocked(invoke).mockResolvedValue({
+      ...playing,
+      pendingAction: "prev",
+    });
+    await vi.advanceTimersByTimeAsync(600);
+    expect(prev).toHaveBeenCalledTimes(1);
+    unsubscribe();
+  });
+
+  it("forwards artworkUrl and syncs lyrics to native widgets", async () => {
+    vi.mocked(invoke).mockResolvedValue(playing);
+    const metadata = vi.fn((id: string) =>
+      id === "local-art"
+        ? { title: "Art Song", artist: "Artist", artworkUrl: "https://example.com/art.jpg" }
+        : undefined,
+    );
+    const player = new AndroidPlaybackController(metadata);
+    await player.load("local-art", true);
+    expect(invoke).toHaveBeenLastCalledWith("android_playback", {
+      action: "load",
+      id: "local-art",
+      autoplay: true,
+      position: 0,
+      displayMetadata: {
+        title: "Art Song",
+        artist: "Artist",
+        artwork_url: "https://example.com/art.jpg",
+      },
+    });
+
+    player.setLyrics("local-art", [
+      { time: 1000, text: "Line 1" },
+      { time: 5000, text: "Line 2" },
+    ]);
+    expect(invoke).toHaveBeenLastCalledWith("android_set_lyrics", {
+      trackId: "local-art",
+      lines: [
+        { time: 1000, text: "Line 1" },
+        { time: 5000, text: "Line 2" },
+      ],
+    });
+  });
 });
+

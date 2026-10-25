@@ -1,5 +1,8 @@
+import { cleanVideoTitle } from "../../domain/online-track";
 import React, { useState, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
+import { isTauri } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   FileText,
   Languages,
@@ -114,7 +117,7 @@ export function LyricsView({
     if (!embedded) {
       document.getElementById("main")?.scrollTo({ top: 0, behavior: "instant" });
     } else {
-      const container = document.querySelector<HTMLElement>(".expanded-lyrics");
+      const container = document.querySelector<HTMLElement>(".expanded-lyrics, .mobile-np-lyrics-scroll-wrap");
       if (activeRef.current) {
         centerLyricLine(activeRef.current, "instant");
       } else if (container) {
@@ -150,7 +153,7 @@ export function LyricsView({
 
   useEffect(() => {
     const container = embedded
-      ? document.querySelector<HTMLElement>(".expanded-lyrics")
+      ? document.querySelector<HTMLElement>(".expanded-lyrics, .mobile-np-lyrics-scroll-wrap")
       : document.getElementById("main");
     if (!container) return;
 
@@ -161,7 +164,11 @@ export function LyricsView({
       }
     };
 
-    const handleUserGesture = () => {
+    const handleUserGesture = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest?.(".lyric-room-floating-bar, .lyric-settings, .lyric-float-btn, button, .icon-button")) {
+        return;
+      }
       isProgrammaticScroll.current = false;
       if (follow) {
         setFollow(false);
@@ -182,6 +189,12 @@ export function LyricsView({
   }, [embedded, follow, setFollow]);
 
   const sourceLink = doc && lyricSourceLink(doc);
+  const handleOpenExternal = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+    if (isTauri()) {
+      e.preventDefault();
+      void openUrl(url).catch(() => {});
+    }
+  };
 
   useEffect(() => {
     if (!lyricsMenuOpen) return;
@@ -268,64 +281,98 @@ export function LyricsView({
 
   return (
     <section className="lyric-room">
-      {embedded ? (
-        targetSlot ? createPortal(settingsContent, targetSlot) : null
-      ) : (
+      {embedded && targetSlot ? createPortal(settingsContent, targetSlot) : null}
+      {!embedded && (
         <div className="lyric-settings-fixed-anchor">
           {settingsContent}
         </div>
       )}
 
       <div className="page-heading lyric-room-heading">
-        <div>
+        <div className="lyric-room-heading-main">
           <p className="eyebrow">BETWEEN THE LINES</p>
           <h1>
             Listen a little closer<span className="heading-dot">.</span>
           </h1>
-          <p className="subtitle">
-            {track
-              ? <>{track.title} · <ArtistLinks artistString={track.artist} onNavigateArtist={onNavigateArtist} /></>
-              : "Choose a song to open its words."}
+          <div className="lyric-room-meta">
+            <p className="subtitle lyric-track-info">
+              {track ? (
+                <>
+                  <span className="lyric-track-title">{track.title}</span>
+                  {" · "}
+                  <ArtistLinks
+                    artistString={track.artist}
+                    onNavigateArtist={onNavigateArtist}
+                  />
+                </>
+              ) : (
+                "Choose a song to open its words."
+              )}
+            </p>
             {doc && (
-              <span className="lyric-status-pill">
-                {" · "}
-                <span className="lyric-timing-status" role="status">
+              <div className="lyric-meta-pills">
+                <span className="lyric-timing-badge" role="status">
                   {lyricSynced
                     ? "Synced lyrics"
                     : session.settings.estimatedScroll
-                      ? "Not synced · Estimated autoscroll"
-                      : "Not synced · Manual scrolling"}
+                      ? "Estimated autoscroll"
+                      : "Manual scrolling"}
                 </span>
                 {sourceLink && (
-                    <>
-                      {" · "}
-                      <a
-                        className="lyric-provenance-link"
-                        href={sourceLink.url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {sourceLink.name} ↗
-                      </a>
-                    </>
-                  )}
-              </span>
+                  <a
+                    className="lyric-provenance-link"
+                    href={sourceLink.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => handleOpenExternal(e, sourceLink.url)}
+                    title={`Open on ${sourceLink.name}`}
+                  >
+                    {sourceLink.name} ↗
+                  </a>
+                )}
+                {!doc.instrumental && (
+                  <span className="lyric-language-badge" aria-label="Song languages">
+                    {lyricLanguageNames(doc).join(", ") || (doc.languageSource ? "Not identified" : "Detecting…")}
+                  </span>
+                )}
+              </div>
             )}
-          </p>
-          {doc && isFetchedLyrics(doc) && !doc.instrumental && !lyricSynced && <p className="subtitle">
-            <button className="link-button" disabled={lyricLookup.status === "loading"} onClick={onRetryLookup}>{lyricLookup.status === "loading" ? "Checking synced lyrics…" : "Check for synced lyrics"}</button>
-            {track?.metadataSourceId && onAlbumRecording && audioDuration && track.duration - audioDuration > Math.max(5, track.duration * 0.02) ? <>
-              {" · This audio is shorter than the album recording. "}
-              <button className="link-button" disabled={busy} onClick={onAlbumRecording}>Try album recording</button>
-            </> : null}
-          </p>}
-          {doc && !doc.instrumental && <p className="subtitle" aria-label="Song languages">
-            Languages: {lyricLanguageNames(doc).join(", ") || (doc.languageSource ? "Not identified" : "Detecting…")}
-          </p>}
+            {doc && isFetchedLyrics(doc) && !doc.instrumental && !lyricSynced && (
+              <p className="subtitle lyric-sync-retry">
+                <button
+                  className="link-button"
+                  disabled={lyricLookup.status === "loading"}
+                  onClick={onRetryLookup}
+                >
+                  {lyricLookup.status === "loading"
+                    ? "Checking synced lyrics…"
+                    : "Check for synced lyrics"}
+                </button>
+                {track?.metadataSourceId &&
+                onAlbumRecording &&
+                audioDuration &&
+                track.duration - audioDuration >
+                  Math.max(5, track.duration * 0.02) ? (
+                  <>
+                    {" · This audio is shorter than the album recording. "}
+                    <button
+                      className="link-button"
+                      disabled={busy}
+                      onClick={onAlbumRecording}
+                    >
+                      Try album recording
+                    </button>
+                  </>
+                ) : null}
+              </p>
+            )}
+          </div>
         </div>
       </div>
       {doc &&
-        processingState.status === "error" && (
+        processingState.status === "error" &&
+        !embedded &&
+        (typeof window === "undefined" || window.innerWidth > 768) && (
           <div className="listening-notice" role="status">
             {processingState.message}
             <button type="button" onClick={() => void translateLyrics("auto")}>
@@ -339,7 +386,7 @@ export function LyricsView({
             <>
               <Loader2 size={36} className="spin" />
               <h2>Looking up lyrics…</h2>
-              <p>Searching for lyrics to {track?.title}.</p>
+              <p>Searching for lyrics to {track?.source?.providerId === "youtube" ? cleanVideoTitle(track.title) : track?.title}.</p>
             </>
           ) : lyricLookup.status === "error" ? (
             <>
@@ -474,8 +521,12 @@ export function LyricsView({
               </div>
             );
           })()}
-          {!embedded && (
-            <div className="lyric-room-floating-bar">
+          {(!embedded || (typeof window !== "undefined" && window.innerWidth <= 768)) && (
+            <div
+              className="lyric-room-floating-bar"
+              onPointerDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
               {doc && !doc.instrumental && (() => {
                 const isTranslating = Boolean(session.settings.translation && processingState.status === "processing");
                 const isRomanizing = Boolean(session.settings.romanisation && (romanizing || (processingState.status === "processing" && !Object.keys(doc.romanisation || {}).length)));

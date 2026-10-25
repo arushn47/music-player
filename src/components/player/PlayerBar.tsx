@@ -1,5 +1,8 @@
 import { ArtistLinks } from "../common/ArtistLinks";
-import React, { useRef, useState } from "react";
+import { CloseTrackMenu } from "../common/CloseTrackMenu";
+import { usePlayerSwipe } from "../../hooks/usePlayerSwipe";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Ellipsis,
   Shuffle,
@@ -13,8 +16,8 @@ import {
   Volume2,
   VolumeX,
   Heart,
-  ListMusic,
   Maximize2,
+  Minimize2,
   PictureInPicture2,
   Infinity as InfinityIcon,
 } from "lucide-react";
@@ -31,6 +34,8 @@ export interface PlayerBarProps {
   floatingLyricsBusy?: boolean;
   onExpand?: () => void;
   expanded?: boolean;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
   onNavigateArtist?: (id: string) => void;
   track?: Track | null;
   tracks: Track[];
@@ -66,6 +71,8 @@ export function PlayerBar({
   floatingLyricsBusy,
   onExpand,
   expanded = false,
+  isFullscreen = false,
+  onToggleFullscreen,
   onNavigateArtist,
   track,
   tracks,
@@ -90,12 +97,141 @@ export function PlayerBar({
   onSetting,
 }: PlayerBarProps) {
   const [seekHover, setSeekHover] = useState<{ time: number; x: number } | null>(null);
+  const [scrubbingTime, setScrubbingTime] = useState<number | null>(null);
   const [showRemaining, setShowRemaining] = useState(false);
   const lastVolume = useRef<number>(
     session.settings.volume > 0 ? session.settings.volume : 0.72,
   );
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    setContextMenu(null);
+  }, [track?.id]);
+
+  useLayoutEffect(() => {
+    if (!contextMenu || !contextMenuRef.current) return;
+    const el = contextMenuRef.current;
+    const rect = el.getBoundingClientRect();
+    const pad = 8;
+    let x = contextMenu.x;
+    let y = contextMenu.y;
+
+    if (x + rect.width > window.innerWidth - pad) {
+      x = Math.max(pad, window.innerWidth - rect.width - pad);
+    }
+    const opensUp = y + rect.height > window.innerHeight - pad;
+    if (opensUp) {
+      y = Math.max(pad, contextMenu.y - rect.height);
+      el.classList.add("opens-up");
+    } else {
+      el.classList.remove("opens-up");
+    }
+
+    el.style.left = `${Math.round(x)}px`;
+    el.style.top = `${Math.round(y)}px`;
+  }, [contextMenu]);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setContextMenu(null);
+      }
+    };
+    const handleResize = () => {
+      setContextMenu(null);
+    };
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [contextMenu]);
+
+  const renderTrackMenuItems = (onAction?: () => void) => (
+    <>
+      {!tracks.some((saved) => saved.id === track?.id) && track && (
+        <button
+          disabled={busy}
+          aria-label="Save"
+          onClick={() => {
+            onAction?.();
+            onSaveOnline(track);
+          }}
+        >
+          Save to library
+        </button>
+      )}
+      {track && (
+        <button
+          disabled={busy}
+          onClick={() => {
+            onAction?.();
+            onChoosePlaylist(track);
+          }}
+        >
+          Save to playlist
+        </button>
+      )}
+      {track && (
+        <button
+          onClick={() => {
+            onAction?.();
+            onFavorite(track.id);
+          }}
+        >
+          {session.favorites.includes(track.id)
+            ? "Remove from favorites"
+            : "Add to favorites"}
+        </button>
+      )}
+      {track?.source &&
+        !track.offline &&
+        (downloads[track.id] === "downloading" ? (
+          <button
+            onClick={() => {
+              onAction?.();
+              onCancelDownload(track.id);
+            }}
+          >
+            Cancel download
+          </button>
+        ) : (
+          <button
+            aria-label="Download current track for offline"
+            onClick={() => {
+              onAction?.();
+              onDownloadTrack(track);
+            }}
+          >
+            Download for offline
+          </button>
+        ))}
+      {track?.offline && (
+        <button
+          onClick={() => {
+            onAction?.();
+            onDeleteOffline(track);
+          }}
+        >
+          Delete offline copy
+        </button>
+      )}
+    </>
+  );
+
+  const activeTime = scrubbingTime ?? Math.min(playback.time, playback.duration || 1);
   const titleLimit = mobile ? 22 : 28;
+  const artistLimit = mobile ? 20 : 25;
   const rawTitle =
     (track?.title && track.title.trim()) ||
     (track?.fileName && track.fileName.trim()) ||
@@ -109,10 +245,22 @@ export function PlayerBar({
     (track?.artist && track.artist.trim()) ||
     (track?.source?.attribution && track.source.attribution.trim()) ||
     "Choose a track to begin";
+  const isArtistLong = rawArtist.length > artistLimit;
+  const displayArtist = isArtistLong
+    ? `${rawArtist.slice(0, artistLimit).replace(/[,;\s]+$/, "")}…`
+    : rawArtist;
 
 
+  const swipes = usePlayerSwipe({ up: onExpand, left: () => { if (track) onSkip(1); }, right: () => { if (track) onSkip(-1); } });
   return (
-    <footer className={`transport ${expanded ? "expanded-transport" : ""}`} aria-label="Playback controls">
+    <footer className={`transport ${expanded ? "expanded-transport" : ""}`} aria-label="Playback controls"
+      {...(mobile ? swipes : {})}
+      onClick={event => { if (mobile && track && !(event.target as Element).closest("button, input, a, summary")) onExpand?.(); }}
+      onContextMenu={(event) => {
+        if (!track || track.format === "catalog") return;
+        event.preventDefault();
+        setContextMenu({ x: event.clientX, y: event.clientY });
+      }}>
       <div
         className="seek-bar-top"
         onMouseMove={(e) => {
@@ -140,19 +288,32 @@ export function PlayerBar({
           max={playback.duration || 1}
           step={0.1}
           disabled={!playback.duration}
-          value={Math.min(playback.time, playback.duration || 1)}
+          value={activeTime}
           style={
             {
-              "--seek-percent": `${Math.min(100, Math.max(0, (playback.time / (playback.duration || 1)) * 100))}%`,
+              "--seek-percent": `${Math.min(100, Math.max(0, (activeTime / (playback.duration || 1)) * 100))}%`,
             } as React.CSSProperties
           }
-          onChange={(e) => onSeek(Number(e.target.value))}
+          onPointerDown={(e) => setScrubbingTime(Number(e.currentTarget.value))}
+          onInput={(e) => setScrubbingTime(Number((e.target as HTMLInputElement).value))}
+          onChange={(e) => {
+            const time = Number(e.target.value);
+            setScrubbingTime(null);
+            onSeek(time);
+          }}
+          onPointerUp={(e) => {
+            if (scrubbingTime !== null) {
+              const time = Number((e.target as HTMLInputElement).value);
+              setScrubbingTime(null);
+              onSeek(time);
+            }
+          }}
         />
       </div>
 
       {expanded && (
         <div className="expanded-times">
-          <span>{clock(playback.time)}</span>
+          <span>{clock(activeTime)}</span>
           <button
             type="button"
             className="expanded-time-toggle"
@@ -161,14 +322,35 @@ export function PlayerBar({
             onClick={() => setShowRemaining((s) => !s)}
           >
             {showRemaining
-              ? `−${clock(Math.max(0, playback.duration - playback.time))}`
+              ? `−${clock(Math.max(0, playback.duration - activeTime))}`
               : clock(playback.duration)}
           </button>
         </div>
       )}
       <div className="now-playing">
-        {onExpand && !mobile ? <button className="cover-expand" disabled={!track} aria-label="Open expanded player" onClick={onExpand}><Artwork url={track?.artworkUrl} className="transport-cover" /><Maximize2 size={18} /></button> : <Artwork url={track?.artworkUrl} className="transport-cover" />}
-        <div className="track-meta now-playing-meta">
+        {!expanded && (
+          onExpand && !mobile ? (
+            <button className="cover-expand" disabled={!track} aria-label="Open expanded player" onClick={onExpand}>
+              <Artwork url={track?.artworkUrl} className="transport-cover" />
+              <Maximize2 size={18} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="mobile-cover-expand"
+              disabled={!track}
+              aria-label="Open now playing"
+              onClick={mobile && onExpand ? onExpand : undefined}
+            >
+              <Artwork url={track?.artworkUrl} className="transport-cover" />
+            </button>
+          )
+        )}
+        <div
+          className="track-meta now-playing-meta"
+          onClick={mobile && onExpand ? onExpand : undefined}
+          style={mobile && onExpand ? { cursor: "pointer" } : undefined}
+        >
           <span className="now-playing-title-wrap">
             <strong dir="auto">
               {expanded ? rawTitle : displayTitle}
@@ -182,7 +364,15 @@ export function PlayerBar({
           <div className="track-subtitle-row">
             <span className="now-playing-artist-wrap">
               <small dir="auto" className="now-playing-artist">
-                {track ? <ArtistLinks artistString={rawArtist} onNavigateArtist={onNavigateArtist} /> : rawArtist}
+                {track ? (
+                  <ArtistLinks
+                    artistString={displayArtist}
+                    onNavigateArtist={onNavigateArtist}
+                    maxArtists={2}
+                  />
+                ) : (
+                  displayArtist
+                )}
               </small>
               {Boolean(track?.artist) && (
                 <span className="artist-hover-tooltip" role="tooltip">
@@ -196,7 +386,7 @@ export function PlayerBar({
         <span className="now-playing-separator" aria-hidden="true" />
 
         <div className="track-time-inline">
-          <span data-testid="elapsed">{clock(playback.time)}</span>
+          <span data-testid="elapsed">{clock(activeTime)}</span>
           <span className="time-sep">/</span>
           <span>{clock(playback.duration)}</span>
         </div>
@@ -218,42 +408,8 @@ export function PlayerBar({
           <details className="track-menu current-track-menu">
             <summary aria-label="Current song actions" title="Song actions"><Ellipsis size={20} aria-hidden="true" /></summary>
             <div className="menu-popover">
-              {!tracks.some((saved) => saved.id === track.id) && (
-                <button
-                  disabled={busy}
-                  aria-label="Save"
-                  onClick={() => onSaveOnline(track)}
-                >
-                  Save to library
-                </button>
-              )}
-              <button disabled={busy} onClick={() => onChoosePlaylist(track)}>
-                Save to playlist
-              </button>
-              <button onClick={() => onFavorite(track.id)}>
-                {session.favorites.includes(track.id)
-                  ? "Remove from favorites"
-                  : "Add to favorites"}
-              </button>
-              {track.source &&
-                !track.offline &&
-                (downloads[track.id] === "downloading" ? (
-                  <button onClick={() => onCancelDownload(track.id)}>
-                    Cancel download
-                  </button>
-                ) : (
-                  <button
-                    aria-label="Download current track for offline"
-                    onClick={() => onDownloadTrack(track)}
-                  >
-                    Download for offline
-                  </button>
-                ))}
-              {track.offline && (
-                <button onClick={() => onDeleteOffline(track)}>
-                  Delete offline copy
-                </button>
-              )}
+              <CloseTrackMenu />
+              {renderTrackMenuItems()}
             </div>
           </details>
         )}
@@ -268,13 +424,13 @@ export function PlayerBar({
           >
             <Shuffle size={17} />
           </IconButton>
-          <IconButton
+          {(!mobile || expanded) && <IconButton
             label="Previous track"
             disabled={!track}
             onClick={() => onSkip(-1)}
           >
             <SkipBack size={19} fill="currentColor" />
-          </IconButton>
+          </IconButton>}
           <button
             className={`play-button ${(autoplayLoading || playback.status === "loading") ? "is-loading" : ""} ${playback.status === "buffering" ? "is-buffering" : ""}`}
             aria-label={
@@ -298,13 +454,13 @@ export function PlayerBar({
               <Play size={21} fill="currentColor" />
             )}
           </button>
-          <IconButton
+          {(!mobile || expanded) && <IconButton
             label="Next track"
             disabled={!track}
             onClick={() => onSkip(1)}
           >
             <SkipForward size={19} fill="currentColor" />
-          </IconButton>
+          </IconButton>}
           <IconButton
             label={`Repeat: ${session.settings.repeat}`}
             active={session.settings.repeat !== "off"}
@@ -355,16 +511,6 @@ export function PlayerBar({
           >
             <FileText size={18} />
           </IconButton>
-          {(mobile || expanded) && onToggleQueue && (
-            <IconButton
-              label={queueOpen ? "Hide queue" : "Show queue"}
-              className="player-btn-queue"
-              active={queueOpen}
-              onClick={onToggleQueue}
-            >
-              <ListMusic size={18} />
-            </IconButton>
-          )}
           {!mobile && (
             <div className="player-volume-container">
               <IconButton
@@ -405,7 +551,35 @@ export function PlayerBar({
               />
             </div>
           )}
+          {!mobile && onToggleFullscreen && (
+            <IconButton
+              label={isFullscreen ? "Exit full screen (F11)" : "Full screen (F11)"}
+              className="player-btn-fullscreen"
+              active={isFullscreen}
+              onClick={onToggleFullscreen}
+            >
+              {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            </IconButton>
+          )}
         </div>
+      )}
+      {contextMenu && track && track.format !== "catalog" && (
+        typeof document === "undefined" ? null : createPortal(
+          <div
+            ref={contextMenuRef}
+            className="menu-popover transport-context-menu"
+            style={{
+              left: `${contextMenu.x}px`,
+              top: `${contextMenu.y}px`,
+            }}
+            role="menu"
+            aria-label="Track options context menu"
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {renderTrackMenuItems(() => setContextMenu(null))}
+          </div>,
+          document.body
+        )
       )}
     </footer>
   );

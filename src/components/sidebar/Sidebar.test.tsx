@@ -16,3 +16,38 @@ it('matches playlist covers with a four-cover collage, single cover or empty fal
     if (!count) expect(html).toContain('lucide-list-music');
   }
 });
+
+it('renders draggable sidebar resizer with accessible separator role when onResizeStart is provided', () => {
+  const html = renderToStaticMarkup(
+    <Sidebar
+      view="mix"
+      setView={() => {}}
+      onHome={() => {}}
+      collectionsCount={1}
+      playlists={[]}
+      collections={[]}
+      hasLyricsDoc={false}
+      onCreatePlaylist={() => {}}
+      onResizeStart={() => {}}
+      onResizeReset={() => {}}
+    />,
+  );
+  expect(html).toContain('class="sidebar-resizer"');
+  expect(html).toContain('role="separator"');
+  expect(html).toContain('aria-orientation="vertical"');
+});
+
+
+it('orders playlists by latest edit with stable legacy ordering without mutating the session', () => {
+  const playlists = [
+    { id: 'legacy-a', name: 'Legacy A', items: [] },
+    { id: 'older', name: 'Older edit', items: [], updatedAt: 10 },
+    { id: 'latest', name: 'Latest edit', items: [], updatedAt: 20 },
+    { id: 'legacy-b', name: 'Legacy B', items: [] },
+  ];
+  const html = renderToStaticMarkup(<Sidebar view="home" setView={()=>{}} onHome={()=>{}} collectionsCount={4} playlists={playlists} collections={[]} hasLyricsDoc={false} onCreatePlaylist={()=>{}} />);
+  const positions = ['Latest edit', 'Older edit', 'Legacy A', 'Legacy B'].map(name => html.indexOf(`title="${name}"`));
+  expect(positions.every(position => position >= 0)).toBe(true);
+  expect(positions).toEqual([...positions].sort((a, b) => a - b));
+  expect(playlists[0].id).toBe('legacy-a');
+});

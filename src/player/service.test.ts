@@ -39,3 +39,13 @@ describe("audio provider dispatch and source recovery", () => {
     expect(bridge.library.ytdlpGetStream.mock.calls.map(([id]) => id)).toEqual([candidate.id, second.id, third.id]);
   });
 });
+
+
+it("shares concurrent source preparation and reuses a recent stream on replay", async () => {
+  const { prepareCatalogCandidate } = await import("./service");
+  bridge.library.ytdlpGetStream.mockResolvedValue(stream);
+  await Promise.all([prepareCatalogCandidate(candidate), prepareCatalogCandidate(candidate)]);
+  await bridge.resolve!("youtube:abcdefghijk");
+  await bridge.resolve!("youtube:abcdefghijk");
+  expect(bridge.library.ytdlpGetStream).toHaveBeenCalledTimes(1);
+});

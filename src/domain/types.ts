@@ -29,6 +29,7 @@ export interface QueueItem {
   requested?: boolean;
 }
 export interface Playlist {
+  updatedAt?: number;
   importSources?: string[];
   syncSource?: string;
   syncFingerprint?: string;
@@ -88,7 +89,21 @@ export interface Preferences {
   historyEnabled: boolean;
   autoGemini: boolean;
 }
+export interface ListeningResume {
+  id: string;
+  kind: 'album' | 'playlist' | 'queue';
+  title: string;
+  queue: QueueItem[];
+  queueTracks: Record<string, Track>;
+  currentId: string;
+  position: number;
+  shuffleOrder: string[];
+  shuffle: boolean;
+  updatedAt: number;
+}
 export interface Session {
+  listeningResumes?: ListeningResume[];
+  favoriteArtists: { id: string; name: string; artworkUrl?: string | null }[];
   favoriteAlbums: { id: string; title: string; artist: string; artworkUrl?: string | null; year?: number | null }[];
   queue: QueueItem[];
   shuffleOrder: string[];
@@ -107,6 +122,7 @@ export interface Snapshot {
   session: Session | null;
 }
 export const defaults = (): Session => ({
+  favoriteArtists: [],
   favoriteAlbums: [],
   queue: [],
   shuffleOrder: [],

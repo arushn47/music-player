@@ -95,7 +95,7 @@ export function SaveToPlaylistModal({
   return (
     <div className="save-playlist-content">
       <div className="save-playlist-header">
-        <div>
+        <div className="save-playlist-header-left">
           <h2 className="save-playlist-title">Save to playlist</h2>
           <p
             className="save-playlist-subtitle ellipsis"

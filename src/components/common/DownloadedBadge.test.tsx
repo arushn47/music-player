@@ -43,4 +43,12 @@ describe("downloaded indicators", () => {
     expect(html.match(/aria-label="Downloaded"/g)).toHaveLength(2);
     expect(html).not.toContain("Saved online");
   });
+  it("renders a play button on collection cards when onPlayCollection is provided", () => {
+    const collections = libraryCollections([saved], [
+      { id: "p1", name: "My Favorites", items: [item(saved.id)] },
+    ]);
+    const html = renderToStaticMarkup(<Collections collections={collections} query="" open={() => {}} onPlayCollection={() => {}} />);
+    expect(html).toContain('aria-label="Play My Favorites"');
+    expect(html).toContain('class="album-hover-play"');
+  });
 });

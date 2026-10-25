@@ -2,8 +2,9 @@ import type { CatalogTrack, CatalogArtist, YtdlpSearchResult } from "../adapters
 import type { Track } from "./types";
 import { youtubeTrack } from "./online-track";
 import { canonicalArtistCredit } from "./catalog-links";
-import { matchSource, searchRoman, sourceCredits, sourceTitle } from "./source-matching";
+import { matchSource, searchRoman, sourceCoreTitle, sourceCredits, sourceTitle } from "./source-matching";
 import { playbackEvent } from "../player/diagnostics";
+import { isCatalogId } from './queue';
 
 export async function canonicalArtistNames(catalog: CatalogTrack, lookup: (id: string) => Promise<CatalogArtist>): Promise<string> {
   if (!catalog.artists.length) return canonicalArtistCredit(catalog.artist);
@@ -62,14 +63,18 @@ export async function resolveCatalogSource(
 ): Promise<YtdlpSearchResult> {
   const candidates = new Map<string, YtdlpSearchResult>();
   const credits = sourceCredits(catalog), title = sourceTitle(catalog.title);
-  if (!title || !credits.length || !/^(?:saavn:[\w-]{8}|itunes:[1-9]\d*)$/.test(catalog.id)) throw new Error("Invalid catalog track identity or credits. Refresh metadata and retry.");
+  if (!title || !credits.length || !isCatalogId(catalog.id)) throw new Error("Invalid catalog track identity or credits. Refresh metadata and retry.");
   const primary = credits[0];
   const romanTitle = await searchRoman(title), romanArtist = await searchRoman(primary);
+  const coreTitle = sourceCoreTitle(title);
   const phases = [
     [`"${title.replaceAll('"', '')}" ${primary}`, `${title} ${primary}`],
     [...credits.slice(1, 4).map(artist => `${title} ${artist}`), `${title} ${catalog.album}`, ...(romanTitle !== title || romanArtist !== primary ? [`${romanTitle} ${romanArtist}`] : [])],
+    ...(coreTitle !== title ? [[...credits.slice(0, 4).map(artist => `${coreTitle} ${artist}`), `${coreTitle} ${catalog.album}`, `${await searchRoman(coreTitle)} ${romanArtist}`]] : []),
   ];
   const triedQueries = new Set<string>(), triedCandidates = new Set(options.exclude || []);
+  const verifiedCandidates = new Set<string>();
+  let artistMetadataChecks = 0;
   let searches = 0, successfulSearches = 0, extractionFailures = 0;
   const searchFailures = new Set<string>(), streamFailures = new Set<string>();
   for (const phase of phases) {
@@ -91,8 +96,12 @@ export async function resolveCatalogSource(
       if (triedCandidates.has(candidate.id)) continue;
       triedCandidates.add(candidate.id);
       let match = await matchSource(catalog, candidate);
-      if (match.reason === "duration-missing" && options.verify) {
-        try { Object.assign(candidate, await options.verify(candidate)); match = await matchSource(catalog, candidate); }
+      if (options.verify && (match.reason === "duration-missing" || (match.reason === "artist-metadata-missing" && artistMetadataChecks++ < 3))) {
+        try {
+          Object.assign(candidate, await options.verify(candidate));
+          match = await matchSource(catalog, candidate);
+          if (match.accepted) verifiedCandidates.add(candidate.id);
+        }
         catch (error) { const reason = failureKind(error); streamFailures.add(reason); extractionFailures++; playbackEvent({ trackId: catalog.id, stage: "extraction-failed", candidateId: candidate.id, reason }); }
       }
       playbackEvent({ trackId: catalog.id, stage: match.accepted ? "matched" : "rejected", candidateId: candidate.id, reason: match.reason });
@@ -101,7 +110,7 @@ export async function resolveCatalogSource(
     matches.sort((a, b) => a.score - b.score);
     for (const { candidate } of matches) {
       try {
-        const details = await options.verify?.(candidate);
+        const details = verifiedCandidates.has(candidate.id) ? undefined : await options.verify?.(candidate);
         if (details) {
           Object.assign(candidate, details);
           const verified = await matchSource(catalog, candidate);

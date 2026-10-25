@@ -68,7 +68,7 @@ export function LyricsSettings({
   const toggle = (
     name: string,
     detail: string,
-    id: "romanisation" | "originalScript" | "originalFirst" | "autoOpenLyrics" | "estimatedScroll" | "autoGemini",
+    id: "romanisation" | "translation" | "originalScript" | "originalFirst" | "autoOpenLyrics" | "estimatedScroll" | "autoGemini",
     disabled = false,
   ) => (
     <label className={`lyric-setting-toggle ${disabled ? "is-disabled" : ""}`}>
@@ -207,6 +207,7 @@ export function LyricsSettings({
       <p className="settings-section-label">DISPLAY</p>
       <div className="lyric-toggle-grid">
         {toggle("Romanization", "Pronounce in English alphabet", "romanisation")}
+        {toggle("Translation", "English meaning beneath lyrics", "translation")}
         {toggle("Original script", "Native lyrics characters", "originalScript")}
         {toggle("Original first", "Above romanization", "originalFirst", !settings.originalScript || !settings.romanisation)}
         {toggle("Auto-open lyrics", "On song start", "autoOpenLyrics")}
@@ -215,89 +216,91 @@ export function LyricsSettings({
 
       {/* AI & Translation - Short, Friendly & Non-Tech */}
       <details className="lyric-advanced-details">
-        <summary>AI translation & cache</summary>
+        <summary>{mobile ? "Lyrics cache" : "AI translation & cache"}</summary>
         <div className="lyric-advanced-body">
-          <div className="card-top-row" style={{ marginTop: 8 }}>
-            <span className="card-section-title">AI TRANSLATION KEY</span>
-            <span role="status" className={`key-pill ${saved ? "key-saved" : ""}`}>
-              {loading ? "Checking…" : saved ? "Key active" : "Optional"}
-            </span>
-          </div>
-
           {!mobile && (
-            saved && !showKeyInput ? (
-              <div className="key-saved-row">
-                <span className="key-saved-label">Google AI Key active</span>
-                <div className="key-saved-actions">
-                  <button
-                    type="button"
-                    className="key-action-pill"
-                    onClick={() => setShowKeyInput(true)}
-                  >
-                    Replace
-                  </button>
-                  <button
-                    type="button"
-                    className="key-action-pill key-remove-pill"
-                    disabled={saving || pending}
-                    onClick={() => {
-                      setSaving(true);
-                      setError("");
-                      void invoke("delete_gemini_key")
-                        .then(() => {
-                          setSaved(false);
-                          window.dispatchEvent(new Event(GEMINI_KEY_CHANGED));
-                          setKey("");
-                          setStatus("Key removed.");
-                        })
-                        .catch(() => setError("Could not remove the saved key."))
-                        .finally(() => setSaving(false));
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
+            <>
+              <div className="card-top-row" style={{ marginTop: 8 }}>
+                <span className="card-section-title">AI TRANSLATION KEY</span>
+                <span role="status" className={`key-pill ${saved ? "key-saved" : ""}`}>
+                  {loading ? "Checking…" : saved ? "Key active" : "Optional"}
+                </span>
               </div>
-            ) : (
-              <form
-                className="key-input-row"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void saveKey();
-                }}
-              >
-                <input
-                  id="gemini-private-key"
-                  aria-label="Gemini API key"
-                  type="password"
-                  disabled={saving}
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={key}
-                  onChange={(event) => setKey(event.target.value)}
-                  placeholder={saved ? "Paste replacement key…" : "Paste Google AI key (AIza…)"}
-                />
-                <button
-                  type="submit"
-                  className="subtle key-save-btn"
-                  disabled={!key.trim() || saving}
-                >
-                  {saving ? "Saving…" : "Save"}
-                </button>
-                {saved && (
-                  <button
-                    type="button"
-                    className="key-action-pill"
-                    onClick={() => setShowKeyInput(false)}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </form>
-            )
-          )}
 
-          {toggle("Auto-translate", "Automatically translate foreign lyrics", "autoGemini", !saved)}
+              {saved && !showKeyInput ? (
+                <div className="key-saved-row">
+                  <span className="key-saved-label">Google AI Key active</span>
+                  <div className="key-saved-actions">
+                    <button
+                      type="button"
+                      className="key-action-pill"
+                      onClick={() => setShowKeyInput(true)}
+                    >
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      className="key-action-pill key-remove-pill"
+                      disabled={saving || pending}
+                      onClick={() => {
+                        setSaving(true);
+                        setError("");
+                        void invoke("delete_gemini_key")
+                          .then(() => {
+                            setSaved(false);
+                            window.dispatchEvent(new Event(GEMINI_KEY_CHANGED));
+                            setKey("");
+                            setStatus("Key removed.");
+                          })
+                          .catch(() => setError("Could not remove the saved key."))
+                          .finally(() => setSaving(false));
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form
+                  className="key-input-row"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void saveKey();
+                  }}
+                >
+                  <input
+                    id="gemini-private-key"
+                    aria-label="Gemini API key"
+                    type="password"
+                    disabled={saving}
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={key}
+                    onChange={(event) => setKey(event.target.value)}
+                    placeholder={saved ? "Paste replacement key…" : "Paste Google AI key (AIza…)"}
+                  />
+                  <button
+                    type="submit"
+                    className="subtle key-save-btn"
+                    disabled={!key.trim() || saving}
+                  >
+                    {saving ? "Saving…" : "Save"}
+                  </button>
+                  {saved && (
+                    <button
+                      type="button"
+                      className="key-action-pill"
+                      onClick={() => setShowKeyInput(false)}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </form>
+              )}
+
+              {toggle("Auto-translate", "Automatically translate foreign lyrics", "autoGemini", !saved)}
+            </>
+          )}
 
           <div className="lyric-settings-actions" style={{ marginTop: 10 }}>
             <button

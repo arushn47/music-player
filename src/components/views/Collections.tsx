@@ -1,5 +1,5 @@
 import React from "react";
-import { Download, FolderOpen, ListMusic } from "lucide-react";
+import { Download, FolderOpen, ListMusic, Play } from "lucide-react";
 import type { Collection } from "../../domain/collections";
 import { Artwork } from "../common/Artwork";
 import { DownloadedBadge } from "../common/DownloadedBadge";
@@ -8,10 +8,12 @@ export function Collections({
   collections,
   query,
   open,
+  onPlayCollection,
 }: {
   collections: Collection[];
   query: string;
   open: (id: string) => void;
+  onPlayCollection?: (collection: Collection) => void;
 }) {
   const visible = collections.filter((collection) =>
     `${collection.name} ${collection.tracks.map((track) => `${track.title} ${track.artist}`).join(" ")}`
@@ -70,17 +72,46 @@ export function Collections({
                   </div>
                 )}
               </span>
+              {collection.tracks.length > 0 && onPlayCollection && (
+                <div
+                  className="album-hover-play"
+                  aria-label={`Play ${collection.name}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPlayCollection(collection);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onPlayCollection(collection);
+                    }
+                  }}
+                >
+                  <Play size={18} fill="currentColor" color="currentColor" />
+                </div>
+              )}
             </div>
             <div className="collection-info">
               <div className="collection-title-row">
-                <span className="collection-title"><span className="collection-name">{collection.name}</span>{collection.tracks.length > 0 && collection.tracks.length === (collection.playlist?.items.length ?? collection.tracks.length) && collection.tracks.every(track => track.offline && !track.missing) && <DownloadedBadge track={collection.tracks[0]} />}</span>
-                <span className="collection-track-count">
-                  {collection.tracks.length}{" "}
-                  {collection.tracks.length === 1 ? "track" : "tracks"}
+                <span className="collection-title" title={collection.name}>
+                  <span className="collection-name">{collection.name}</span>
+                  {collection.tracks.length > 0 &&
+                    collection.tracks.length === (collection.playlist?.items.length ?? collection.tracks.length) &&
+                    collection.tracks.every((track) => track.offline && !track.missing) && (
+                      <DownloadedBadge track={collection.tracks[0]} />
+                    )}
                 </span>
               </div>
               <span className="collection-description">
-                {collection.description}
+                {collection.tracks.length} {collection.tracks.length === 1 ? "track" : "tracks"}
+                {collection.description &&
+                collection.description !== "Your playlist" &&
+                collection.description !== "Playlist"
+                  ? ` · ${collection.description}`
+                  : ""}
               </span>
             </div>
           </button>

@@ -9,6 +9,7 @@ import {
   setShuffle,
   isQueuedCatalog,
   resolveQueueEntry,
+  resolveUpcomingCatalog,
 } from "./queue";
 import { catalogQueueTrack } from "./catalog-track";
 import { restoreSession } from "./session";
@@ -24,6 +25,26 @@ const tracks: Track[] = ["a", "b", "a", "c"].map((id) => ({
   format: "WAV",
 }));
 describe("collection playback sequence", () => {
+  it("resolves upcoming requests without changing playback, shuffle order, or a selected unresolved occurrence", () => {
+    const pending = catalogQueueTrack({ id: "itunes:42", title: "Song", artist: "Artist", artists: [], album: "Album", duration: 100 });
+    let session = playCollection(defaults(), [pending, pending, tracks[0]], 0);
+    session = setShuffle(session, true, () => 0);
+    session = enqueue(session, pending.id, true);
+    const source = { ...pending, id: "youtube:abcdefghijk", format: "YouTube", source: { providerId: "youtube", sourceId: "abcdefghijk", pageUrl: "https://www.youtube.com/watch?v=abcdefghijk", license: "", licenseUrl: "", attribution: "Artist" } };
+    const resolved = resolveUpcomingCatalog(session, pending.id, source);
+    expect(resolved.currentId).toBe(session.currentId);
+    expect(resolved.position).toBe(session.position);
+    expect(resolved.shuffleOrder).toEqual(session.shuffleOrder);
+    expect(resolved.queue.map(entry => entry.id)).toEqual(session.queue.map(entry => entry.id));
+    expect(resolved.queue.find(entry => entry.id === session.currentId)?.trackId).toBe(pending.id);
+    expect(resolved.queue.filter(entry => entry.trackId === source.id)).toHaveLength(2);
+    expect(resolved.queueTracks[pending.id]).toEqual(pending);
+    expect(restoreSession(resolved, tracks).queue).toEqual(resolved.queue);
+    const removed = { ...session, queue: session.queue.filter(entry => entry.trackId !== pending.id) };
+    expect(resolveUpcomingCatalog(removed, pending.id, source)).toBe(removed);
+    expect(resolveUpcomingCatalog(session, pending.id, { ...source, metadataSourceId: "itunes:999" })).toBe(session);
+    expect(resolveUpcomingCatalog(session, pending.id, { ...source, missing: true })).toBe(session);
+  });
   it("keeps an entire unresolved album across restore and source resolution without changing occurrence order", () => {
     const album = [1, 2, 3].map(id => catalogQueueTrack({ id: `itunes:${id}`, title: `Song ${id}`, artist: "Artist", artists: [], album: "Album", duration: 100 }));
     const session = playCollection(defaults(), album, 0);
@@ -38,6 +59,12 @@ describe("collection playback sequence", () => {
     expect(restoreSession(resolved, []).queue).toEqual(resolved.queue);
     expect(resolveQueueEntry({ ...restored, currentId: restored.queue[1].id }, restored.currentId!, album[0].id, source).queue).toBe(restored.queue);
     expect(isQueuedCatalog({ ...album[0], id: "../../local.wav" })).toBe(false);
+  });
+  it("restores valid favorite artists and supports older sessions", () => {
+    const artist = { id: "saavn:artist:42", name: "Artist", artworkUrl: "https://example.com/artist.jpg" };
+    const session = restoreSession({ ...defaults(), favoriteArtists: [artist, artist, { ...artist, id: "https://evil.test" }, { ...artist, id: "itunes:7", artworkUrl: "javascript:alert(1)" }] }, []);
+    expect(session.favoriteArtists).toEqual([artist, { id: "itunes:7", name: "Artist", artworkUrl: null }]);
+    expect(restoreSession({}, []).favoriteArtists).toEqual([]);
   });
   it("round-trips favorite album metadata and rejects untrusted IDs without disturbing old sessions", () => {
     const album = { id: "saavn:album:42", title: "Album", artist: "Artist", artworkUrl: "https://c.saavncdn.com/cover.jpg" };

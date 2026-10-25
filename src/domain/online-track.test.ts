@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cleanVideoTitle,
   needsMetadata,
   repairYoutubeTrack,
   youtubeTrack,
@@ -134,4 +135,11 @@ describe("online source metadata", () => {
       youtubeTrack(result),
     );
   });
+});
+
+
+it("cleans video presentation labels while retaining genuine song titles and recording versions", () => {
+  expect(cleanVideoTitle("Full Video: Samayama Song | Hi Nanna | Nani,Mrunal Thakur | Hesham Abdul Wahab")).toBe("Samayama");
+  expect(cleanVideoTitle("Love Song")).toBe("Love Song");
+  expect(cleanVideoTitle("Official Video: Song (Live) | Artist")).toBe("Song (Live)");
 });

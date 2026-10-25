@@ -153,19 +153,7 @@ fn validate(record: &mut ListeningRecord) -> Result<()> {
         .try_fold(0_i64, |sum, value| sum.checked_add(*value));
     if uuid::Uuid::parse_str(&record.id).is_err()
         || !stable_identity(record)
-        || record.metadata_source_id.as_ref().is_some_and(|id| {
-            !id.strip_prefix("itunes:").is_some_and(|value| {
-                value.len() <= 20
-                    && value
-                        .parse::<u64>()
-                        .is_ok_and(|n| n > 0 && value == n.to_string())
-            }) && !id.strip_prefix("saavn:").is_some_and(|value| {
-                value.len() == 8
-                    && value
-                        .bytes()
-                        .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
-            })
-        })
+        || record.metadata_source_id.as_ref().is_some_and(|id| !crate::catalog::valid_catalog_id(id))
         || !text_valid
         || record.started_at < 0
         || record.updated_at < record.started_at
@@ -345,7 +333,7 @@ mod tests {
         let legacy: ListeningRecord = serde_json::from_value(legacy).unwrap();
         assert!(legacy.metadata_source_id.is_none());
         checkpoint(&mut db, 0, legacy).unwrap();
-        for id in ["itunes:18446744073709551615", "saavn:QAbmbZ7O"] {
+        for id in ["itunes:18446744073709551615", "saavn:QAbmbZ7O", "musicbrainz:recording:c4197d72-b3dd-445f-bdb8-a7f6598b5f74"] {
             row.metadata_source_id = Some(id.into());
             checkpoint(&mut db, 0, row.clone()).unwrap();
             let saved = read(&db).unwrap().records.remove(0);
@@ -374,7 +362,7 @@ mod tests {
         }
         assert_eq!(
             read(&db).unwrap().records[0].metadata_source_id.as_deref(),
-            Some("saavn:QAbmbZ7O")
+            Some("musicbrainz:recording:c4197d72-b3dd-445f-bdb8-a7f6598b5f74")
         );
     }
     #[test]

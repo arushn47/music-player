@@ -84,7 +84,7 @@ describe("local romanization", () => {
     expect(generated[ids[1]]).toContain("friend");
     expect(generated[ids[1]]).not.toMatch(/[\u0900-\u097f]/);
     expect(generated[ids[2]]).toBeUndefined();
-    expect(generated[ids[3]]).toBeUndefined();
+    expect(generated[ids[3]]).toBe("ài");
     expect(doc.lines.map((line) => line.id)).toEqual(ids);
     const tamil = await romanizeDocument(parseLyrics("வணக்கம்"));
     expect(Object.values(tamil)[0]).not.toMatch(/[\u0b80-\u0bff]/);

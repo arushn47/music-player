@@ -6,6 +6,8 @@ import type { Playback } from "./controller";
 export class AndroidPlaybackController {
   state: Playback = { status: "idle", time: 0, duration: 0, error: null };
   onEnded: () => void = () => {};
+  onNext: () => void = () => {};
+  onPrevious: () => void = () => {};
   private listeners = new Set<(state: Playback) => void>();
   private generation = 0;
   private ended = false;
@@ -17,19 +19,27 @@ export class AndroidPlaybackController {
   constructor(
     private readonly metadata: (
       id: string,
-    ) => Pick<Track, "title" | "artist"> | undefined = () => undefined,
+    ) => Pick<Track, "title" | "artist" | "artworkUrl"> | undefined = () => undefined,
   ) {
     document.addEventListener("visibilitychange", () => {
       this.schedule();
       if (!document.hidden) void this.poll();
     });
   }
-  private update(state: Playback) {
+  private update(rawState: Playback & { id?: string; pendingAction?: string }) {
     const wasEnded = this.ended;
+    const state: Playback = {
+      ...rawState,
+      trackId: rawState.trackId ?? (rawState.id ? rawState.id : this.state.trackId),
+      playbackId: rawState.playbackId ?? this.state.playbackId,
+      seekVersion: rawState.seekVersion ?? this.state.seekVersion,
+    };
     this.state = state;
     this.ended = state.status === "ended";
     this.listeners.forEach((fn) => fn(state));
     if (this.ended && !wasEnded) this.onEnded();
+    if (rawState.pendingAction === "next") this.onNext();
+    else if (rawState.pendingAction === "prev") this.onPrevious();
   }
   private schedule() {
     if (this.timer) clearInterval(this.timer);
@@ -87,6 +97,9 @@ export class AndroidPlaybackController {
     this.ended = false;
     this.update({
       status: "loading",
+      playbackId: crypto.randomUUID(),
+      seekVersion: 0,
+      trackId: id,
       time: position,
       duration: 0,
       error: null,
@@ -113,7 +126,11 @@ export class AndroidPlaybackController {
       autoplay,
       position,
       ...(metadata && {
-        displayMetadata: { title: metadata.title, artist: metadata.artist },
+        displayMetadata: {
+          title: metadata.title,
+          artist: metadata.artist,
+          artwork_url: metadata.artworkUrl,
+        },
       }),
     });
   }
@@ -140,6 +157,7 @@ export class AndroidPlaybackController {
   seek(value: number) {
     if (Number.isFinite(value)) {
       this.ended = false;
+      this.update({ ...this.state, seekVersion: (this.state.seekVersion ?? 0) + 1 });
       void this.command("seek", { value: Math.max(0, value) });
     }
   }
@@ -151,5 +169,11 @@ export class AndroidPlaybackController {
     ++this.generation;
     this.failedLoad = false;
     void this.command("stop");
+  }
+  setLyrics(trackId: string, lines: Array<{ time: number | null; text: string }>) {
+    void invoke("android_set_lyrics", { trackId, lines }).catch(() => {});
+  }
+  setTheme(themeMode: string, accentColor: string) {
+    void invoke("android_set_theme", { themeMode, accentColor }).catch(() => {});
   }
 }

@@ -1,29 +1,20 @@
-import React, { useEffect, useState } from "react";
-import {
-  Loader2,
-  Play,
-  RefreshCw,
-  Sparkles,
-} from "lucide-react";
-import {
-  cachedHomeAlbums,
-  DISCOVERY_LANGUAGES,
-  discoveryPreferences,
-  loadHomeAlbums,
-  setDiscoveryLanguage,
-  type DiscoveryLanguage,
-  type HomeAlbums,
-} from "../../adapters/discovery-home";
-import { historyArtwork, type ListeningRecord } from "../../domain/listening";
-import type { Track } from "../../domain/types";
-import { Artwork, DownloadedBadge, Select } from "../common";
-import { CatalogTrackActions } from "../common/CatalogTrackActions";
-import { library, type CatalogAlbum, type CatalogTrack } from "../../adapters/native";
-
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
+import { DISCOVERY_PREFERENCES_CHANGED, discoveryPreferences } from '../../adapters/discovery-home';
+import { loadQuickPickPool, quickPickTracks } from '../../adapters/quick-picks';
+import { quickPickSeeds, sameRecommendation, type QuickPickCandidate } from '../../domain/quick-picks';
+import { homeHistory } from '../../domain/home-listening';
+import type { ListeningRecord } from '../../domain/listening';
+import type { ListeningResume, Track } from '../../domain/types';
+import type { CatalogTrack } from '../../adapters/native';
+import { Artwork, DownloadedBadge } from '../common';
 export interface DiscoveryHomeProps {
   onPlayAlbum: (id: string) => Promise<void>;
+  onPlayQuickPick: (track: Track) => void;
   searches: string[];
   records: ListeningRecord[];
+  resumes?: ListeningResume[];
+  onResume?: (id: string) => void;
   savedTracks: Track[];
   busy: boolean;
   onlineAvailable: boolean;
@@ -32,553 +23,91 @@ export interface DiscoveryHomeProps {
   onReplay: (record: ListeningRecord) => void;
   onImportMusic?: () => void;
   onOpenLibrary?: () => void;
+  onOpenTracker?: () => void;
   onNavigateAlbum?: (id: string) => void;
   onNavigateArtist?: (id: string) => void;
   onSaveDiscovery?: (track: CatalogTrack, mode: "play" | "save" | "next" | "queue") => void;
   favorites?: string[];
+  favoriteArtists?: string[];
+  favoriteAlbums?: string[];
   downloads?: Record<string, string>;
   onCatalogAction?: (track: CatalogTrack, action: any) => void;
 }
 
-const label = (language: string) =>
-  language.charAt(0).toUpperCase() + language.slice(1);
 
-function getGreeting(): string {
+function TrackShelf({ title, tracks, onPlay, onOpen }: { title: string; tracks: Track[]; onPlay: (track: Track) => void; onOpen?: () => void }) {
+  const scroll = useRef<HTMLDivElement>(null);
+  if (!tracks.length) return null;
+  return <section aria-label={title} className="discover-home-section recent-played-section">
+    <div className="recent-section-heading">{onOpen ? <button type="button" className="recent-heading-btn" onClick={onOpen}><h2>{title}</h2><ChevronRight size={18} /></button> : <h2>{title}</h2>}<div className="recent-section-nav">{[-1, 1].map(direction => <button type="button" className="discover-nav-arrow" key={direction} aria-label={(direction < 0 ? 'Previous ' : 'Next ') + title} onClick={() => scroll.current?.scrollBy({ left: direction * scroll.current.clientWidth * .85, behavior: 'smooth' })}>{direction < 0 ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}</button>)}</div></div>
+    <div className="recent-tracks-grid" ref={scroll} style={{ gridTemplateRows: `repeat(${Math.min(4, tracks.length)}, 52px)` }}>{tracks.map(track => <button type="button" key={track.id} className="recent-track-item" aria-label={'Play ' + track.title} title={'Play ' + track.title} onClick={() => onPlay(track)}>
+      <div className="recent-track-art-wrap"><Artwork url={track.artworkUrl} className="recent-track-art" /><div className="recent-track-play-badge" aria-hidden="true"><Play size={14} fill="currentColor" /></div></div>
+      <div className="recent-track-details"><div className="recent-track-title">{track.title}</div><div className="recent-track-artist"><DownloadedBadge track={track} /><span>{track.artist}</span></div></div>
+    </button>)}</div></section>;
+}
+function RotationShelf({ tracks, onPlay }: { tracks: Track[]; onPlay: (track: Track) => void }) {
+  const scroll = useRef<HTMLDivElement>(null);
+  if (!tracks.length) return null;
+  return <section aria-label="Your Rotation" className="discover-home-section">
+    <div className="discover-section-heading"><div><h2>Your Rotation</h2><p className="subtitle">The songs you keep coming back to.</p></div><div className="recent-section-nav">{[-1, 1].map(direction => <button type="button" className="discover-nav-arrow" key={direction} aria-label={(direction < 0 ? 'Previous ' : 'Next ') + 'Your Rotation'} onClick={() => scroll.current?.scrollBy({ left: direction * scroll.current.clientWidth * .85, behavior: 'smooth' })}>{direction < 0 ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}</button>)}</div></div>
+    <div className="discover-albums discover-rotation-carousel" ref={scroll}>{tracks.map(track => <button type="button" key={track.id} className="discover-album-card" aria-label={'Play ' + track.title} title={'Play ' + track.title} onClick={() => onPlay(track)}>
+      <div className="album-card-cover-wrap"><Artwork url={track.artworkUrl} className="cover" /><div className="album-hover-play"><Play size={18} fill="currentColor" /></div></div><strong className="album-title">{track.title}</strong><span className="subtitle"><DownloadedBadge track={track} />{track.artist}</span>
+    </button>)}</div>
+  </section>;
+}
+function ContinueShelf({ resumes, savedTracks, onResume }: { resumes: ListeningResume[]; savedTracks: Track[]; onResume?: (id: string) => void }) {
+  const scroll = useRef<HTMLDivElement>(null);
+  if (!resumes.length) return null;
+  return <section aria-label="Continue Listening" className="discover-home-section">
+    <div className="discover-section-heading"><h2>Continue Listening</h2><div className="recent-section-nav">{[-1, 1].map(direction => <button type="button" className="discover-nav-arrow" key={direction} aria-label={(direction < 0 ? 'Previous ' : 'Next ') + 'Continue Listening'} onClick={() => scroll.current?.scrollBy({ left: direction * scroll.current.clientWidth * .85, behavior: 'smooth' })}>{direction < 0 ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}</button>)}</div></div>
+    <div className="discover-albums discover-rotation-carousel" ref={scroll}>{resumes.map(item => {
+      const current = item.queue.find(entry => entry.id === item.currentId);
+      const track = current && (savedTracks.find(track => track.id === current.trackId) || item.queueTracks[current.trackId]);
+      return <button type="button" className="discover-album-card" key={item.id} onClick={() => onResume?.(item.id)} aria-label={'Resume ' + item.title}><div className="album-card-cover-wrap"><Artwork url={track?.artworkUrl} className="cover" /><div className="album-hover-play"><Play size={18} fill="currentColor" /></div></div><strong className="album-title">{item.title}</strong><span className="subtitle">{item.kind} · Track {item.queue.findIndex(entry => entry.id === item.currentId) + 1} of {item.queue.length} · {Math.floor(item.position / 60)}:{String(Math.floor(item.position % 60)).padStart(2, '0')}</span></button>;
+    })}</div>
+  </section>;
+}
+export function DiscoveryHome({ records, savedTracks, onlineAvailable, favorites = [], favoriteArtists = [], favoriteAlbums = [], resumes = [], onResume, onPlayQuickPick, onOpenTracker }: DiscoveryHomeProps) {
+  const [languages, setLanguages] = useState(() => discoveryPreferences().languages);
+  const [pool, setPool] = useState<QuickPickCandidate[]>([]);
+  const languageKey = languages.join(',');
+  useEffect(() => {
+    const changed = () => setLanguages(discoveryPreferences().languages);
+    window.addEventListener(DISCOVERY_PREFERENCES_CHANGED, changed);
+    return () => window.removeEventListener(DISCOVERY_PREFERENCES_CHANGED, changed);
+  }, []);
+  const historyKey = records.map(record => record.id + ':' + (record.listenedMs >= 10000) + ':' + Math.floor(record.listenedMs / 180000)).join(',');
+  const activityKey = records.map(record => record.id + ':' + record.startedAt + ':' + record.updatedAt + ':' + record.listenedMs).join(',');
+  const favoritesKey = JSON.stringify([favorites, favoriteArtists, favoriteAlbums]);
+  const preferences = useMemo(() => ({ records, favorites, languages, favoriteArtists, favoriteAlbums }), [historyKey, favoritesKey, languageKey]);
+  const seeds = useMemo(() => quickPickSeeds(savedTracks, preferences), [savedTracks, preferences]);
+  const seedKey = seeds.map(track => track.metadataSourceId || track.id).join(',');
+  useEffect(() => {
+    let active = true;
+    setPool([]);
+    if (onlineAvailable) void loadQuickPickPool(languages, seeds, () => active).then(value => { if (active) setPool(value); }).catch(() => {});
+    return () => { active = false; };
+  }, [languageKey, seedKey, onlineAvailable]);
+  const history = useMemo(() => homeHistory(records, savedTracks, favorites, onlineAvailable), [activityKey, savedTracks, favoritesKey, onlineAvailable]);
+  const continuing = resumes.filter(item => item.queue.every(entry => {
+    const track = savedTracks.find(track => track.id === entry.trackId) || item.queueTracks[entry.trackId];
+    return track && !track.missing && (onlineAvailable || track.offline || (track.source?.providerId !== 'youtube' && track.format !== 'catalog'));
+  }));
+  const continuedTracks = continuing.map(item => {
+    const entry = item.queue.find(entry => entry.id === item.currentId);
+    return entry && (savedTracks.find(track => track.id === entry.trackId) || item.queueTracks[entry.trackId]);
+  }).filter((track): track is Track => !!track);
+  const exclusive = (tracks: Track[]) => tracks.filter(track => !continuedTracks.some(other => sameRecommendation({ track }, { track: other })));
+  const reserved = [...history.recent, ...history.rotation, ...history.forgotten, ...continuedTracks];
+  const picks = useMemo(() => quickPickTracks([...savedTracks.map(track => ({ track })), ...pool].filter(candidate => !reserved.some(track => sameRecommendation(candidate, { track }))), preferences, onlineAvailable), [savedTracks, pool, preferences, onlineAvailable, history, resumes]);
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 18) return "Good afternoon";
-  if (hour >= 18 && hour < 22) return "Good evening";
-  return "Good night";
-}
-
-interface MoodChip {
-  id: string;
-  label: string;
-  query?: string;
-}
-
-const MOOD_CHIPS: MoodChip[] = [
-  { id: "all", label: "All" },
-  { id: "trending", label: "Top Hits", query: "trending top hits" },
-  { id: "chill", label: "Chill", query: "chill lofi relaxing" },
-  { id: "workout", label: "Workout", query: "workout energy gym" },
-  { id: "focus", label: "Focus", query: "focus ambient study instrumental" },
-  { id: "party", label: "Party", query: "party dance club hits" },
-  { id: "romantic", label: "Romance", query: "romantic love acoustic" },
-  { id: "acoustic", label: "Acoustic", query: "indie folk acoustic" },
-];
-
-export function DiscoveryHome({
-  searches,
-  records,
-  savedTracks,
-  busy,
-  onlineAvailable,
-  onSearch,
-  onClearSearches,
-  onReplay,
-  onNavigateAlbum,
-  onNavigateArtist,
-  onSaveDiscovery,
-  onPlayAlbum,
-  favorites = [],
-  downloads = {},
-  onCatalogAction,
-}: DiscoveryHomeProps) {
-  const [language, setLanguage] = useState<DiscoveryLanguage>(
-    () => discoveryPreferences().language,
-  );
-  const [shelf, setShelf] = useState<HomeAlbums | null>(() => cachedHomeAlbums(language));
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [revision, setRevision] = useState(0);
-  const [playingAlbum, setPlayingAlbum] = useState<string | null>(null);
-
-  // Spotlight album & tracks
-  const spotlightAlbum = shelf?.albums[0] ?? null;
-  const [spotlightTracks, setSpotlightTracks] = useState<CatalogTrack[]>([]);
-
-  // Mood / Vibe state
-  const [selectedMood, setSelectedMood] = useState<string>("all");
-  const [moodTracks, setMoodTracks] = useState<CatalogTrack[]>([]);
-  const [moodLoading, setMoodLoading] = useState(false);
-
-  // Load home albums
-  useEffect(() => {
-    let active = true;
-    setShelf(cachedHomeAlbums(language));
-    setLoading(true);
-    setError("");
-    void loadHomeAlbums(language, revision > 0)
-      .then((value) => {
-        if (active) setShelf(value);
-      })
-      .catch(() => {
-        if (active)
-          setError(
-            "Couldn't refresh albums. You can still search, revisit saved albums or play your local music.",
-          );
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [language, revision]);
-
-  // Fetch top tracks for the spotlight album
-  useEffect(() => {
-    if (!spotlightAlbum) {
-      setSpotlightTracks([]);
-      return;
-    }
-    let active = true;
-    library
-      .lookupAlbum(spotlightAlbum.id)
-      .then((data) => {
-        if (active && data?.tracks?.length) {
-          setSpotlightTracks(data.tracks.slice(0, 6));
-        }
-      })
-      .catch(() => {
-        if (active) setSpotlightTracks([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, [spotlightAlbum?.id]);
-
-  // Fetch mood tracks when a mood filter is active
-  useEffect(() => {
-    if (selectedMood === "all") {
-      setMoodTracks([]);
-      return;
-    }
-    const chip = MOOD_CHIPS.find((m) => m.id === selectedMood);
-    if (!chip?.query) return;
-
-    let active = true;
-    setMoodLoading(true);
-    library
-      .searchCatalog(`${chip.query} ${language}`, 8)
-      .then((tracks) => {
-        if (active) setMoodTracks(tracks);
-      })
-      .catch(() => {
-        if (active) setMoodTracks([]);
-      })
-      .finally(() => {
-        if (active) setMoodLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [selectedMood, language]);
-
-  const seen = new Set<string>();
-  const recent = [...records]
-    .sort((a, b) => b.startedAt - a.startedAt)
-    .filter((record) => !seen.has(record.trackId) && seen.add(record.trackId))
-    .slice(0, 9);
-
-  const greeting = getGreeting();
-
-  const handlePlayAlbum = async (album: CatalogAlbum, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (playingAlbum) return;
-    setPlayingAlbum(album.id);
-    try { await onPlayAlbum(album.id); }
-    finally { setPlayingAlbum(null); }
-  };
-
-  return (
-    <div className="discovery-home">
-      {/* Sleek Subbar: Mood Filter Pills on left, Language + Refresh on right */}
-      <div className="discover-subbar">
-        <div className="discover-mood-bar" role="toolbar" aria-label="Browse by mood and genre">
-          {MOOD_CHIPS.map((chip) => (
-            <button
-              key={chip.id}
-              className={`discover-mood-chip ${selectedMood === chip.id ? "is-active" : ""}`}
-              onClick={() => setSelectedMood(chip.id)}
-              aria-pressed={selectedMood === chip.id}
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
-        <div className="discover-shelf-controls">
-          <Select
-            ariaLabel="Discovery language"
-            value={language}
-            options={DISCOVERY_LANGUAGES.map((value) => ({
-              value,
-              label: label(value),
-            }))}
-            onChange={(value) => {
-              setRevision(0);
-              setDiscoveryLanguage(value);
-              setLanguage(value);
-            }}
-          />
-          <button
-            className="subtle icon-only discover-refresh-btn"
-            disabled={loading}
-            aria-label="Refresh discovery albums"
-            title="Refresh albums"
-            onClick={() => setRevision((value) => value + 1)}
-          >
-            {loading ? <Loader2 size={15} className="spin" /> : <RefreshCw size={15} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Jump Back In / Recently Played (Spotify) */}
-      {recent.length > 0 && selectedMood === "all" && (
-        <section aria-label="Recently played" className="discover-home-section">
-          <div className="discover-section-heading">
-            <h2>Jump back in</h2>
-          </div>
-          <div className="discover-recent-grid">
-            {recent.map((record) => {
-              const saved = savedTracks.find((track) => track.id === record.trackId);
-              const unavailable = saved ? saved.missing : record.providerId !== "youtube";
-              const needsSetup =
-                !onlineAvailable &&
-                !saved?.offline &&
-                (saved?.source?.providerId || record.providerId) === "youtube";
-              return (
-                <div
-                  key={record.trackId}
-                  className={`discover-recent-card ${unavailable || needsSetup ? "is-disabled" : ""}`}
-                  onClick={() => !busy && !unavailable && !needsSetup && onReplay(record)}
-                  role="button"
-                  tabIndex={0}
-                  title={
-                    unavailable
-                      ? "Add the original file to play again"
-                      : needsSetup
-                        ? "Enable online playback to listen"
-                        : `Play ${record.title}`
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      if (!busy && !unavailable && !needsSetup) onReplay(record);
-                    }
-                  }}
-                >
-                  <div className="discover-recent-cover-wrap">
-                    <Artwork url={saved?.artworkUrl || historyArtwork(record)} />
-                    <div className="discover-recent-play-overlay">
-                      <Play size={16} fill="currentColor" />
-                    </div>
-                  </div>
-                  <div className="discover-recent-info">
-                    <strong title={record.title}>{record.title}</strong>
-                    <small title={record.artist}><DownloadedBadge track={saved} />{record.artist}</small>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Explore Albums (Trending Releases) - Prominently Displayed Directly Below Recent / Subbar */}
-      {selectedMood === "all" && (
-        <section aria-label="Explore albums" className="discover-home-section">
-          <div className="discover-section-heading">
-            <div>
-              <h2>Explore albums</h2>
-              <p className="subtitle">Trending releases · {label(language)}</p>
-            </div>
-          </div>
-
-          {error && (
-            <p className="subtitle" role="status">
-              {error}
-              {shelf?.albums.length ? " Showing saved catalogue results." : ""}
-            </p>
-          )}
-          {loading && !shelf?.albums.length && (
-            <div className="empty" style={{ padding: "40px 0" }}>
-              <Loader2 size={32} className="spin" />
-              <p>Finding trending albums…</p>
-            </div>
-          )}
-          {!loading && !error && !shelf?.albums.length && (
-            <p className="subtitle">
-              No albums are available for this language right now. Try another language or search above.
-            </p>
-          )}
-
-          {!!shelf?.albums.length && (
-            <>
-              <div className="albums-grid discover-albums">
-                {shelf.albums.map((album) => (
-                  <div
-                    className="album-card discover-album-card"
-                    key={album.id}
-                    onClick={() => onNavigateAlbum?.(album.id)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Open album ${album.title}`}
-                    onKeyDown={(e) => {
-                      if (e.target !== e.currentTarget) return;
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onNavigateAlbum?.(album.id);
-                      }
-                    }}
-                  >
-                    <div className="album-card-cover-wrap">
-                      <Artwork url={album.artworkUrl} className="album-card-cover" />
-                      <button
-                        className={`album-hover-play ${playingAlbum === album.id ? "is-loading" : ""}`}
-                        aria-label={`Play album ${album.title}`}
-                        disabled={busy || !onlineAvailable || !!playingAlbum}
-                        onClick={(e) => void handlePlayAlbum(album, e)}
-                      >
-                        {playingAlbum === album.id ? (
-                          <Loader2 size={18} className="spin" color="currentColor" />
-                        ) : (
-                          <Play size={18} fill="currentColor" color="currentColor" />
-                        )}
-                      </button>
-                    </div>
-                    <div className="album-card-info">
-                      <div className="album-title" title={album.title}>
-                        {album.title}
-                      </div>
-                      <div className="album-year" title={album.artist}>
-                        {album.artist}
-                        {album.year ? ` · ${album.year}` : ""}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="discover-cache-note">
-                Saved on this device · Updated {new Date(shelf.updatedAt).toLocaleString()}
-              </p>
-            </>
-          )}
-        </section>
-      )}
-
-      {/* Mood / Vibe Tracks Section (When Mood Filter is Active) */}
-      {selectedMood !== "all" && (
-        <section aria-label="Vibe Picks" className="discover-home-section">
-          <div className="discover-section-heading">
-            <div>
-              <h2>{MOOD_CHIPS.find((m) => m.id === selectedMood)?.label || "Vibe Picks"}</h2>
-              <p className="subtitle">
-                Curated vibe tracks in {label(language)} · Direct 1-tap playback
-              </p>
-            </div>
-            <button className="link-button" onClick={() => setSelectedMood("all")}>
-              Reset to All
-            </button>
-          </div>
-          {moodLoading && (
-            <div className="empty" style={{ padding: "40px 0" }}>
-              <Loader2 size={32} className="spin" />
-              <p>Curating tracks for this vibe…</p>
-            </div>
-          )}
-          {!moodLoading && moodTracks.length > 0 && (
-            <div className="discover-quick-picks-grid">
-              {moodTracks.map((t, idx) => (
-                <div key={t.id} className="discover-quick-track">
-                  <span className="discover-track-rank">
-                    {String(idx + 1).padStart(2, "0")}
-                  </span>
-                  <div
-                    className="discover-quick-art-wrap"
-                    onClick={() => onSaveDiscovery?.(t, "play")}
-                    role="button"
-                    tabIndex={0}
-                    title={`Play ${t.title}`}
-                  >
-                    <Artwork url={t.artworkUrl} />
-                    <div className="discover-quick-play-overlay">
-                      <Play size={14} fill="currentColor" />
-                    </div>
-                  </div>
-                  <div className="discover-quick-info">
-                    <button
-                      className="link-button discover-track-title"
-                      onClick={() => onSaveDiscovery?.(t, "play")}
-                      title={t.title}
-                    >
-                      <strong>{t.title}</strong>
-                    </button>
-                    <small title={t.artist}><DownloadedBadge track={savedTracks.find(saved => saved.id === t.id || saved.metadataSourceId === t.id)} />{t.artist}</small>
-                  </div>
-                  <span className="discover-quick-duration">
-                    {Math.floor(t.duration / 60)}:
-                    {String(Math.floor(t.duration % 60)).padStart(2, "0")}
-                  </span>
-                  {onCatalogAction && (
-                    <div className="discover-quick-actions">
-                      <CatalogTrackActions
-                        track={t}
-                        savedTracks={savedTracks}
-                        favorites={favorites}
-                        onCatalogAction={onCatalogAction}
-                        disabled={busy}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-          {!moodLoading && moodTracks.length === 0 && (
-            <p className="subtitle">
-              No tracks found for this vibe right now. Try another vibe or change your discovery language.
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* Featured Spotlight Hero Banner (Apple Music / Nuclear) */}
-      {spotlightAlbum && selectedMood === "all" && (
-        <section aria-label="Featured spotlight" className="discover-home-section discover-spotlight-section">
-          <div className="discover-spotlight-card">
-            <div
-              className="discover-spotlight-backdrop"
-              style={{
-                backgroundImage: spotlightAlbum.artworkUrl
-                  ? `url(${spotlightAlbum.artworkUrl})`
-                  : undefined,
-              }}
-            />
-            <div className="discover-spotlight-overlay" />
-            <div className="discover-spotlight-content">
-              <div
-                className="discover-spotlight-artwork-wrap"
-                onClick={() => onNavigateAlbum?.(spotlightAlbum.id)}
-                role="button"
-                tabIndex={0}
-                title={`Explore ${spotlightAlbum.title}`}
-              >
-                <Artwork
-                  url={spotlightAlbum.artworkUrl}
-                  className="discover-spotlight-cover"
-                />
-                <div className="discover-spotlight-art-badge">
-                  <Play size={20} fill="currentColor" />
-                </div>
-              </div>
-              <div className="discover-spotlight-details">
-                <span className="discover-spotlight-badge">
-                  <Sparkles size={11} style={{ marginRight: 4, verticalAlign: -1 }} />
-                  FEATURED SPOTLIGHT · {label(language).toUpperCase()}
-                </span>
-                <h2 className="discover-spotlight-title" title={spotlightAlbum.title}>
-                  {spotlightAlbum.title}
-                </h2>
-                <p className="discover-spotlight-artist">
-                  {spotlightAlbum.artist}{" "}
-                  {spotlightAlbum.year ? `· ${spotlightAlbum.year}` : ""}
-                </p>
-                <p className="discover-spotlight-desc">
-                  Top trending release on JioSaavn · Featured listen for your library.
-                </p>
-                <div className="discover-spotlight-actions">
-                  <button
-                    className="primary discover-spotlight-play-btn"
-                    disabled={busy || !onlineAvailable || !!playingAlbum}
-                    onClick={() => void handlePlayAlbum(spotlightAlbum)}
-                  >
-                    {playingAlbum === spotlightAlbum.id ? <Loader2 size={16} className="spin" /> : <Play size={16} fill="currentColor" />}
-                    Play Album
-                  </button>
-                  <button
-                    className="subtle discover-spotlight-explore-btn"
-                    onClick={() => onNavigateAlbum?.(spotlightAlbum.id)}
-                  >
-                    Explore Tracklist
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Quick Picks / Top Tracks Row (YT Music + Spotify) */}
-      {spotlightTracks.length > 0 && selectedMood === "all" && (
-        <section aria-label="Quick picks" className="discover-home-section">
-          <div className="discover-section-heading">
-            <div>
-              <h2>Quick picks</h2>
-              <p className="subtitle">
-                Trending songs from {spotlightAlbum?.title}
-              </p>
-            </div>
-            {spotlightAlbum && (
-              <button
-                className="link-button"
-                onClick={() => onNavigateAlbum?.(spotlightAlbum.id)}
-              >
-                See all {spotlightTracks.length} tracks
-              </button>
-            )}
-          </div>
-          <div className="discover-quick-picks-grid">
-            {spotlightTracks.map((t, idx) => (
-              <div key={t.id} className="discover-quick-track">
-                <span className="discover-track-rank">
-                  {String(idx + 1).padStart(2, "0")}
-                </span>
-                <div
-                  className="discover-quick-art-wrap"
-                  onClick={() => onSaveDiscovery?.(t, "play")}
-                  role="button"
-                  tabIndex={0}
-                  title={`Play ${t.title}`}
-                >
-                  <Artwork url={t.artworkUrl} />
-                  <div className="discover-quick-play-overlay">
-                    <Play size={14} fill="currentColor" />
-                  </div>
-                </div>
-                <div className="discover-quick-info">
-                  <button
-                    className="link-button discover-track-title"
-                    onClick={() => onSaveDiscovery?.(t, "play")}
-                    title={t.title}
-                  >
-                    <strong>{t.title}</strong>
-                  </button>
-                  <small title={t.artist}><DownloadedBadge track={savedTracks.find(saved => saved.id === t.id || saved.metadataSourceId === t.id)} />{t.artist}</small>
-                </div>
-                <span className="discover-quick-duration">
-                  {Math.floor(t.duration / 60)}:
-                  {String(Math.floor(t.duration % 60)).padStart(2, "0")}
-                </span>
-                {onCatalogAction && (
-                  <div className="discover-quick-actions">
-                    <CatalogTrackActions
-                      track={t}
-                      savedTracks={savedTracks}
-                      favorites={favorites}
-                      onCatalogAction={onCatalogAction}
-                      disabled={busy}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-
-    </div>
-  );
+  const greeting = hour >= 5 && hour < 12 ? 'Good morning' : hour < 18 && hour >= 12 ? 'Good afternoon' : hour >= 18 && hour < 22 ? 'Good evening' : 'Good night';
+  return <div className="discovery-home">
+    <div className="discover-greeting-header"><h1 className="discover-greeting-title">{greeting}<span className="discover-greeting-dot">.</span></h1><p className="discover-greeting-subtitle">Music for a calmer, brighter you.</p></div>
+    <TrackShelf title="Recently Played" tracks={history.recent} onPlay={onPlayQuickPick} onOpen={onOpenTracker} />
+    <ContinueShelf resumes={continuing} savedTracks={savedTracks} onResume={onResume} />
+    <TrackShelf title="Quick Picks" tracks={picks} onPlay={onPlayQuickPick} />
+    <RotationShelf tracks={exclusive(history.rotation)} onPlay={onPlayQuickPick} />
+    <TrackShelf title="Forgotten Favorites" tracks={exclusive(history.forgotten)} onPlay={onPlayQuickPick} />
+  </div>;
 }

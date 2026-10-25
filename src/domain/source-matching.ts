@@ -14,6 +14,19 @@ export function sourceTitle(text: string): string {
     .trim();
 }
 
+export function sourceCoreTitle(text: string): string {
+  const title = sourceTitle(text);
+  // shortcut: only article-led subtitles and redundant Theme labels; expand with verified catalog examples.
+  return title.replace(/\s*[([]([^()[\]]+)[)\]]$/, (annotation, content: string, offset: number) => {
+    if (/^theme$/i.test(content) && /\btheme$/i.test(title.slice(0, offset))) return "";
+    const parts = content.split(/\s+[-–—]\s+/);
+    if (!/^(?:the|an?)\s+\p{L}/iu.test(parts.at(-1)!)) return annotation;
+    if (parts.length === 1) return "";
+    if (parts.length === 2 && parts[0].match(versions)?.join("").toLowerCase() === parts[0].toLowerCase()) return ` (${parts[0]})`;
+    return annotation;
+  }).trim();
+}
+
 export function sourceCredits(track: CatalogTrack): string[] {
   return [...new Set([...(track.artists || []).map(a => a.name), track.artist]
     .flatMap(text => canonicalArtistCredit(text).split(/\s*[,;&]\s*|\s+(?:and|feat\.?|ft\.?|featuring|x)\s+/i))
@@ -71,6 +84,13 @@ export async function matchSource(catalog: CatalogTrack, candidate: YtdlpSearchR
   const titles = [candidate.track, quotedTitle, sourceTitle(candidate.title), ...compactTitles, ...queries.map(q => sourceTitle(q.title))].filter((t): t is string => Boolean(t));
   let titleMatch = false;
   for (const value of titles) if (closeTitle(title, value) || (/[\u0900-\u0dff]/.test(title) !== /[\u0900-\u0dff]/.test(value) && closeTitle(romanTitle, await searchRoman(value)))) { titleMatch = true; break; }
+  if (!titleMatch) {
+    const coreTitle = sourceCoreTitle(title), romanCoreTitle = await searchRoman(coreTitle);
+    for (const value of titles) {
+      const coreValue = sourceCoreTitle(value);
+      if (closeTitle(coreTitle, coreValue) || (/[\u0900-\u0dff]/.test(coreTitle) !== /[\u0900-\u0dff]/.test(coreValue) && closeTitle(romanCoreTitle, await searchRoman(coreValue)))) { titleMatch = true; break; }
+    }
+  }
   // Catalogs join alternate song names with a dash; label uploads may use pipe segments.
   const alternateTitles = title.split(/\s+[-–—]\s+/);
   const segments = candidate.title.split("|").map(sourceTitle);
@@ -96,13 +116,15 @@ export async function matchSource(catalog: CatalogTrack, candidate: YtdlpSearchR
       return parts.length >= 2 && parts[0].length >= 5 && segments.includes(parts[0]);
     });
   }
-  if (!artistMatch) return reject("artist");
-  if (candidate.duration === null || !Number.isFinite(candidate.duration) || candidate.duration <= 0) return reject("duration-missing");
+  const missingArtistMetadata = !candidate.artist?.trim() && /^(?:Release|Various Artists|Unknown Artist)\s*-\s*Topic$/i.test(candidate.channel || "");
+  if (!artistMatch && !missingArtistMetadata) return reject("artist");
+  if (candidate.duration === null || !Number.isFinite(candidate.duration) || candidate.duration <= 0) return reject(!artistMatch && missingArtistMetadata ? "artist-metadata-missing" : "duration-missing");
   const difference = Math.abs(candidate.duration - catalog.duration);
   if (catalog.duration > 0 && catalog.duration - candidate.duration > Math.max(5, catalog.duration * 0.02)) return reject("duration");
   const artistChannel = credits.some(credit => identity(canonicalArtistCredit(candidate.channel || "").replace(/\s*-\s*Topic$|VEVO$/i, "")) === identity(credit));
   const video = /\b(?:official (?:music )?video|video song|full video)\b/i.test(candidate.title) && artistChannel;
   const tolerance = video && candidate.duration > catalog.duration ? Math.min(60, Math.max(30, catalog.duration * 0.25)) : Math.max(30, catalog.duration * 0.15);
   if (catalog.duration > 0 && difference > tolerance) return reject("duration");
+  if (!artistMatch) return reject("artist-metadata-missing");
   return { accepted: true, reason: "matched", score: difference + (candidate.track ? 0 : 2) };
 }

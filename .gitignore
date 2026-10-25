@@ -61,3 +61,9 @@ scripts/*
 !scripts/updates-ui-test.mjs
 
 !scripts/sidebar-scroll-test.mjs
+
+!docs/PROVIDER-EVALUATION.md
+!scripts/evaluate-music-providers.py
+!scripts/providers-ui-test.mjs
+!scripts/mobile-ui-test.mjs
+!docs/MOBILE-REDESIGN.md

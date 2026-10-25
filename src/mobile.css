@@ -1,0 +1,199 @@
+.mobile-library-navigation, .mobile-settings-back, .mobile-settings-chevron, .mobile-actions-close, .mobile-track-favorite { display: none; }
+
+@media (max-width: 768px) {
+  #root .app {
+    grid-template-rows: 56px minmax(0, 1fr) auto calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: 0;
+    background: var(--bg);
+  }
+  #root .app main { padding: 16px 18px 28px; scrollbar-gutter: auto; overscroll-behavior-y: contain; }
+  #root .app .mobile-header { height: 56px; padding: 0 16px !important; background: var(--bg); border-bottom: 0; }
+  #root .app .mobile-header .brand-text { font-size: 24px !important; }
+  #root .app .mobile-header .brand-icon { width: 30px !important; height: 30px !important; }
+  #root .app .mobile-header-actions { gap: 4px !important; }
+  #root .app :is(.icon-button, .icon-only, .mobile-header-btn, .topbar-arrow-btn, .track-menu summary, .mobile-np-icon-btn, .mobile-np-queue-action-btn, .discover-refresh-btn, .apple-chart-refresh-btn, .search-clear-button) {
+    width: 44px !important; height: 44px !important; min-width: 44px !important; min-height: 44px !important;
+    flex: 0 0 44px; aspect-ratio: 1; padding: 0 !important; border-radius: 50% !important;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  #root .app .mobile-header-btn { background: transparent !important; border: 0 !important; box-shadow: none; }
+  #root .app :is(button.primary, button.subtle) { min-height: 44px; }
+  #root .app .mobile-tab-bar {
+    height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 4px 16px calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--bg-sidebar) !important; backdrop-filter: none !important; border-top: 1px solid var(--line);
+  }
+  #root .app .mobile-tab { min-height: 48px; gap: 2px !important; }
+  #root .app .mobile-tab span { font-size: 11px !important; line-height: 1.3 !important; }
+  #root .app .mobile-tab.active svg { color: var(--accent); }
+  #root .app h1 { font-size: 28px; line-height: 1.2; }
+  #root .app h2 { font-size: 21px; line-height: 1.3; letter-spacing: -.025em; }
+  #root .app .page-heading { margin-bottom: 20px; gap: 16px; }
+  #root .app .page-heading .eyebrow { display: none; }
+  #root .app .page-heading .subtitle { font-size: 13px; line-height: 1.5; margin-top: 6px; }
+  #root .app :is(.discover-section-heading, .discover-editorial-header, .recent-section-heading) { margin-bottom: 12px; gap: 8px; }
+  #root .app :is(.discover-section-nav, .recent-section-nav) { display: none; }
+  #root .app :is(.discover-home-section, .discover-editorial-section) { margin: 0 0 28px; }
+  #root .app :is(.discover-albums, .discover-release-row, .discover-trending-row, .discover-chart-row, .recent-tracks-grid) {
+    overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none;
+  }
+  #root .app :is(.discover-release-row, .discover-trending-row, .discover-rotation-carousel) { gap: 14px; grid-auto-columns: minmax(145px, 40vw); }
+  #root .app .discover-album-card { min-width: 0; scroll-snap-align: start; text-align: left; }
+  #root .app :is(.album-card-cover-wrap, .discover-album-card .cover) { border-radius: 12px; box-shadow: none; }
+  #root .app .album-title { font-size: 14px; line-height: 1.4; margin-top: 8px; }
+  #root .app .discover-album-card :is(.album-year, .subtitle) { font-size: 12px; line-height: 1.45; }
+  #root .app .discover-spotlight-card { min-height: 200px; border-radius: 16px; }
+  #root .app .discover-spotlight-content { padding: 20px; }
+  #root .app :is(.discover-spotlight-desc, .discover-spotlight-hero-branding) { display: none; }
+  #root .app .discover-spotlight-title { font-size: 24px; max-width: 85%; }
+  #root .app .discover-spotlight-badge { font-size: 10px; }
+  #root .app .discover-spotlight-actions { margin-top: 14px; gap: 8px; }
+  #root .app .discover-spotlight-overlay { background: linear-gradient(90deg, #000c, #0002); }
+  #root .app .discover-search-central { margin-bottom: 24px; }
+  #root .app .discover-search-bar { min-width: 0; min-height: 48px; }
+  #root .app .discover-search-bar input { font-size: 16px; min-width: 0; }
+  #root .app :is(.explore-grid, .albums-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  #root .app .explore-card { min-height: 112px; height: 116px; padding: 14px; border-radius: 14px; }
+  #root .app .explore-card-title { font-size: 18px; }
+  #root .app .recent-tracks-grid { grid-auto-columns: minmax(260px, 82vw); gap: 8px 14px; }
+  #root .app .recent-track-item { padding: 6px 0; min-height: 56px; }
+  #root .app .recent-track-title { font-size: 15px; }
+  #root .app .recent-track-artist { font-size: 12px; }
+
+  #root .app .mobile-library-navigation { display: block; margin-bottom: 18px; }
+  #root .app .mobile-library-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  #root .app .mobile-library-heading h1 { margin: 0; }
+  #root .app .mobile-library-filters { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0 6px; }
+  #root .app .mobile-library-filters button { flex: 0 0 auto; min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 12px; font-size: 14px; background: var(--panel); }
+  #root .app .mobile-library-filters [aria-current="page"] { background: var(--accent-subtle); color: var(--accent); border-color: var(--line-accent); }
+  #root .app .mobile-library-shortcuts { display: flex; gap: 18px; margin-top: 8px; }
+  #root .app .mobile-library-shortcuts button { display: flex; align-items: center; gap: 7px; min-height: 44px; padding: 0; color: var(--muted); font-size: 12px; }
+  #root .app .library-root-heading > div:first-child { display: none; }
+  #root .app .library-root-heading { margin-bottom: 16px; }
+  #root .app .library-root-heading .heading-actions { justify-content: flex-start; flex-wrap: wrap; }
+  #root .app .library-root-heading .heading-actions > .subtle { display: none; }
+  #root .app .mobile-track-favorite { display: flex; }
+  #root .app .mobile-library-songs .collection-cover { display: none; }
+  #root .app .mobile-library-songs h1 { font: 600 16px/1.4 var(--font-sans); }
+  #root .app .mobile-library-songs .eyebrow { display: none; }
+  #root .app .collection-grid { display: flex; flex-direction: column; gap: 4px; border: 0; padding: 0; }
+  #root .app .collection-card { display: flex; flex-direction: row; align-items: center; gap: 14px; padding: 8px 0; border: 0; background: transparent; border-radius: 10px; box-shadow: none; }
+  #root .app .collection-art-wrap { flex: 0 0 60px; width: 60px; height: 60px; margin: 0; }
+  #root .app .collection-art { width: 60px; height: 60px; border-radius: 10px; }
+  #root .app .collection-info { flex: 1; min-width: 0; padding: 0; text-align: left; }
+  #root .app .collection-title { font-size: 16px; }
+  #root .app .collection-description { margin-top: 4px; font-size: 12px; }
+  #root .app .library-tools { flex-wrap: wrap; margin-bottom: 18px; }
+  #root .app .library-tools .search { flex: 1 1 220px; min-height: 44px; }
+  #root .app .library-tools > .muted { font-size: 12px; }
+  #root .app .collection-header { flex-direction: column; align-items: stretch; gap: 20px; }
+  #root .app .collection-header .collection-cover { align-self: center; width: min(52vw, 210px); height: auto; aspect-ratio: 1; }
+  #root .app .album-actions { gap: 8px; flex-wrap: wrap; }
+  #root .app :is(.track-header, .catalog-tracks .track-header) { display: none; }
+  #root .app :is(.track-row, .catalog-tracks .track-row) { grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; min-height: 68px; padding: 8px 0; border-radius: 10px; }
+  #root .app .track-row > :is(.track-play, .duration, .album) { display: none; }
+  #root .app .track-meta { grid-column: 1; gap: 12px; min-width: 0; }
+  #root .app .track-meta .cover { width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px; }
+  #root .app .track-title-button { font-size: 15px; line-height: 1.4; text-align: start; }
+  #root .app .track-meta-text small { font-size: 12px; line-height: 1.5; }
+  #root .app .track-actions { grid-column: 2; gap: 0; }
+  #root .app .track-actions > .icon-button { display: none; }
+  #root .app .catalog-fav-menu-btn { display: flex; }
+  #root .app .track-row { -webkit-user-select: none; user-select: none; }
+
+  #root .app details.track-menu[open] { z-index: 1600; }
+  #root .app details.track-menu[open]::before { content: ""; position: fixed; inset: 0; z-index: -1; background: #0009; backdrop-filter: none; }
+  #root .app .track-menu .menu-popover {
+    position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: 100%; max-height: min(78dvh, 620px);
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px)); border-radius: 24px 24px 0 0;
+    background: var(--bg-sidebar); backdrop-filter: none; box-shadow: 0 -12px 48px #0004;
+    display: flex; flex-direction: column; gap: 2px; animation: mobile-actions-in 160ms ease-out;
+  }
+  #root .app .track-menu .menu-popover::before { content: ""; width: 36px; height: 4px; background: var(--muted); opacity: .5; border-radius: 4px; margin: 0 auto 12px; flex-shrink: 0; }
+  #root .app .menu-popover :is(button, a) { min-height: 48px; padding: 12px 14px; font-size: 15px; border-radius: 12px; flex-shrink: 0; }
+  #root .app .mobile-actions-close { display: flex; order: 99; justify-content: center; margin-top: 8px; color: var(--accent); background: var(--accent-subtle); }
+  #root .app .apple-select-menu { max-height: 50dvh; overflow-y: auto; }
+  #root .app .apple-select-option { min-height: 48px; font-size: 14px; }
+  #root .app > dialog, dialog.collection-hub {
+    position: fixed; inset: auto 0 0; margin: 0; width: 100%; max-width: 100%; max-height: calc(90dvh - env(safe-area-inset-top, 0px));
+    border-radius: 24px 24px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto; overscroll-behavior: contain; border-bottom: 0;
+  }
+  #root .app > dialog::backdrop, dialog.collection-hub::backdrop { background: #0009; backdrop-filter: none; }
+  #root .app dialog input { font-size: 16px; min-height: 48px; }
+  #root .app .dialog-actions button { min-height: 48px; }
+
+  #root .app .settings-redesign { display: block; height: auto; min-height: 100%; background: transparent; }
+  #root .app .settings-sidebar { width: 100%; padding: 0; background: transparent; border: 0; display: flex; flex-direction: column; gap: 2px; overflow: visible; }
+  #root .app .settings-title { display: block; padding: 0; margin: 0 0 20px; font: 600 28px/1.2 var(--font-display); }
+  #root .app .settings-nav-btn { width: 100%; min-height: 58px; padding: 14px 12px; margin: 0; border-radius: 12px; font-size: 15px; background: var(--panel); }
+  #root .app .mobile-settings-chevron { display: block; margin-left: auto; color: var(--muted); }
+  #root .app .settings-content { padding: 0; width: 100%; overflow: visible; }
+  #root .app .settings-index .settings-content, #root .app .settings-detail .settings-sidebar { display: none; }
+  #root .app .mobile-settings-back { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; color: var(--muted); margin-bottom: 16px; }
+  #root .app .settings-content .category-subtitle { font-size: 13px; margin-bottom: 24px; }
+  #root .app .settings-section { margin-bottom: 24px; }
+  #root .app .theme-mode-toggle { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  #root .app :is(.theme-option, .palette-option) { box-shadow: none; padding: 14px; }
+  #root .app .accent-palette-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  #root .app .palette-option { min-width: 0; flex-wrap: wrap; gap: 10px; }
+  #root .app .palette-info strong { font-size: 13px; }
+  #root .app .palette-info small { display: none; }
+
+  #root .app .transport { min-height: 56px !important; height: 56px !important; padding: 6px 12px !important; gap: 8px !important; border-radius: 0; background: var(--bg-panel, var(--panel)); touch-action: none; }
+  #root .app .transport .now-playing { min-width: 0 !important; gap: 10px !important; flex: 1 !important; }
+  #root .app .transport-cover { width: 44px !important; height: 44px !important; border-radius: 8px !important; }
+  #root .app .transport .now-playing-meta { width: auto !important; }
+  #root .app .transport .now-playing-artist .link-button { pointer-events: none; }
+  #root .app .transport .current-track-menu { display: none; }
+  #root .app .transport .player-buttons { gap: 0 !important; }
+  #root .app .transport .player-buttons > :is(.icon-button, .play-button) { width: 44px !important; height: 44px !important; min-width: 44px !important; min-height: 44px !important; flex: 0 0 44px; box-shadow: none !important; }
+  #root .app .transport .player-buttons > [aria-label="Previous track"] { display: none !important; }
+  #root .app .transport .seek-bar-top { height: 3px; pointer-events: none; }
+  #root .app .transport .seek-bar-top input { height: 3px; }
+  #root .app .transport .seek-bar-top input::-webkit-slider-thumb { visibility: hidden; }
+  #root .app .mobile-now-playing { background: var(--bg); animation: none; transition: transform 220ms cubic-bezier(.2,.8,.2,1); will-change: auto; touch-action: none; }
+  @starting-style { #root .app .mobile-now-playing { transform: translateY(100%); } }
+  #root .app .mobile-now-playing .ambient-background { --cover-weight: 58%; }
+  #root .app .mobile-np-scrim { background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--bg) 75%, transparent)); }
+  #root .app .mobile-np-drag-zone { height: calc(16px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); flex-shrink: 0; }
+  #root .app .mobile-np-header { padding: 0 12px 8px; gap: 12px; touch-action: none; flex-shrink: 0; }
+  #root .app .mobile-np-context { flex: 1; min-width: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; }
+  #root .app .mobile-np-context span { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  #root .app .mobile-np-context small { display: block; max-width: 100%; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #root .app .mobile-np-segmented-tabs { padding: 2px; backdrop-filter: none; }
+  #root .app .mobile-np-tab { min-height: 44px; padding: 8px 10px; font-size: 13px; transition: color 120ms, background 120ms; }
+  @media (max-width: 400px) { #root .app .mobile-np-tab svg { display: none; } }
+  #root .app .mobile-np-main-view { padding: 16px 20px 12px; gap: 8px; min-height: 0; }
+  #root .app .mobile-np-artwork-container { padding: 0; }
+  #root .app .mobile-np-artwork-card { width: min(calc(100vw - 40px), calc(100dvh - 340px), 430px); max-height: none; flex-shrink: 0; border-radius: 10px; box-shadow: 0 14px 38px #0003; transform: none; transition: none; touch-action: none; }
+  #root .app .mobile-np-identity-row { margin: 16px 0 10px; }
+  #root .app .mobile-np-title { font-size: 23px; letter-spacing: -.025em; }
+  #root .app .mobile-np-slider-wrap, #root .app .mobile-np-seek-slider { height: 44px; touch-action: none; }
+  #root .app .mobile-np-scrubber-section { margin-bottom: 0; }
+  #root .app .mobile-np-play-button { width: 68px; height: 68px; min-width: 68px; background: var(--accent); color: var(--accent-text); box-shadow: none; }
+  #root .app .mobile-np-queue-tab { position: absolute; inset: calc(68px + env(safe-area-inset-top, 0px)) 0 calc(56px + env(safe-area-inset-bottom, 0px)); height: auto; padding: 16px; background: var(--bg); z-index: 20; border-radius: 20px 20px 0 0; transform: translateY(calc(100% + 80px)); visibility: hidden; pointer-events: none; transition: transform 220ms cubic-bezier(.2,.8,.2,1), visibility 0s 220ms; }
+  #root .app .mobile-np-queue-tab.is-open { transform: translateY(0); visibility: visible; pointer-events: auto; transition: transform 220ms cubic-bezier(.2,.8,.2,1); }
+  #root .app .mobile-np-queue-scroll { touch-action: pan-y; overscroll-behavior: contain; }
+  #root .app .mobile-np-queue-item { border-radius: 8px; margin: 0; padding: 10px 0; border: 0; background: transparent; }
+  #root .app .mobile-np-queue-item.current { box-shadow: none; border-color: var(--line-accent); background: var(--accent-subtle); }
+  #root .app .mobile-np-queue-actions { gap: 0; }
+  #root .app .mobile-np-queue-info strong { font-size: 15px; }
+  #root .app .mobile-np-queue-info small { font-size: 12px; }
+  #root .app .mobile-np-empty-queue { padding: 48px 24px; min-height: 180px; }
+  #root .app .mobile-np-lyrics-scroll-wrap { padding: 16px 20px 100px; overscroll-behavior: contain; touch-action: pan-y; }
+  #root .app .mobile-np-lyrics-scroll-wrap .lyric-lines { padding: 36px 0 35dvh !important; }
+  #root .app .mobile-now-playing .lyric-line { padding: 12px 0; margin: 0 0 12px; opacity: .6; transform: none; filter: none; }
+  #root .app .mobile-now-playing .lyric-line.is-active { opacity: 1; }
+  #root .app .mobile-now-playing .lyric-primary { font-size: var(--lyric-size, 28px); line-height: 1.5; font-weight: 650; }
+  #root .app .mobile-now-playing .lyric-translation { font-size: 15px; line-height: 1.6; margin-top: 6px; }
+  #root .app .mobile-now-playing .lyric-settings-fixed-anchor { justify-content: flex-end !important; }
+  #root .app .mobile-now-playing .lyric-room-floating-bar { bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important; }
+  #root .app .mobile-np-bottom-tabs { position: relative; z-index: 30; margin-top: auto; flex-shrink: 0; height: calc(56px + env(safe-area-inset-bottom, 0px)); padding: 4px 20px calc(4px + env(safe-area-inset-bottom, 0px)); display: flex; border-top: 1px solid var(--line); background: var(--bg); }
+  #root .app .mobile-np-bottom-tabs button { display: flex; flex: 1; min-height: 48px; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  #root .app .mobile-np-bottom-tabs [aria-expanded="true"] { color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) {
+    #root .app :is(.mobile-now-playing, .menu-popover, .mobile-tab, .collection-card, .lyric-line) { animation: none; transition: none !important; }
+  }
+}
+@keyframes mobile-actions-in { from { opacity: .5; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
