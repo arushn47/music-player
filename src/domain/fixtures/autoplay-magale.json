@@ -1,0 +1,643 @@
+{
+  "seed": {
+    "id": "saavn:kmYeF4aI",
+    "title": "Magale (From \"Baththa\")",
+    "artist": "Sai Abhyankkar, Harini, Karthik Netha",
+    "artists": [
+      {
+        "name": "Sai Abhyankkar"
+      },
+      {
+        "name": "Harini"
+      },
+      {
+        "name": "Karthik Netha"
+      }
+    ],
+    "album": "Magale (From &quot;Baththa&quot;)",
+    "albumId": "80304913",
+    "language": "tamil",
+    "genre": null,
+    "duration": 257
+  },
+  "radio": [
+    {
+      "id": "saavn:bhasn3eS",
+      "title": "Ooroda Oththa Don",
+      "artist": "Sai Abhyankkar, Vangal Pulla Vicky, Thamizh Aadhavan, KK Nagar Gana Jeeva",
+      "artists": [
+        {
+          "name": "Sai Abhyankkar"
+        },
+        {
+          "name": "Vangal Pulla Vicky"
+        },
+        {
+          "name": "Thamizh Aadhavan"
+        },
+        {
+          "name": "KK Nagar Gana Jeeva"
+        }
+      ],
+      "album": "Baththa (Original Motion Picture Soundtrack)",
+      "albumId": "81429928",
+      "language": "tamil",
+      "genre": null,
+      "duration": 211
+    },
+    {
+      "id": "saavn:jlBMldVu",
+      "title": "Veezha Veera (From \"OM Chapter 1: Udhiram  - The Blood Wood\") [Tamil]",
+      "artist": "Sai Abhyankkar, Tippu, Arun Srinivasan",
+      "artists": [
+        {
+          "name": "Sai Abhyankkar"
+        },
+        {
+          "name": "Tippu"
+        },
+        {
+          "name": "Arun Srinivasan"
+        }
+      ],
+      "album": "Veezha Veera (From &quot;OM Chapter 1: Udhiram  - The Blood Wood&quot;) [Tamil]",
+      "albumId": "82267846",
+      "language": "tamil",
+      "genre": null,
+      "duration": 236
+    },
+    {
+      "id": "saavn:wIt3qL8q",
+      "title": "Chellame Magale (Mohan Kannan Version)",
+      "artist": "Sai Abhyankkar, Mohan Kannan, Harini, Karthik Netha",
+      "artists": [
+        {
+          "name": "Sai Abhyankkar"
+        },
+        {
+          "name": "Mohan Kannan"
+        },
+        {
+          "name": "Harini"
+        },
+        {
+          "name": "Karthik Netha"
+        }
+      ],
+      "album": "Baththa (Original Motion Picture Soundtrack)",
+      "albumId": "81429928",
+      "language": "tamil",
+      "genre": null,
+      "duration": 256
+    },
+    {
+      "id": "saavn:wQDbPkmJ",
+      "title": "Kalyana Virundhu",
+      "artist": "Ilaiyaraaja, Yugendran Vasudevan, Anthony Daasan, Priya Jerson",
+      "artists": [
+        {
+          "name": "Ilaiyaraaja"
+        },
+        {
+          "name": "Yugendran Vasudevan"
+        },
+        {
+          "name": "Anthony Daasan"
+        },
+        {
+          "name": "Priya Jerson"
+        }
+      ],
+      "album": "Dorothy",
+      "albumId": "81039505",
+      "language": "tamil",
+      "genre": null,
+      "duration": 238
+    },
+    {
+      "id": "saavn:_C23SgA9",
+      "title": "Putaapu Gang",
+      "artist": "Anirudh Ravichander, Thamizh Aadhavan",
+      "artists": [
+        {
+          "name": "Anirudh Ravichander"
+        },
+        {
+          "name": "Thamizh Aadhavan"
+        }
+      ],
+      "album": "Jailer 2 (Original Motion Picture Soundtrack)",
+      "albumId": "81308476",
+      "language": "tamil",
+      "genre": null,
+      "duration": 160
+    },
+    {
+      "id": "saavn:TDytRiqp",
+      "title": "The Feel of Baththa",
+      "artist": "Sai Abhyankkar, Harini, Karthik Netha",
+      "artists": [
+        {
+          "name": "Sai Abhyankkar"
+        },
+        {
+          "name": "Harini"
+        },
+        {
+          "name": "Karthik Netha"
+        }
+      ],
+      "album": "Baththa (Original Motion Picture Soundtrack)",
+      "albumId": "81429928",
+      "language": "tamil",
+      "genre": null,
+      "duration": 72
+    },
+    {
+      "id": "saavn:8Ut61Xbl",
+      "title": "Muthumani",
+      "artist": "Ilaiyaraaja, Shweta Mohan",
+      "artists": [
+        {
+          "name": "Ilaiyaraaja"
+        },
+        {
+          "name": "Shweta Mohan"
+        }
+      ],
+      "album": "Dorothy",
+      "albumId": "81039505",
+      "language": "tamil",
+      "genre": null,
+      "duration": 299
+    },
+    {
+      "id": "saavn:bWAryKJA",
+      "title": "One Sun One Moon",
+      "artist": "Anirudh Ravichander, Super Subu, M.S Krsna, Heisenberg",
+      "artists": [
+        {
+          "name": "Anirudh Ravichander"
+        },
+        {
+          "name": "Super Subu"
+        },
+        {
+          "name": "M.S Krsna"
+        },
+        {
+          "name": "Heisenberg"
+        }
+      ],
+      "album": "Jailer 2 (Original Motion Picture Soundtrack)",
+      "albumId": "81308476",
+      "language": "tamil",
+      "genre": null,
+      "duration": 217
+    },
+    {
+      "id": "saavn:kBN0Uf9F",
+      "title": "Pesamale",
+      "artist": "Siri Xander, Arra Aria Khayal",
+      "artists": [
+        {
+          "name": "Siri Xander"
+        },
+        {
+          "name": "Arra Aria Khayal"
+        }
+      ],
+      "album": "Pesamale",
+      "albumId": "78430287",
+      "language": "tamil",
+      "genre": null,
+      "duration": 178
+    },
+    {
+      "id": "saavn:cSIMOwct",
+      "title": "Mozhiye",
+      "artist": "Sai Abhyankkar, Sid Sriram, Karthik Netha",
+      "artists": [
+        {
+          "name": "Sai Abhyankkar"
+        },
+        {
+          "name": "Sid Sriram"
+        },
+        {
+          "name": "Karthik Netha"
+        }
+      ],
+      "album": "Baththa (Original Motion Picture Soundtrack)",
+      "albumId": "81429928",
+      "language": "tamil",
+      "genre": null,
+      "duration": 232
+    },
+    {
+      "id": "saavn:SrJ_Tm5q",
+      "title": "Rathinamo (Female Version)",
+      "artist": "Saurav Srisan, Tanisha Gnanavel",
+      "artists": [
+        {
+          "name": "Saurav Srisan"
+        },
+        {
+          "name": "Tanisha Gnanavel"
+        }
+      ],
+      "album": "Rathinamo (Female Version)",
+      "albumId": "80986531",
+      "language": "tamil",
+      "genre": null,
+      "duration": 177
+    },
+    {
+      "id": "saavn:Igv-1Jdh",
+      "title": "Rasagulla",
+      "artist": "Jen Martin, Anirudh Ravichander, Vishnu Edavan",
+      "artists": [
+        {
+          "name": "Jen Martin"
+        },
+        {
+          "name": "Anirudh Ravichander"
+        },
+        {
+          "name": "Vishnu Edavan"
+        }
+      ],
+      "album": "Hi",
+      "albumId": "79618164",
+      "language": "tamil",
+      "genre": null,
+      "duration": 226
+    },
+    {
+      "id": "saavn:3-acMgK2",
+      "title": "One Name",
+      "artist": "Anirudh Ravichander, Super Subu",
+      "artists": [
+        {
+          "name": "Anirudh Ravichander"
+        },
+        {
+          "name": "Super Subu"
+        }
+      ],
+      "album": "Jailer 2 (Original Motion Picture Soundtrack)",
+      "albumId": "81308476",
+      "language": "tamil",
+      "genre": null,
+      "duration": 204
+    },
+    {
+      "id": "saavn:ofkIhrUs",
+      "title": "Ala Bolelo",
+      "artist": "Anirudh Ravichander, Arunraja Kamaraj",
+      "artists": [
+        {
+          "name": "Anirudh Ravichander"
+        },
+        {
+          "name": "Arunraja Kamaraj"
+        }
+      ],
+      "album": "Jailer 2 (Original Motion Picture Soundtrack)",
+      "albumId": "81308476",
+      "language": "tamil",
+      "genre": null,
+      "duration": 240
+    },
+    {
+      "id": "saavn:kRNFjEMy",
+      "title": "Vaazhanum Baththa",
+      "artist": "Sai Abhyankkar, Karthik Netha",
+      "artists": [
+        {
+          "name": "Sai Abhyankkar"
+        },
+        {
+          "name": "Karthik Netha"
+        }
+      ],
+      "album": "Baththa (Original Motion Picture Soundtrack)",
+      "albumId": "81429928",
+      "language": "tamil",
+      "genre": null,
+      "duration": 211
+    },
+    {
+      "id": "saavn:P5pjB99X",
+      "title": "Radhimaa (From \"Think Indie\")",
+      "artist": "Sai Abhyankkar, Nargis Teji, Asma Teji, Vivek",
+      "artists": [
+        {
+          "name": "Sai Abhyankkar"
+        },
+        {
+          "name": "Nargis Teji"
+        },
+        {
+          "name": "Asma Teji"
+        },
+        {
+          "name": "Vivek"
+        }
+      ],
+      "album": "Radhimaa (From &quot;Think Indie&quot;)",
+      "albumId": "79613192",
+      "language": "tamil",
+      "genre": null,
+      "duration": 259
+    },
+    {
+      "id": "saavn:9LT1Sk4o",
+      "title": "Shaitaan",
+      "artist": "Anirudh Ravichander, Romy, Vivek, Super Subu",
+      "artists": [
+        {
+          "name": "Anirudh Ravichander"
+        },
+        {
+          "name": "Romy"
+        },
+        {
+          "name": "Vivek"
+        },
+        {
+          "name": "Super Subu"
+        }
+      ],
+      "album": "Jailer 2 (Original Motion Picture Soundtrack)",
+      "albumId": "81308476",
+      "language": "tamil",
+      "genre": null,
+      "duration": 175
+    },
+    {
+      "id": "saavn:RU4UIolr",
+      "title": "Aane Wala Star",
+      "artist": "Dholu bholu, Sai Abhyankkar",
+      "artists": [
+        {
+          "name": "Dholu bholu"
+        },
+        {
+          "name": "Sai Abhyankkar"
+        }
+      ],
+      "album": "Aane Wala Star",
+      "albumId": "77673756",
+      "language": "tamil",
+      "genre": null,
+      "duration": 132
+    },
+    {
+      "id": "saavn:aFcsEYdV",
+      "title": "Kalaivaniye",
+      "artist": "Hiphop Tamizha, Sathyaprakash, Kaushik Krish",
+      "artists": [
+        {
+          "name": "Hiphop Tamizha"
+        },
+        {
+          "name": "Sathyaprakash"
+        },
+        {
+          "name": "Kaushik Krish"
+        }
+      ],
+      "album": "Meesaya Murukku 2",
+      "albumId": "81589805",
+      "language": "tamil",
+      "genre": null,
+      "duration": 199
+    },
+    {
+      "id": "saavn:xQ0k8sPR",
+      "title": "Vibe Venuma",
+      "artist": "Hiphop Tamizha, Kaushik Krish, VM Mahalingam, VJ siddhu",
+      "artists": [
+        {
+          "name": "Hiphop Tamizha"
+        },
+        {
+          "name": "Kaushik Krish"
+        },
+        {
+          "name": "VM Mahalingam"
+        },
+        {
+          "name": "VJ siddhu"
+        }
+      ],
+      "album": "Meesaya Murukku 2",
+      "albumId": "81589805",
+      "language": "tamil",
+      "genre": null,
+      "duration": 154
+    },
+    {
+      "id": "saavn:fWnNynnK",
+      "title": "Goindhamma",
+      "artist": "Hiphop Tamizha, Kaushik Krish, Gana Vinoth, Gana Ulagam Dharani, Gana Sudhakar",
+      "artists": [
+        {
+          "name": "Hiphop Tamizha"
+        },
+        {
+          "name": "Kaushik Krish"
+        },
+        {
+          "name": "Gana Vinoth"
+        },
+        {
+          "name": "Gana Ulagam Dharani"
+        },
+        {
+          "name": "Gana Sudhakar"
+        }
+      ],
+      "album": "Meesaya Murukku 2",
+      "albumId": "81589805",
+      "language": "tamil",
+      "genre": null,
+      "duration": 192
+    },
+    {
+      "id": "saavn:KFPR3TYX",
+      "title": "Lojak Mojak",
+      "artist": "Hiphop Tamizha, Harshath Khan, Kaushik Krish",
+      "artists": [
+        {
+          "name": "Hiphop Tamizha"
+        },
+        {
+          "name": "Harshath Khan"
+        },
+        {
+          "name": "Kaushik Krish"
+        }
+      ],
+      "album": "Meesaya Murukku 2",
+      "albumId": "81589805",
+      "language": "tamil",
+      "genre": null,
+      "duration": 141
+    },
+    {
+      "id": "saavn:Ffp7J_aS",
+      "title": "Tiger Siva",
+      "artist": "Hiphop Tamizha",
+      "artists": [
+        {
+          "name": "Hiphop Tamizha"
+        }
+      ],
+      "album": "Meesaya Murukku 2",
+      "albumId": "81589805",
+      "language": "tamil",
+      "genre": null,
+      "duration": 137
+    },
+    {
+      "id": "saavn:8eDySiJ4",
+      "title": "Aura 10/10",
+      "artist": "Hiphop Tamizha, Thamizh Aadhavan",
+      "artists": [
+        {
+          "name": "Hiphop Tamizha"
+        },
+        {
+          "name": "Thamizh Aadhavan"
+        }
+      ],
+      "album": "Meesaya Murukku 2",
+      "albumId": "81589805",
+      "language": "tamil",
+      "genre": null,
+      "duration": 129
+    },
+    {
+      "id": "saavn:LMYfTDgG",
+      "title": "Poda Padichiruken",
+      "artist": "Hiphop Tamizha, Gana Bala, VM Mahalingam",
+      "artists": [
+        {
+          "name": "Hiphop Tamizha"
+        },
+        {
+          "name": "Gana Bala"
+        },
+        {
+          "name": "VM Mahalingam"
+        }
+      ],
+      "album": "Meesaya Murukku 2",
+      "albumId": "81589805",
+      "language": "tamil",
+      "genre": null,
+      "duration": 147
+    },
+    {
+      "id": "saavn:BWbO9DuF",
+      "title": "Pappali Pazhamey",
+      "artist": "Hiphop Tamizha, Gana Vinoth, Gana Ulagam Dharani, K.R.Dharan",
+      "artists": [
+        {
+          "name": "Hiphop Tamizha"
+        },
+        {
+          "name": "Gana Vinoth"
+        },
+        {
+          "name": "Gana Ulagam Dharani"
+        },
+        {
+          "name": "K.R.Dharan"
+        }
+      ],
+      "album": "Meesaya Murukku 2",
+      "albumId": "81589805",
+      "language": "tamil",
+      "genre": null,
+      "duration": 206
+    },
+    {
+      "id": "saavn:yg08zNEX",
+      "title": "Sigma Style",
+      "artist": "Thaman S, Smile Tupakeys, MC Rude",
+      "artists": [
+        {
+          "name": "Thaman S"
+        },
+        {
+          "name": "Smile Tupakeys"
+        },
+        {
+          "name": "MC Rude"
+        }
+      ],
+      "album": "Sigma (Tamil)",
+      "albumId": "80781127",
+      "language": "tamil",
+      "genre": null,
+      "duration": 206
+    },
+    {
+      "id": "saavn:BHTBKbVn",
+      "title": "Kalla Nikkiriye",
+      "artist": "Govind Vasantha, Sid Sriram, Karthik Netha",
+      "artists": [
+        {
+          "name": "Govind Vasantha"
+        },
+        {
+          "name": "Sid Sriram"
+        },
+        {
+          "name": "Karthik Netha"
+        }
+      ],
+      "album": "Anbil Avan (Original Motion Picture Soundtrack)",
+      "albumId": "81310831",
+      "language": "tamil",
+      "genre": null,
+      "duration": 241
+    },
+    {
+      "id": "saavn:N-_Dj1p3",
+      "title": "Adi Podi",
+      "artist": "Hiphop Tamizha",
+      "artists": [
+        {
+          "name": "Hiphop Tamizha"
+        }
+      ],
+      "album": "Meesaya Murukku 2",
+      "albumId": "81589805",
+      "language": "tamil",
+      "genre": null,
+      "duration": 161
+    },
+    {
+      "id": "saavn:OJcm2ra4",
+      "title": "Annakiliye",
+      "artist": "Smith Asher, Dheekshitha",
+      "artists": [
+        {
+          "name": "Smith Asher"
+        },
+        {
+          "name": "Dheekshitha"
+        }
+      ],
+      "album": "Annakiliye",
+      "albumId": "81129277",
+      "language": "tamil",
+      "genre": null,
+      "duration": 238
+    }
+  ]
+}

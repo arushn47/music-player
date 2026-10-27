@@ -1,6 +1,14 @@
 import type { Track } from "./types";
 import type { YtdlpSearchResult } from "../adapters/native";
-import { canonicalArtistCredit } from "./catalog-links";
+import { artistCredits, canonicalArtistCredit } from "./catalog-links";
+
+function youtubeArtist(value: string, channel: string | null): string {
+  const artist = canonicalArtistCredit(value);
+  // The rapper's channel omits "$"; do not alias unrelated catalog/local Krsna credits.
+  if (!/^krsna(?:\s*-\s*topic)?$/i.test(channel?.trim() || "")) return artist;
+  if (!artist || /^unknown artist$/i.test(artist)) return "KR$NA";
+  return artistCredits(artist).map(credit => /^krsna$/i.test(credit.name) ? "KR$NA" : credit.name).join(", ");
+}
 
 const presentationLabel =
   /^(?:(?:official\s+)?(?:music\s+)?(?:lyric(?:s)?(?:\s+video)?|audio|video|visuali[sz]er)|hd|hq|4k)$/i;
@@ -87,7 +95,7 @@ export function youtubeTrack(result: YtdlpSearchResult): Track {
   return {
     id: `youtube:${result.id}`,
     title: result.track?.trim() || song,
-    artist: canonicalArtistCredit(result.artist?.trim() || artist),
+    artist: youtubeArtist(result.artist?.trim() || artist, result.channel),
     album: result.album?.trim() || "",
     duration: result.duration || 0,
     fileName: result.title,
@@ -109,7 +117,7 @@ export function youtubeTrack(result: YtdlpSearchResult): Track {
 export function repairYoutubeTrack(track: Track): Track {
   if (track.source?.providerId !== "youtube") return track;
   const source = track.source;
-  const artist = canonicalArtistCredit(track.artist);
+  const artist = track.metadataSourceId ? canonicalArtistCredit(track.artist) : youtubeArtist(track.artist, source.attribution);
   if (artist !== track.artist) track = { ...track, artist };
   if (
     track.metadataSourceId ||

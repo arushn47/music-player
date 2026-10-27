@@ -100,9 +100,16 @@ fn parse_youtube(data: &Value) -> Result<Playlist, String> {
 }
 
 #[tauri::command]
-pub async fn read_playlist_link(link: String) -> Result<Playlist, String> {
+pub async fn read_playlist_link(_app: tauri::AppHandle, link: String) -> Result<Playlist, String> {
     let (provider, url) = target(&link)?;
     if provider == "youtube" {
+        #[cfg(target_os = "android")]
+        {
+            let data = crate::android::call(&_app, "resolveSource", json!({"operation":"playlist", "url":url})).await?;
+            if data.to_string().len() > 8_000_000 { return Err("Playlist metadata exceeds 8 MB. Use a smaller playlist.".into()); }
+            return parse_youtube(&data);
+        }
+        #[cfg(not(target_os = "android"))]
         return tauri::async_runtime::spawn_blocking(move || {
             let output = crate::ytdlp::run_ytdlp(&["--ignore-config", "--no-warnings", "--flat-playlist", "--skip-download", "--playlist-end", "501", "--dump-single-json", "--socket-timeout", "10", "--", &url])?;
             if output.len() > 8_000_000 { return Err("Playlist metadata exceeds 8 MB. Use a smaller playlist.".into()); }

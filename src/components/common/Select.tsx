@@ -55,6 +55,7 @@ export function Select<T extends string | number = string>({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        e.preventDefault();
         setIsOpen(false);
         triggerRef.current?.focus();
       }

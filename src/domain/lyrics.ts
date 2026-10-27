@@ -1,4 +1,24 @@
-import type { LyricDocument } from "./types";
+import type { LyricDocument, LyricLine } from "./types";
+
+function enhancedLine(body: string, start: number): Pick<LyricLine, "text" | "words"> {
+  const markers = [...body.matchAll(/<(\d{1,3}):([0-5]\d)(?:[.:](\d{1,3}))?>/g)];
+  const text = body.replace(/<\d{1,3}:[0-5]\d(?:[.:]\d{1,3})?>/g, "");
+  if (!markers.length) return { text };
+  const times = markers.map(m => (Number(m[1]) * 60 + Number(m[2])) * 1000 + Number((m[3] || "").padEnd(3, "0")));
+  // Unmarked prefixes and backwards clocks cannot be assigned genuine word timings.
+  if (body.slice(0, markers[0].index).trim() || times.some((t, i) => t < start || (i > 0 && t < times[i - 1]))) return { text };
+  const words = markers.flatMap((m, i) => {
+    const value = body.slice(m.index! + m[0].length, markers[i + 1]?.index ?? body.length);
+    return value ? [{ time: times[i], end: times[i + 1], text: value }] : [];
+  });
+  return words.length && words.map(w => w.text).join("") === text ? { text, words } : { text };
+}
+
+export function wordProgress(word: NonNullable<LyricLine["words"]>[number], clock: number): number {
+  if (!Number.isFinite(clock) || clock < word.time) return 0;
+  // A final word without an explicit end gets a discrete highlight, never an invented duration.
+  return word.end !== undefined && word.end > word.time ? Math.min(1, (clock - word.time) / (word.end - word.time)) : 1;
+}
 
 // Source line IDs depend on source order/occurrence, never on a timing offset or supplied variant.
 export function parseLyrics(raw: string, fileName = "Lyrics"): LyricDocument {
@@ -38,7 +58,7 @@ export function parseLyrics(raw: string, fileName = "Lyrics"): LyricDocument {
           time:
             (Number(s[1]) * 60 + Number(s[2])) * 1000 +
             Number((s[3] || "").padEnd(3, "0")),
-          text: body,
+          ...enhancedLine(body, (Number(s[1]) * 60 + Number(s[2])) * 1000 + Number((s[3] || "").padEnd(3, "0"))),
         }),
       );
     } else if (line.trim()) {
@@ -52,6 +72,7 @@ export function parseLyrics(raw: string, fileName = "Lyrics"): LyricDocument {
   if (offsetTags > 1)
     warnings.push("Multiple file offsets: the last valid offset is used.");
   if (timed) lines.sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity));
+  // Vocal lines can overlap; only the word sequence within each line must be ordered.
   if (!lines.length) throw new Error("The file contains no lyric lines.");
   return {
     id: crypto.randomUUID(),
@@ -94,7 +115,7 @@ export function synchronizedLyrics(
     return false;
   return !doc.lines.some(
     (line) =>
-      line.time !== null && duration > 0 && line.time > (duration + 2) * 1000,
+      duration > 0 && ((line.time !== null && line.time > (duration + 2) * 1000) || line.words?.some(word => (word.end ?? word.time) > (duration + 2) * 1000)),
   );
 }
 
@@ -130,6 +151,19 @@ export function normalizeCachedLyrics(
   doc: LyricDocument,
   duration: number,
 ): LyricDocument {
+  if (doc.raw.length <= 1_048_576 && /<\d{1,3}:[0-5]\d(?:[.:]\d{1,3})?>/.test(doc.raw)) {
+    const parsed = parseLyrics(doc.raw, doc.fileName);
+    const source = new Map(parsed.lines.map(line => [line.id, line]));
+    let changed = false;
+    const lines = doc.lines.map(line => {
+      const original = source.get(line.id);
+      if (!original || original.time !== line.time || original.text !== line.text.replace(/<\d{1,3}:[0-5]\d(?:[.:]\d{1,3})?>/g, "")) return line;
+      if (original.text === line.text && JSON.stringify(original.words) === JSON.stringify(line.words)) return line;
+      changed = true;
+      return { ...line, text: original.text, words: original.words };
+    });
+    if (changed) doc = { ...doc, lines };
+  }
   // Older parsers mistook section labels such as [Chorus: Singer] for timestamps.
   const sourceLines = doc.raw.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").split("\n");
   const cleanedWarnings = doc.warnings.filter(warning => {

@@ -8,9 +8,10 @@ export interface EngineSetupProps {
   engineCancelling: boolean;
   onInstallYoutubeEngine: () => Promise<void>;
   onCancelYoutubeEngineInstall: () => Promise<void>;
+  required?: boolean;
 }
 
-export function EngineSetupCard({ engineState, engineError, engineProgress: progress, engineCancelling, onInstallYoutubeEngine, onCancelYoutubeEngineInstall }: EngineSetupProps) {
+export function EngineSetupCard({ engineState, engineError, engineProgress: progress, engineCancelling, onInstallYoutubeEngine, onCancelYoutubeEngineInstall, required = false }: EngineSetupProps) {
   const installing = engineState === "installing";
   const checking = engineState === "checking";
   const installed = engineState === "installed";
@@ -29,7 +30,8 @@ export function EngineSetupCard({ engineState, engineError, engineProgress: prog
       <strong>{installed ? "Online playback is ready" : installing ? "Setting up online playback" : checking ? "Checking online playback" : "Enable online playback"}</strong>
       <p>{installed ? "Ready to listen. No restart needed."
         : checking ? "Checking the components on this device. Your local music is ready to use."
-        : installing ? "You can keep browsing while setup finishes. Keep Lumaire open."
+        : installing ? required ? "Keep Lumaire open while setup finishes. This dialog closes when playback is ready." : "You can keep browsing while setup finishes. Keep Lumaire open."
+        : required ? "Download the free playback components once to continue into Lumaire. If setup fails or is cancelled, retry here."
         : "Download the free playback components once to listen to online discoveries. Local music works without this step."}</p>
       {installing && <div className="engine-install-progress">
         <p role="status" aria-live="polite">{engineCancelling ? "Cancelling… Waiting for the current check to stop." : stage}</p>

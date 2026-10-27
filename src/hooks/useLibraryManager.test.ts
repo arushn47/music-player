@@ -34,6 +34,7 @@ vi.mock("../domain/catalog-track", async importOriginal => ({
 }));
 import { useLibraryManager } from "./useLibraryManager";
 import { playCollection, playbackQueue } from "../domain/queue";
+import { catalogQueueTrack } from '../domain/catalog-track';
 const catalog: CatalogTrack = { id: "itunes:42", title: "Pal Pal", artist: "Afusic, Talwiinder", artists: [], album: "Pal Pal", duration: 208 };
 const current: Track = { id: "current", title: "Current", artist: "Artist", album: "Album", duration: 200, format: "WAV", fileName: "Current.wav", missing: false };
 const candidate = { id: "abcdefghijk", title: catalog.title, channel: catalog.artist, duration: 208, thumbnail: null };
@@ -48,6 +49,46 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("instant catalog queue actions", () => {
+  it('captures all favorite types through the shared update path', () => {
+    let manager = render();
+    manager.setTracks([catalogQueueTrack(catalog)]);
+    manager.setSession({ ...manager.session, replica: { deviceId: 'local', clock: 3, cells: {}, favoritesInitialized: true } });
+    render().favorite(catalog.id);
+    manager = render();
+    expect(manager.session.replica!.cells[JSON.stringify(['fav-track', catalog.id])].value).toMatchObject({ id: catalog.id });
+    manager.update(s => ({ ...s, favoriteArtists: [{ id: 'itunes:12', name: 'Artist' }], favoriteAlbums: [{ id: 'itunes:34', title: 'Album', artist: 'Artist' }] }));
+    manager = render();
+    expect(Object.keys(manager.session.replica!.cells)).toHaveLength(3);
+    manager.update(s => ({ ...s, favorites: [], favoriteArtists: [], favoriteAlbums: [], playlists: [{ id: 'mix', name: 'Mix', items: [] }] }));
+    manager = render();
+    expect(manager.session.replica!.cells[JSON.stringify(['name','mix'])].value).toBe('Mix');
+    for (const cell of Object.values(manager.session.replica!.cells).filter(c=>c.key.startsWith('["fav-'))) expect(cell.value).toBe(false);
+  });
+  it("keeps errors while a notification is shown and expires that notification after four seconds", () => {
+    render().setError('An existing error');
+    render().notify('Saved to library');
+    expect(render().error).toBe('An existing error');
+    expect(render().message).toBe('Saved to library');
+    const [expire, delay] = vi.mocked(window.setTimeout).mock.calls.at(-1)!;
+    expect(delay).toBe(4000);
+    (expire as () => void)();
+    expect(render().message).toBe('');
+  });
+  it("favorites a streamed queue song without locking playback, then supports unliking", async () => {
+    const streamed: Track = { ...current, id: 'youtube:streamed', title: 'Streamed song', format: 'YouTube', source: { providerId: 'youtube', sourceId: 'streamed', pageUrl: 'https://www.youtube.com/watch?v=streamed', license: '', licenseUrl: '', attribution: 'Artist' } };
+    let manager = render();
+    manager.setSession({ ...manager.session, queueTracks: { [streamed.id]: streamed } });
+    bridge.saveOnline.mockResolvedValue(streamed);
+    render().favorite(streamed.id);
+    await settle(); manager = render();
+    expect(bridge.saveOnline).toHaveBeenCalledWith(streamed);
+    expect(manager.session.favorites).toContain(streamed.id);
+    expect(manager.busy).toBe(false);
+    manager.favorite(streamed.id);
+    expect(render().session.favorites).not.toContain(streamed.id);
+    expect(bridge.player.pause).not.toHaveBeenCalled();
+    expect(bridge.player.load).not.toHaveBeenCalled();
+  });
   it("inserts next/queue requests before verification finishes, preserves click order and never locks or changes playback", async () => {
     let resolve!: (value: typeof candidate) => void;
     bridge.resolve.mockImplementation(() => new Promise(done => { resolve = done; }));
@@ -99,5 +140,31 @@ describe("instant catalog queue actions", () => {
     render().update(session => ({ ...session, queue: session.queue.slice(0, 1) }));
     render(); resolve(candidate); await settle();
     expect(render().session.queue.map(entry => entry.trackId)).toEqual([current.id]);
+  });
+
+  it("supports notification actions with extended expiry and records last playlist in localStorage", async () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    });
+    const onClick = vi.fn();
+    const manager = render();
+    manager.notify("Added to Telugu", { label: "Change", onClick });
+    expect(render().message).toBe("Added to Telugu");
+    expect(render().messageAction).toEqual({ label: "Change", onClick });
+    const [expire, delay] = vi.mocked(window.setTimeout).mock.calls.at(-1)!;
+    expect(delay).toBe(6000);
+    (expire as () => void)();
+    expect(render().message).toBe("");
+    expect(render().messageAction).toBeNull();
+
+    // Adding track to playlist
+    render().update(s => ({ ...s, playlists: [{ id: "p1", name: "Telugu", items: [] }] }));
+    await render().addOnlineToPlaylist(current, "p1", undefined, { action: { label: "Change", onClick } });
+    await settle();
+    expect(storage.get("lumaire:last-playlist-id")).toBe("p1");
+    expect(render().message).toBe("Added to Telugu");
+    expect(render().messageAction?.label).toBe("Change");
   });
 });

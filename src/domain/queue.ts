@@ -169,13 +169,16 @@ export function reorderUpcoming(
   id: string,
   delta: number,
 ): Session {
-  const order = playbackQueue(session);
+  const order = [...playbackQueue(session)];
   const current = order.findIndex((entry) => entry.id === session.currentId);
   const from = order.findIndex((entry) => entry.id === id);
-  if (from <= current || from + delta <= current) return session;
+  const to = from + delta;
+  if (from <= current || !Number.isInteger(delta) || !delta || to <= current || to >= order.length) return session;
+  const [entry] = order.splice(from, 1);
+  order.splice(to, 0, entry);
   // A manual reorder specifies the displayed upcoming order, including any
   // collection items moved between explicit requests.
-  const queue = move(order, id, delta).map((entry, index) =>
+  const queue = order.map((entry, index) =>
     index > current ? { ...entry, requested: true } : entry,
   );
   return {

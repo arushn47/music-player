@@ -1,5 +1,5 @@
 // Android tooling is scoped to this process. Never load user API keys from .env.
-import { existsSync, readdirSync, copyFileSync, mkdirSync } from "node:fs";
+import { existsSync, readdirSync, copyFileSync, mkdirSync, statSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 
@@ -70,8 +70,28 @@ if (missing.length) {
   );
   process.exit(1);
 }
-if (!["init", "build", "dev"].includes(command))
-  throw new Error("Use doctor, init, build or dev.");
+if (command === "install") {
+  const adb = path.join(env.ANDROID_HOME, "platform-tools/adb.exe");
+  const candidates = [
+    path.resolve("releases/Lumaire-v1.0.5/Lumaire-1.0.5-Android-arm64.apk"),
+    path.resolve("src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk"),
+  ].filter(existsSync);
+  candidates.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
+  const targetApk = candidates[0];
+  if (!targetApk) {
+    console.error("No APK found to install.");
+    process.exit(1);
+  }
+  console.log(`Installing newest APK: ${path.basename(targetApk)} (modified ${new Date(statSync(targetApk).mtimeMs).toLocaleTimeString()}) via ADB...`);
+  let result = spawnSync(adb, ["install", "-r", targetApk], { env, stdio: "inherit" });
+  if (result.status !== 0) {
+    console.log("Install failed; attempting with -d flag...");
+    result = spawnSync(adb, ["install", "-r", "-d", targetApk], { env, stdio: "inherit" });
+  }
+  process.exit(result.status ?? 0);
+}
+if (!["init", "build", "dev", "install"].includes(command))
+  throw new Error("Use doctor, init, build, dev or install.");
 const cli = path.resolve("node_modules/@tauri-apps/cli/tauri.js");
 const options = command === "init" ? ["--ci", "--skip-targets-install"] : [];
 let failure = "";

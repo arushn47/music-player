@@ -12,7 +12,7 @@ import type { Track } from "../../domain/types";
 import type { ListeningRecord } from "../../domain/listening";
 import { clearDiscoverySearches, discoveryPreferences, rememberDiscoverySearch, removeDiscoverySearch } from "../../adapters/discovery-home";
 import { Artwork, IconButton } from "../common";
-import { EngineSetupCard, type EngineSetupProps } from "../common/EngineSetupCard";
+import type { EngineSetupProps } from "../common/EngineSetupCard";
 import { CatalogTrackActions, type CatalogActionHandlers } from "../common/CatalogTrackActions";
 import { DiscoverShelves } from "./DiscoverShelves";
 import type { CommonsDiscoveryState } from "./CommonsDiscovery";
@@ -455,7 +455,6 @@ export function DiscoveryView({
         </div>
 
         {!ytdlpAvailable && mobile && engineSetup.engineState !== "checking" && <div className="banner error" role="alert">Online streaming could not start. Try restarting Lumaire; your local music remains available.</div>}
-        {!mobile && (!ytdlpAvailable || engineSetup.engineState === "installing") && <EngineSetupCard {...engineSetup} />}
 
         {error && (
           <div className="banner error" role="alert">
@@ -491,6 +490,7 @@ export function DiscoveryView({
                     >
                       <img
                         src={item.image}
+                        onError={event => { event.currentTarget.hidden = true; }}
                         alt=""
                         className="explore-card-img"
                         loading="lazy"

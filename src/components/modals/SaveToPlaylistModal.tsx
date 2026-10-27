@@ -131,9 +131,14 @@ export function SaveToPlaylistModal({
                   session.queueTracks[i.trackId]?.artworkUrl,
               )
               .find(Boolean);
-            const isAdded = playlist.items.some(
-              (i) => i.trackId === playlistTarget.id,
-            );
+            const isAdded = playlist.items.some((i) => {
+              if (i.trackId === playlistTarget.id) return true;
+              if (playlistTarget.metadataSourceId) {
+                const saved = tracks.find((t) => t.id === i.trackId) || session.queueTracks[i.trackId];
+                if (saved?.metadataSourceId === playlistTarget.metadataSourceId) return true;
+              }
+              return false;
+            });
 
             return (
               <button

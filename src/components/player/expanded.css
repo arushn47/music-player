@@ -86,9 +86,9 @@ dialog.expanded-player {
   transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
 }
 .expanded-layout.has-lyrics {
-  grid-template-columns: minmax(320px, 460px) minmax(0, 1.15fr);
-  gap: clamp(36px, 6vw, 96px);
-  padding: 68px clamp(32px, 6vw, 120px) 44px;
+  grid-template-columns: minmax(320px, 4fr) minmax(0, 6fr);
+  gap: clamp(32px, 4.5vw, 72px);
+  padding: 68px clamp(32px, 4vw, 72px) 44px;
   justify-content: center;
 }
 .expanded-layout.no-lyrics {
@@ -183,6 +183,7 @@ dialog.expanded-player {
 .expanded-transport .track-meta.now-playing-meta {
   flex: 1;
   min-width: 0;
+  max-width: none;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -582,7 +583,9 @@ dialog.expanded-player {
   min-height: 38px;
   box-sizing: border-box;
   flex-shrink: 0;
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  contain: paint;
+  transition: width 0.3s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .expanded-volume-control:hover,
 .expanded-volume-control.is-hovered,
@@ -630,7 +633,7 @@ dialog.expanded-player {
   border: none;
   box-shadow: none;
   outline: none;
-  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), opacity 0.16s ease, margin 0.22s ease;
+  transition: width 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.14s ease, margin 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 .expanded-volume-control:hover input[type="range"],
 .expanded-volume-control.is-hovered input[type="range"],
@@ -640,6 +643,7 @@ dialog.expanded-player {
   pointer-events: auto;
   margin-left: 2px;
   margin-right: 10px;
+  transition: width 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.18s 0.04s ease-out, margin 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
 .expanded-volume-control input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
@@ -684,6 +688,9 @@ dialog.expanded-player {
 .expanded-lyrics::-webkit-scrollbar {
   display: none;
 }
+@media (min-width: 769px) {
+  .expanded-lyrics { height: min(100%, 70dvh); }
+}
 .expanded-lyrics .lyric-room {
   padding: 0 10px;
   min-height: 100%;
@@ -698,7 +705,7 @@ dialog.expanded-player {
 }
 .expanded-lyrics .lyric-lines {
   width: 100%;
-  max-width: 100%;
+  max-width: min(860px, 100%);
   padding-top: 22vh;
   padding-bottom: 30vh;
   mask-image: none;
@@ -748,7 +755,7 @@ dialog.expanded-player {
 }
 .expanded-lyrics .lyric-line {
   width: 100%;
-  max-width: 100%;
+  max-width: min(860px, 100%);
 }
 
 .lyric-empty-instrumental {

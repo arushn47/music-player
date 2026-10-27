@@ -10,6 +10,7 @@ describe("catalog navigation references", () => {
     expect(artistReference("Emiway")).toBe("saavn:artist:name:Emiway%20Bantai");
   });
   it("keeps individual collaboration credits and escapes locator delimiters", () => {
+    expect(artistCredits('Kr$na')[0]).toEqual({ name: 'KR$NA', id: 'saavn:artist:name:KR%24NA' });
     expect(artistCredits("KR$NA, Seedhe Maut").map(credit => credit.name)).toEqual(["KR$NA", "Seedhe Maut"]);
     expect(artistCredits("Bayaan, Hasan Raheem & Rovalio").map(credit => credit.name)).toEqual(["Bayaan", "Hasan Raheem", "Rovalio"]);
     expect(artistCredits("R&B")[0].name).toBe("R&B");

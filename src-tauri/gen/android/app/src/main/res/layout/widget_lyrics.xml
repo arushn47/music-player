@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_lyrics_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background">
+
+    <!-- Dynamic tinted background (rendered 1:1 with rounded corners) -->
+    <ImageView
+        android:id="@+id/widget_lyrics_bg_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:contentDescription="" />
+
+    <LinearLayout
+        android:id="@+id/widget_lyrics_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp">
+
+        <!-- Track Header Indicator (shown when height >= 110dp) -->
+        <LinearLayout
+            android:id="@+id/widget_lyrics_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:src="@drawable/ic_widget_dot"
+                android:contentDescription="" />
+
+            <TextView
+                android:id="@+id/widget_lyrics_track_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="#C4B5FD"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:text="LUMAIRE LIVE LYRICS" />
+        </LinearLayout>
+
+        <!-- Previous lyric line (faint/dimmed, shown on tall widgets) -->
+        <TextView
+            android:id="@+id/widget_lyrics_prev"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:textSize="12sp"
+            android:textColor="#71717A"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:visibility="gone"
+            android:text="" />
+
+        <!-- Current active lyric line (prominent, glowing accent) -->
+        <TextView
+            android:id="@+id/widget_lyrics_current"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:lineSpacingExtra="3dp"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:text="Not playing" />
+
+        <!-- Upcoming lyric line 1 -->
+        <TextView
+            android:id="@+id/widget_lyrics_next"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="13sp"
+            android:textColor="#A1A1AA"
+            android:lineSpacingExtra="2dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:text="Play music in Lumaire" />
+
+        <!-- Upcoming lyric line 2 (shown on tall widgets) -->
+        <TextView
+            android:id="@+id/widget_lyrics_next2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textSize="12sp"
+            android:textColor="#71717A"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:visibility="gone"
+            android:text="" />
+    </LinearLayout>
+</FrameLayout>

@@ -64,3 +64,54 @@ it("renders Import button beside New playlist in playlists view when onOpenImpor
   expect(html).toContain('title="Import playlists from Spotify, YouTube, Apple Music or files"');
 });
 
+it("renders Download playlist action and progress display when viewing a playlist", () => {
+  const noop = () => {};
+  const session = defaults();
+  const playlist = { id: "p1", name: "Road Trip", createdAt: 1, items: [{ id: "i1", trackId: "t1" }] };
+  const track = { id: "t1", title: "Highway", album: "Drive", artist: "Driver", duration: 120, fileName: "h.mp3", format: "MP3", missing: false };
+  const props: LibraryViewProps = {
+    view: "library",
+    heading: "Road Trip",
+    playlist,
+    tracks: [track],
+    visible: [track],
+    rows: [{ t: track, entryId: "i1" }],
+    playbackStatus: "idle",
+    session,
+    downloads: {},
+    collections: [],
+    query: "",
+    busy: false,
+    mobile: false,
+    desktop: true,
+    onSetQuery: noop,
+    onSelectView: noop,
+    onPlayAll: noop,
+    onPlayTrackInList: noop,
+    onImportMusic: noop,
+    onFavorite: noop,
+    onRemoveTrack: noop,
+    onDownloadTrack: noop,
+    onDeleteOffline: noop,
+    onQueueTrack: noop,
+    onRelinkTrack: noop,
+    onChoosePlaylist: noop,
+    onDownloadPlaylist: noop,
+    downloadProgress: {
+      active: true,
+      done: 1,
+      total: 3,
+      stage: "Downloading",
+      title: "Highway",
+      percent: 45,
+      failed: [],
+      paused: false,
+      cancelled: false,
+    },
+  };
+  const html = renderToStaticMarkup(<LibraryView {...props} />);
+  expect(html).toContain("Downloading…");
+  expect(html).toContain("album-download-progress");
+  expect(html).toContain("Track 2 of 3 · Downloading: Highway");
+});
+

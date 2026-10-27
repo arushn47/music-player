@@ -2,6 +2,13 @@ import { expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PlayerBar, type PlayerBarProps } from "./PlayerBar";
 import { defaults } from "../../domain/types";
+it("caps immersive titles while keeping the full title available on hover", () => {
+  const title = 'Veezha Veera (From "OM Chapter 1: Udhiram – The Blood Wood") [Tamil]';
+  const props = { tracks: [], session: defaults(), playback: {status: "paused", time: 0, duration: 200}, downloads: {}, track: {id: "fixture", title, artist: "Artist"} } as unknown as PlayerBarProps;
+  const html = renderToStaticMarkup(<PlayerBar {...props} expanded titleCharacterLimit={40}/>);
+  expect(html).toContain(`${title.slice(0, 40).trimEnd()}...`.replaceAll('"', '&quot;'));
+  expect(html).toContain(title.replaceAll('"', '&quot;'));
+});
 it("offers expansion only on PC while keeping the mobile mini-player", () => {
   const noop = () => {};
   const props: PlayerBarProps = { tracks: [], session: defaults(), playback: { status: "idle", trackId: null, time: 0, duration: 0, error: null }, downloads: {}, busy: false, view: "discover", setView: noop, onSeek: noop, onTogglePlay: noop, onSkip: noop, onFavorite: noop, onChoosePlaylist: noop, onDownloadTrack: noop, onDeleteOffline: noop, onSaveOnline: noop, onCancelDownload: noop, onSetting: noop, onExpand: noop };
@@ -128,5 +135,52 @@ it("renders track action items in current-track-menu for active tracks", () => {
   expect(html).toContain('class="track-menu current-track-menu"');
   expect(html).toContain("Save to playlist");
   expect(html).toContain("Add to favorites");
+  const streamed = renderToStaticMarkup(<PlayerBar {...props} tracks={[]} />);
+  expect(streamed).toContain('aria-label="Favorite current track"');
+  for (const expanded of [false, true]) {
+    const artists = renderToStaticMarkup(<PlayerBar {...props} expanded={expanded} track={{ ...mockTrack, artist: "Hesham Abdul Wahab, Darshana Rajendran" }} onNavigateArtist={noop} />);
+    expect(artists).toContain('>Darshana Rajendran</button>');
+    expect(artists).not.toContain('>Darsh…</button>');
+  }
+});
+
+it("preserves longer song titles and multiple artists on mobile playback controls without early cut off", () => {
+  const noop = () => {};
+  const mockTrack = {
+    id: "track-1",
+    title: "A Somewhat Longer Song Title For Testing",
+    artist: "Artist One, Artist Two, Artist Three",
+    album: "Test Album",
+    duration: 180,
+    fileName: "test.mp3",
+    offline: false,
+    missing: false,
+    format: "online",
+  };
+  const props: PlayerBarProps = {
+    tracks: [mockTrack],
+    track: mockTrack,
+    session: defaults(),
+    playback: { status: "playing", trackId: "track-1", time: 10, duration: 180, error: null },
+    downloads: {},
+    busy: false,
+    view: "discover",
+    setView: noop,
+    onSeek: noop,
+    onTogglePlay: noop,
+    onSkip: noop,
+    onFavorite: noop,
+    onChoosePlaylist: noop,
+    onDownloadTrack: noop,
+    onDeleteOffline: noop,
+    onSaveOnline: noop,
+    onCancelDownload: noop,
+    onSetting: noop,
+    mobile: true,
+  };
+  const html = renderToStaticMarkup(<PlayerBar {...props} onNavigateArtist={noop} />);
+  expect(html).toContain("A Somewhat Longer Song Title For Testing");
+  expect(html).not.toContain("A Somewhat Longer Song...");
+  expect(html).toContain(">Artist Three</button>");
 });
 

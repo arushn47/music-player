@@ -27,6 +27,7 @@ import type { Track, Session, Preferences } from "../../domain/types";
 import type { Playback } from "../../player/controller";
 
 export interface PlayerBarProps {
+  titleCharacterLimit?: number;
   autoplayLoading?: boolean;
   onFloatingLyrics?: () => void;
   floatingLyricsOpen?: boolean;
@@ -64,6 +65,7 @@ const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 
 export function PlayerBar({
+  titleCharacterLimit,
   autoplayLoading = false,
   onFloatingLyrics,
   floatingLyricsOpen,
@@ -104,6 +106,23 @@ export function PlayerBar({
   );
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const isVolumeDragging = useRef(false);
+  const volumeContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handlePointerUp = () => {
+      if (isVolumeDragging.current) {
+        isVolumeDragging.current = false;
+        if (!volumeContainerRef.current?.matches(":hover")) {
+          if (volumeContainerRef.current?.contains(document.activeElement)) {
+            (document.activeElement as HTMLElement)?.blur();
+          }
+        }
+      }
+    };
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => window.removeEventListener("pointerup", handlePointerUp);
+  }, []);
 
   useEffect(() => {
     setContextMenu(null);
@@ -230,8 +249,7 @@ export function PlayerBar({
   );
 
   const activeTime = scrubbingTime ?? Math.min(playback.time, playback.duration || 1);
-  const titleLimit = mobile ? 22 : 28;
-  const artistLimit = mobile ? 20 : 25;
+  const titleLimit = titleCharacterLimit ?? (mobile ? 48 : 28);
   const rawTitle =
     (track?.title && track.title.trim()) ||
     (track?.fileName && track.fileName.trim()) ||
@@ -245,17 +263,13 @@ export function PlayerBar({
     (track?.artist && track.artist.trim()) ||
     (track?.source?.attribution && track.source.attribution.trim()) ||
     "Choose a track to begin";
-  const isArtistLong = rawArtist.length > artistLimit;
-  const displayArtist = isArtistLong
-    ? `${rawArtist.slice(0, artistLimit).replace(/[,;\s]+$/, "")}…`
-    : rawArtist;
 
 
   const swipes = usePlayerSwipe({ up: onExpand, left: () => { if (track) onSkip(1); }, right: () => { if (track) onSkip(-1); } });
   return (
     <footer className={`transport ${expanded ? "expanded-transport" : ""}`} aria-label="Playback controls"
       {...(mobile ? swipes : {})}
-      onClick={event => { if (mobile && track && !(event.target as Element).closest("button, input, a, summary")) onExpand?.(); }}
+      onClick={event => { if (!expanded && track && !(event.target as Element).closest("button, input, a, summary, details, .menu-popover, .seek-bar-top")) onExpand?.(); }}
       onContextMenu={(event) => {
         if (!track || track.format === "catalog") return;
         event.preventDefault();
@@ -348,12 +362,11 @@ export function PlayerBar({
         )}
         <div
           className="track-meta now-playing-meta"
-          onClick={mobile && onExpand ? onExpand : undefined}
           style={mobile && onExpand ? { cursor: "pointer" } : undefined}
         >
           <span className="now-playing-title-wrap">
             <strong dir="auto">
-              {expanded ? rawTitle : displayTitle}
+              {expanded && titleCharacterLimit === undefined ? rawTitle : displayTitle}
             </strong>
             {Boolean(track?.title) && (
               <span className="title-hover-tooltip" role="tooltip">
@@ -366,12 +379,12 @@ export function PlayerBar({
               <small dir="auto" className="now-playing-artist">
                 {track ? (
                   <ArtistLinks
-                    artistString={displayArtist}
+                    artistString={rawArtist}
                     onNavigateArtist={onNavigateArtist}
-                    maxArtists={2}
+                    maxArtists={mobile ? 3 : 2}
                   />
                 ) : (
-                  displayArtist
+                  rawArtist
                 )}
               </small>
               {Boolean(track?.artist) && (
@@ -391,7 +404,7 @@ export function PlayerBar({
           <span>{clock(playback.duration)}</span>
         </div>
 
-        {track && tracks.some((saved) => saved.id === track.id) && !expanded && (
+        {track && !expanded && (
           <IconButton
             label="Favorite current track"
             active={session.favorites.includes(track.id)}
@@ -512,7 +525,17 @@ export function PlayerBar({
             <FileText size={18} />
           </IconButton>
           {!mobile && (
-            <div className="player-volume-container">
+            <div
+              ref={volumeContainerRef}
+              className="player-volume-container"
+              onMouseLeave={() => {
+                if (!isVolumeDragging.current) {
+                  if (volumeContainerRef.current?.contains(document.activeElement)) {
+                    (document.activeElement as HTMLElement)?.blur();
+                  }
+                }
+              }}
+            >
               <IconButton
                 label={session.settings.volume === 0 ? "Unmute" : "Mute"}
                 className="volume-icon-btn"
@@ -543,6 +566,15 @@ export function PlayerBar({
                     "--volume-percent": `${Math.min(100, Math.max(0, session.settings.volume * 100))}%`,
                   } as React.CSSProperties
                 }
+                onPointerDown={() => {
+                  isVolumeDragging.current = true;
+                }}
+                onPointerUp={(e) => {
+                  isVolumeDragging.current = false;
+                  if (!volumeContainerRef.current?.matches(":hover")) {
+                    e.currentTarget.blur();
+                  }
+                }}
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   if (val > 0) lastVolume.current = val;

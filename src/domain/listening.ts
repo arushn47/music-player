@@ -88,17 +88,20 @@ export function aggregateListening(records: ListeningRecord[], range: HistoryRan
     const artist = record.artist.trim() || "Unknown artist";
     // Explicit collaboration delimiters only; do not split the word 'and' in band names.
     const artists = new Map(artist.split(/\s*[,;&]\s*/u).filter(Boolean).map(name => [normalized(name), name]));
+    // Use metadataSourceId as the canonical track key when available: two catalog songs that
+    // resolve to the same YouTube video share a trackId but must stay separate in rankings.
+    const trackKey = record.metadataSourceId || record.trackId;
     for (const [key, name] of artists) {
       add(groups.artists, key, name, "", ms, record);
       const meta = artistMeta.get(key) || { songs: new Set<string>(), plays: 0 };
-      meta.songs.add(record.trackId || record.title);
+      meta.songs.add(trackKey || record.title);
       meta.plays++;
       artistMeta.set(key, meta);
     }
     const rawAlbum = record.album.trim();
     const album = !rawAlbum || ["youtube", "local collection", "unknown", "unknown album"].includes(normalized(rawAlbum)) ? "Unknown album" : rawAlbum;
     add(groups.albums, `${normalized(artist)}\0${normalized(album)}`, album, artist, ms, record);
-    add(groups.tracks, record.trackId, record.title || "Unknown track", artist, ms, record);
+    add(groups.tracks, trackKey, record.title || "Unknown track", artist, ms, record);
   }
   for (const [key, rank] of groups.artists) {
     const meta = artistMeta.get(key);

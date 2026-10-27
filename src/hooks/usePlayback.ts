@@ -1,7 +1,12 @@
 import { useTaskbarControls } from "./useTaskbarControls";
 import { useEffect, useRef, useState } from "react";
-import { library, mobile } from "../adapters/native";
-import { autoplayCandidates, resolveAutoplayCandidate, autoplayTitle } from '../domain/autoplay';
+import { mobile, type CatalogTrack } from "../adapters/native";
+import { autoplayCandidates, resolveAutoplayCandidate } from '../domain/autoplay';
+import { loadAutoplayPool } from '../adapters/autoplay';
+import { discoveryPreferences } from '../adapters/discovery-home';
+import { rankAutoplay } from '../domain/autoplay-ranking';
+import { catalogQuickPick } from '../domain/quick-picks';
+import type { ListeningRecord } from '../domain/listening';
 import {
   advance,
   advanceAfterFailure,
@@ -10,7 +15,6 @@ import {
   playbackQueue,
   playSelection,
   isQueuedCatalog,
-  isCatalogId,
   resolveQueueEntry,
 } from "../domain/queue";
 import { type QueueItem, type Session, type Track } from "../domain/types";
@@ -35,6 +39,7 @@ export interface UsePlaybackOptions {
   onSetFollow?: (follow: boolean) => void;
   onToggleQueue?: () => void;
   queueOpen?: boolean;
+  listeningRecords?: ListeningRecord[];
 }
 
 export function usePlayback({
@@ -53,6 +58,7 @@ export function usePlayback({
   onSetFollow,
   onToggleQueue,
   queueOpen,
+  listeningRecords = [],
 }: UsePlaybackOptions) {
   const [playback, setPlayback] = useState<Playback>(player.state);
   const [undo, setUndo] = useState<Session["queue"] | null>(null);
@@ -60,6 +66,13 @@ export function usePlayback({
   useTaskbarControls(playback.status === "playing" || playback.status === "buffering", Boolean(playback.trackId), autoplayLoading || playback.status === "loading" || playback.status === "buffering", togglePlay, skip);
   const autoplayRequest = useRef(0);
   const autoplayPending = useRef(false);
+  const autoplayAnchor = useRef<Track | null>(null);
+  const autoplayRecent = useRef<CatalogTrack[]>([]);
+  const autoplayCount = useRef(0);
+  const explicitSkips = useRef<{ track: Track; at: number }[]>([]);
+  const pendingAutoplay = useRef<{ entryId: string; track: Track; metadata?: CatalogTrack; playbackId: Playback['playbackId'] } | null>(null);
+  const recordsRef = useRef(listeningRecords);
+  recordsRef.current = listeningRecords;
   const autoOpenedLyrics = useRef<string | null>(null);
   const failedQueueItems = useRef(new Set<string>());
   const lastVolumeRef = useRef<number>(session.settings.volume || 0.7);
@@ -108,7 +121,7 @@ export function usePlayback({
     if (next) {
       playbackEvent({ trackId: current.trackId, stage: "queue-skip", reason: "unavailable" });
       notify(`Skipped unavailable track. ${playback.error || "Retry it later."}`);
-      selectQueue(next, true);
+      selectQueue(next, true, false);
     } else if (sessionRef.current.settings.autoplay) {
       void continueAutoplay();
     }
@@ -135,37 +148,48 @@ export function usePlayback({
       const s = sessionRef.current;
       const next = advance(s, 1, true);
       if (next) {
-        selectQueue(next, true);
+        selectQueue(next, true, false);
+      } else if (s.settings.autoplay) {
+        void continueAutoplay();
       } else {
         persist();
       }
     };
     if ("onNext" in player) {
       (player as { onNext?: () => void }).onNext = () => {
-        const s = sessionRef.current;
-        const next = advance(s, 1, true);
-        if (next) selectQueue(next, true);
+        skip(1);
       };
     }
     if ("onPrevious" in player) {
       (player as { onPrevious?: () => void }).onPrevious = () => {
-        const s = sessionRef.current;
-        const prev = advance(s, -1, true);
-        if (prev) selectQueue(prev, true);
+        skip(-1);
       };
     }
   });
+
+  // Start audio only after React has committed our queue entry, never from a stale snapshot.
+  useEffect(() => {
+    const pending = pendingAutoplay.current;
+    if (!pending) return;
+    pendingAutoplay.current = null;
+    if (session.currentId !== pending.entryId || !session.settings.autoplay || player.state.playbackId !== pending.playbackId || ['playing', 'buffering', 'loading'].includes(player.state.status)) return;
+    playbackTracks.set(pending.track.id, pending.track);
+    autoplayCount.current++;
+    if (pending.metadata) autoplayRecent.current = [...autoplayRecent.current, pending.metadata].slice(-80);
+    void player.load(pending.track.id, true);
+  }, [session.currentId, session.queue, session.settings.autoplay]);
 
   useEffect(() => {
     autoplayRequest.current++;
     autoplayPending.current = false;
     setAutoplayLoading(false);
+    if (!session.settings.autoplay) autoplayAnchor.current = null;
     return () => { autoplayRequest.current++; autoplayPending.current = false; };
-  }, [session.settings.autoplay, session.currentId]);
+  }, [session.settings.autoplay, session.currentId, session.queue]);
 
   useEffect(() => {
     if (session.settings.autoplay && playback.status === 'ended' && !advance(sessionRef.current, 1, true)) void continueAutoplay();
-  }, [session.settings.autoplay, playback.status, session.currentId]);
+  }, [session.settings.autoplay, playback.status, session.currentId, session.queue]);
 
   async function continueAutoplay() {
     if (autoplayPending.current || !sessionRef.current.settings.autoplay) return;
@@ -175,35 +199,44 @@ export function usePlayback({
     if (!current || !seed?.artist || /unknown artist/i.test(seed.artist)) return;
     const request = ++autoplayRequest.current;
     const playbackId = player.state.playbackId;
+    const queueVersion = initial.queue;
+    autoplayAnchor.current ??= seed;
+    const anchor = autoplayAnchor.current;
     const active = () => request === autoplayRequest.current && sessionRef.current.settings.autoplay
       && sessionRef.current.currentId === current.id && player.state.playbackId === playbackId
+      && sessionRef.current.queue === queueVersion
       && !advance(sessionRef.current, 1);
     autoplayPending.current = true;
     setAutoplayLoading(true);
     player.pause();
     try {
-      let seedId = seed.metadataSourceId || seed.id;
-      if (!isCatalogId(seedId)) {
-        const matches = await library.searchCatalog(seed.title.slice(0, 200), 10);
-        if (!active()) return;
-        const match = matches.find(track => autoplayTitle(track.title).toLocaleLowerCase() === autoplayTitle(seed.title).toLocaleLowerCase()
-          && track.artist.split(/,| & /).some(artist => seed.artist.toLocaleLowerCase().includes(artist.trim().toLocaleLowerCase())));
-        if (!match) { notify('Autoplay could not identify this song. Choose another song to continue.'); return; }
-        seedId = match.id;
-      }
-      const candidates = await library.recommendCatalog(seedId);
+      const preferences = () => ({ session: sessionRef.current, saved: tracksRef.current, records: recordsRef.current, languages: discoveryPreferences().languages });
+      const pool = await loadAutoplayPool(anchor, active);
       if (!active()) return;
       const live = sessionRef.current;
       const known = live.queue.map(entry => tracksRef.current.find(track => track.id === entry.trackId) || live.queueTracks[entry.trackId]).filter((track): track is Track => !!track);
-      const track = await resolveAutoplayCandidate(autoplayCandidates(candidates, seed, known), resolveQueuedTrack, active);
+      const excluded = [...known, ...autoplayRecent.current.map(item => catalogQuickPick(item).track), ...explicitSkips.current.filter(item => Date.now() - item.at < 10 * 60000).map(item => item.track)];
+      const ranked = rankAutoplay(pool.candidates, preferences(), { anchor, current: seed, metadata: pool.metadata, recent: autoplayRecent.current, skipped: explicitSkips.current, excluded, turn: autoplayCount.current + 1 });
+      if (!ranked.length) { notify('Autoplay could not verify a matching song in the original song’s language. Add a song to the queue or try again.'); return; }
+      const resolvedCandidates = new Map<Track, CatalogTrack>();
+      const track = await resolveAutoplayCandidate(ranked.map(item => item.track), async candidate => {
+        const resolved = await resolveQueuedTrack(candidate);
+        const metadata = ranked.find(item => item.track.id === candidate.id)?.track;
+        if (metadata) resolvedCandidates.set(resolved, metadata);
+        return resolved;
+      }, active, resolved => autoplayCandidates([{ ...resolved, artists: [] }], seed, excluded).length > 0
+        && !excluded.some(known => resolved.metadataSourceId && [known.id, known.metadataSourceId].includes(resolved.metadataSourceId)));
       if (!active()) return;
       if (!track) { notify('No playable songs found in this radio. Try Next again.'); return; }
-      playbackTracks.set(track.id, track);
+      if (['playing', 'buffering', 'loading'].includes(player.state.status)) return;
       const next = enqueue({ ...sessionRef.current, queueTracks: { ...sessionRef.current.queueTracks, [track.id]: track } }, track.id);
       const selected = next.queue.find(entry => entry.id === advance(next, 1));
       if (selected) {
-        update(() => ({ ...next, currentId: selected.id, position: 0, queue: next.queue.map(entry => entry.id === selected.id ? { ...entry, requested: false } : entry) }));
-        void player.load(track.id, true);
+        pendingAutoplay.current = { entryId: selected.id, track, metadata: resolvedCandidates.get(track), playbackId };
+        update(s => s.queue !== queueVersion || s.currentId !== current.id || !s.settings.autoplay ? s : ({ ...s,
+          queueTracks: { ...s.queueTracks, [track.id]: track }, shuffleOrder: next.shuffleOrder,
+          currentId: selected.id, position: 0, queue: next.queue.map(entry => entry.id === selected.id ? { ...entry, requested: false } : entry),
+        }));
       }
     } catch { if (active()) notify('Autoplay could not reach the catalog. Try Next again to retry.'); }
     finally {
@@ -234,7 +267,7 @@ export function usePlayback({
         return;
       }
 
-      if (dialogOpen || target?.closest("dialog[open]")) {
+      if (dialogOpen || target?.closest("dialog[open]:not(.expanded-player), .apple-select-container, [role='listbox'], [role='menu']")) {
         return;
       }
 
@@ -399,11 +432,13 @@ export function usePlayback({
     }
   }, [playback.status, session.currentId, session.settings.autoOpenLyrics]);
 
-  function selectQueue(id: string, autoplay: boolean) {
+  function selectQueue(id: string, autoplay: boolean, deliberate = true) {
     autoplayRequest.current++;
+    autoplayPending.current = false;
     setAutoplayLoading(false);
     const selected = sessionRef.current.queue.find((i) => i.id === id);
     if (!selected) return;
+    if (deliberate) autoplayAnchor.current = tracksRef.current.find(track => track.id === selected.trackId) || sessionRef.current.queueTracks[selected.trackId] || null;
     const previous = player.state;
     update((s) => ({
       ...checkpointListening(s, tracksRef.current, previous.time, previous.status === 'ended'),
@@ -435,6 +470,10 @@ export function usePlayback({
 
   function playTrack(t: Track) {
     if (player.state.trackId === t.id && player.state.status === "loading") return;
+    autoplayAnchor.current = t;
+    autoplayRequest.current++;
+    autoplayPending.current = false;
+    setAutoplayLoading(false);
     playbackTracks.set(t.id, t);
     setUndo(null);
     const previousPosition = player.state.time;
@@ -458,6 +497,10 @@ export function usePlayback({
       startIndex,
     );
     if (!next.currentId || !collectionTracks[startIndex] || collectionTracks[startIndex].missing) return;
+    autoplayAnchor.current = collectionTracks[startIndex];
+    autoplayRequest.current++;
+    autoplayPending.current = false;
+    setAutoplayLoading(false);
     update(() => next);
     collectionTracks.forEach(track => playbackTracks.set(track.id, track));
     void loadQueuedTrack(next.queue.find(entry => entry.id === next.currentId)!, true, collectionTracks[startIndex]);
@@ -473,6 +516,10 @@ export function usePlayback({
     update(s => ({ ...checkpointListening(s, tracksRef.current, previousPosition), queue: resume.queue, queueTracks: resume.queueTracks, currentId: resume.currentId, position: resume.position, shuffleOrder: resume.shuffleOrder, settings: { ...s.settings, shuffle: resume.shuffle } }));
     Object.values(resume.queueTracks).forEach(track => playbackTracks.set(track.id, track));
     const track = tracksRef.current.find(track => track.id === entry.trackId) || resume.queueTracks[entry.trackId];
+    autoplayAnchor.current = track || null;
+    autoplayRequest.current++;
+    autoplayPending.current = false;
+    setAutoplayLoading(false);
     void loadQueuedTrack(entry, true, track, resume.position);
   }
 
@@ -503,8 +550,14 @@ export function usePlayback({
       player.seek(0);
       return;
     }
+    const state = player.state;
+    const current = sessionRef.current.queue.find(entry => entry.id === sessionRef.current.currentId);
+    const track = current && (tracksRef.current.find(track => track.id === current.trackId) || sessionRef.current.queueTracks[current.trackId]);
+    if (direction === 1 && !autoplayPending.current && track && state.trackId === track.id && ['playing', 'paused'].includes(state.status)) {
+      explicitSkips.current = [...explicitSkips.current, { track, at: Date.now() }].slice(-50);
+    }
     const id = advance(sessionRef.current, direction);
-    if (id) selectQueue(id, true);
+    if (id) selectQueue(id, true, false);
     else if (direction === -1) player.seek(0);
     else if (sessionRef.current.settings.autoplay) void continueAutoplay();
   }

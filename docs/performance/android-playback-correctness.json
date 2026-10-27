@@ -1,0 +1,79 @@
+{
+  "startedAt": "2026-10-27T07:45:33.022Z",
+  "checks": [
+    {
+      "name": "Local audio still loads and advances",
+      "evidence": {
+        "id": "60db4a81-8933-4e31-9d7d-636c93b574a1",
+        "advanced": 0.613
+      }
+    },
+    {
+      "name": "Verification and native playback share one bounded audio-only resolution",
+      "evidence": {
+        "before": 2,
+        "after": 2,
+        "cacheHits": 1,
+        "codec": "mp4a.40.2",
+        "id": "youtube:aqz-KE-bpKQ"
+      }
+    },
+    {
+      "name": "Pause, seek and resume use the real service clock",
+      "evidence": {
+        "pausedAt": 0.009,
+        "resumedAt": 30.035
+      }
+    },
+    {
+      "name": "Independent searches complete without cancelling each other or stopping audio",
+      "evidence": {
+        "counts": [
+          1,
+          1
+        ],
+        "advanced": 7.773999999999997
+      }
+    },
+    {
+      "name": "Cancelling an active uncached worker preserves the incumbent audio",
+      "evidence": {
+        "cancellationMs": 250.77409999999873,
+        "error": "Error: page.evaluate: Online lookup cancelled."
+      }
+    },
+    {
+      "name": "A newer local selection wins over a pending source and late results",
+      "evidence": {
+        "winningId": "60db4a81-8933-4e31-9d7d-636c93b574a1"
+      }
+    },
+    {
+      "name": "Failed sources are not cached, retries and later playback still work",
+      "evidence": {
+        "errors": [
+          "Error: page.evaluate: ERROR: [youtube] ___________: This video is unavailable",
+          "Error: page.evaluate: ERROR: [youtube] ___________: This video is unavailable"
+        ],
+        "requests": 2
+      }
+    },
+    {
+      "name": "Screen-off foreground playback advances without the WebView timer",
+      "evidence": {
+        "advanced": 8.113
+      }
+    },
+    {
+      "name": "Expired in-memory stream entries trigger a fresh real extraction",
+      "evidence": {
+        "before": 8,
+        "after": 9
+      }
+    }
+  ],
+  "failures": [],
+  "apkSha256": "f09679aa8d9410068d65fe44da72de64109489ab9e8f01d35447536908a58b92",
+  "passed": true,
+  "finishedAt": "2026-10-27T07:47:47.402Z"
+}

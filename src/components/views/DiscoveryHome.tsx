@@ -9,6 +9,7 @@ import type { ListeningResume, Track } from '../../domain/types';
 import type { CatalogTrack } from '../../adapters/native';
 import { Artwork, DownloadedBadge } from '../common';
 export interface DiscoveryHomeProps {
+  mobile?: boolean;
   onPlayAlbum: (id: string) => Promise<void>;
   onPlayQuickPick: (track: Track) => void;
   searches: string[];
@@ -35,19 +36,22 @@ export interface DiscoveryHomeProps {
 }
 
 
-function TrackShelf({ title, tracks, onPlay, onOpen }: { title: string; tracks: Track[]; onPlay: (track: Track) => void; onOpen?: () => void }) {
+function emptyShelf(title: string, message: string) {
+  return <section aria-label={title} className="discover-home-section home-shelf-empty"><h2>{title}</h2><p className="subtitle">{message}</p></section>;
+}
+function TrackShelf({ title, tracks, onPlay, onOpen, emptyMessage }: { title: string; tracks: Track[]; onPlay: (track: Track) => void; onOpen?: () => void; emptyMessage?: string }) {
   const scroll = useRef<HTMLDivElement>(null);
-  if (!tracks.length) return null;
+  if (!tracks.length) return emptyMessage ? emptyShelf(title, emptyMessage) : null;
   return <section aria-label={title} className="discover-home-section recent-played-section">
     <div className="recent-section-heading">{onOpen ? <button type="button" className="recent-heading-btn" onClick={onOpen}><h2>{title}</h2><ChevronRight size={18} /></button> : <h2>{title}</h2>}<div className="recent-section-nav">{[-1, 1].map(direction => <button type="button" className="discover-nav-arrow" key={direction} aria-label={(direction < 0 ? 'Previous ' : 'Next ') + title} onClick={() => scroll.current?.scrollBy({ left: direction * scroll.current.clientWidth * .85, behavior: 'smooth' })}>{direction < 0 ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}</button>)}</div></div>
-    <div className="recent-tracks-grid" ref={scroll} style={{ gridTemplateRows: `repeat(${Math.min(4, tracks.length)}, 52px)` }}>{tracks.map(track => <button type="button" key={track.id} className="recent-track-item" aria-label={'Play ' + track.title} title={'Play ' + track.title} onClick={() => onPlay(track)}>
+    <div className="recent-tracks-grid" ref={scroll} style={{ gridTemplateRows: `repeat(${Math.min(4, tracks.length)}, var(--recent-row-height, 52px))` }}>{tracks.map(track => <button type="button" key={track.id} className="recent-track-item" aria-label={'Play ' + track.title} title={'Play ' + track.title} onClick={() => onPlay(track)}>
       <div className="recent-track-art-wrap"><Artwork url={track.artworkUrl} className="recent-track-art" /><div className="recent-track-play-badge" aria-hidden="true"><Play size={14} fill="currentColor" /></div></div>
       <div className="recent-track-details"><div className="recent-track-title">{track.title}</div><div className="recent-track-artist"><DownloadedBadge track={track} /><span>{track.artist}</span></div></div>
     </button>)}</div></section>;
 }
-function RotationShelf({ tracks, onPlay }: { tracks: Track[]; onPlay: (track: Track) => void }) {
+function RotationShelf({ tracks, onPlay, mobile }: { tracks: Track[]; onPlay: (track: Track) => void; mobile: boolean }) {
   const scroll = useRef<HTMLDivElement>(null);
-  if (!tracks.length) return null;
+  if (!tracks.length) return mobile ? emptyShelf('Your Rotation', 'Play a song three times to start your rotation on this device.') : null;
   return <section aria-label="Your Rotation" className="discover-home-section">
     <div className="discover-section-heading"><div><h2>Your Rotation</h2><p className="subtitle">The songs you keep coming back to.</p></div><div className="recent-section-nav">{[-1, 1].map(direction => <button type="button" className="discover-nav-arrow" key={direction} aria-label={(direction < 0 ? 'Previous ' : 'Next ') + 'Your Rotation'} onClick={() => scroll.current?.scrollBy({ left: direction * scroll.current.clientWidth * .85, behavior: 'smooth' })}>{direction < 0 ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}</button>)}</div></div>
     <div className="discover-albums discover-rotation-carousel" ref={scroll}>{tracks.map(track => <button type="button" key={track.id} className="discover-album-card" aria-label={'Play ' + track.title} title={'Play ' + track.title} onClick={() => onPlay(track)}>
@@ -55,9 +59,9 @@ function RotationShelf({ tracks, onPlay }: { tracks: Track[]; onPlay: (track: Tr
     </button>)}</div>
   </section>;
 }
-function ContinueShelf({ resumes, savedTracks, onResume }: { resumes: ListeningResume[]; savedTracks: Track[]; onResume?: (id: string) => void }) {
+function ContinueShelf({ resumes, savedTracks, onResume, mobile }: { resumes: ListeningResume[]; savedTracks: Track[]; onResume?: (id: string) => void; mobile: boolean }) {
   const scroll = useRef<HTMLDivElement>(null);
-  if (!resumes.length) return null;
+  if (!resumes.length) return mobile ? emptyShelf('Continue Listening', 'Start an album, playlist or queue with two or more songs. Your unfinished listening will appear here.') : null;
   return <section aria-label="Continue Listening" className="discover-home-section">
     <div className="discover-section-heading"><h2>Continue Listening</h2><div className="recent-section-nav">{[-1, 1].map(direction => <button type="button" className="discover-nav-arrow" key={direction} aria-label={(direction < 0 ? 'Previous ' : 'Next ') + 'Continue Listening'} onClick={() => scroll.current?.scrollBy({ left: direction * scroll.current.clientWidth * .85, behavior: 'smooth' })}>{direction < 0 ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}</button>)}</div></div>
     <div className="discover-albums discover-rotation-carousel" ref={scroll}>{resumes.map(item => {
@@ -67,7 +71,7 @@ function ContinueShelf({ resumes, savedTracks, onResume }: { resumes: ListeningR
     })}</div>
   </section>;
 }
-export function DiscoveryHome({ records, savedTracks, onlineAvailable, favorites = [], favoriteArtists = [], favoriteAlbums = [], resumes = [], onResume, onPlayQuickPick, onOpenTracker }: DiscoveryHomeProps) {
+export function DiscoveryHome({ mobile = false, records, savedTracks, onlineAvailable, favorites = [], favoriteArtists = [], favoriteAlbums = [], resumes = [], onResume, onPlayQuickPick, onOpenTracker }: DiscoveryHomeProps) {
   const [languages, setLanguages] = useState(() => discoveryPreferences().languages);
   const [pool, setPool] = useState<QuickPickCandidate[]>([]);
   const languageKey = languages.join(',');
@@ -104,10 +108,10 @@ export function DiscoveryHome({ records, savedTracks, onlineAvailable, favorites
   const greeting = hour >= 5 && hour < 12 ? 'Good morning' : hour < 18 && hour >= 12 ? 'Good afternoon' : hour >= 18 && hour < 22 ? 'Good evening' : 'Good night';
   return <div className="discovery-home">
     <div className="discover-greeting-header"><h1 className="discover-greeting-title">{greeting}<span className="discover-greeting-dot">.</span></h1><p className="discover-greeting-subtitle">Music for a calmer, brighter you.</p></div>
-    <TrackShelf title="Recently Played" tracks={history.recent} onPlay={onPlayQuickPick} onOpen={onOpenTracker} />
-    <ContinueShelf resumes={continuing} savedTracks={savedTracks} onResume={onResume} />
-    <TrackShelf title="Quick Picks" tracks={picks} onPlay={onPlayQuickPick} />
-    <RotationShelf tracks={exclusive(history.rotation)} onPlay={onPlayQuickPick} />
-    <TrackShelf title="Forgotten Favorites" tracks={exclusive(history.forgotten)} onPlay={onPlayQuickPick} />
+    <TrackShelf title="Recently Played" tracks={history.recent} onPlay={onPlayQuickPick} onOpen={onOpenTracker} emptyMessage={mobile ? 'Your listening history on this device will appear here.' : undefined} />
+    <ContinueShelf resumes={continuing} savedTracks={savedTracks} onResume={onResume} mobile={mobile} />
+    <TrackShelf title="Quick Picks" tracks={picks} onPlay={onPlayQuickPick} emptyMessage={mobile ? 'Save or play music to shape your recommendations.' : undefined} />
+    <RotationShelf tracks={exclusive(history.rotation)} onPlay={onPlayQuickPick} mobile={mobile} />
+    <TrackShelf title="Forgotten Favorites" tracks={exclusive(history.forgotten)} onPlay={onPlayQuickPick} emptyMessage={mobile ? 'Older favorites you have not played in a while will return here as your listening history grows.' : undefined} />
   </div>;
 }

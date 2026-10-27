@@ -27,7 +27,7 @@ it('verifies candidates and skips failures and unresolved placeholders before se
 it('bounds unavailable source attempts and returns no recommendation', async () => {
   const resolve = vi.fn().mockRejectedValue(new Error('Unavailable'));
   expect(await resolveAutoplayCandidate(choices, resolve, () => true)).toBeNull();
-  expect(resolve).toHaveBeenCalledTimes(5);
+  expect(resolve).toHaveBeenCalledTimes(8);
 });
 it('does not queue a resolved candidate after autoplay is cancelled', async () => {
   let active = true;
@@ -54,4 +54,17 @@ it('starts a playable alternative without waiting for a slow first source', asyn
   expect(await resolveAutoplayCandidate(choices, resolve, () => true)).toBe(playable);
   expect(resolve).toHaveBeenCalledTimes(2);
   finishSlow(playable);
+});
+it('bounds a stalled availability check and cannot accept its late result', async () => {
+  vi.useFakeTimers();
+  try {
+    let finish!: (track: Track) => void;
+    const resolve = vi.fn(() => new Promise<Track>(done => { finish = done; }));
+    const work = resolveAutoplayCandidate(choices, resolve, () => true);
+    await vi.advanceTimersByTimeAsync(12000);
+    expect(await work).toBeNull();
+    finish({ id: 'late', format: 'webm' } as Track);
+    await Promise.resolve();
+    expect(resolve).toHaveBeenCalledTimes(2);
+  } finally { vi.useRealTimers(); }
 });

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
+import { QueueDragHandle } from "../common/QueueDragHandle";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ChevronDown,
   Disc3,
-  FileText,
   ListMusic,
   Shuffle,
   SkipBack,
@@ -13,8 +13,6 @@ import {
   Repeat1,
   Heart,
   ListPlus,
-  ArrowUp,
-  ArrowDown,
   X,
   Loader2,
   Volume2,
@@ -31,7 +29,7 @@ import { playbackQueue } from "../../domain/queue";
 import "./mobile-now-playing.css";
 
 export interface MobileNowPlayingProps {
-  initialTab?: "player" | "lyrics" | "queue";
+  initialTab?: "player" | "queue";
   track?: Track | null;
   tracks: Track[];
   session: Session;
@@ -45,12 +43,11 @@ export interface MobileNowPlayingProps {
   onNavigateArtist: (artistId: string) => void;
   onChoosePlaylist?: (track: Track) => void;
   onSelectQueue: (entryId: string, play: boolean) => void;
-  onReorderUpcoming: (entryId: string, delta: 1 | -1) => void;
+  onReorderUpcoming: (entryId: string, delta: number) => void;
   onRemoveQueue: (entryId: string) => void;
   onClearQueue: () => void;
   onUndoRemoval?: () => void;
   undo?: Session["queue"] | null;
-  lyrics?: ReactNode;
   doc?: LyricDocument | null;
   sessionVolume?: number;
 }
@@ -82,7 +79,6 @@ export function MobileNowPlaying({
   onClearQueue,
   onUndoRemoval,
   undo,
-  lyrics,
   sessionVolume = 0.72,
 }: MobileNowPlayingProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -91,6 +87,7 @@ export function MobileNowPlaying({
   const [scrubbingTime, setScrubbingTime] = useState<number | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const artworkRef = useRef<HTMLDivElement>(null);
   const queueRef = useRef<HTMLElement>(null);
   const closingRef = useRef(false);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -135,6 +132,10 @@ export function MobileNowPlaying({
     right: () => { if (activeTab === "player" && track) onSkip(-1); },
     drag: (x, y) => {
       clearTimeout(dismissTimer.current);
+      if (activeTab === "player" && Math.abs(x) > Math.abs(y) * 1.2 && artworkRef.current) {
+        artworkRef.current.style.transform = `translateX(${x}px)`;
+        return;
+      }
       if (Math.abs(y) <= Math.abs(x) * 1.2) return;
       if (activeTab === "player" && y > 0 && containerRef.current) {
         containerRef.current.style.transition = "none";
@@ -147,6 +148,7 @@ export function MobileNowPlaying({
       }
     },
     reset: () => {
+      if (artworkRef.current) artworkRef.current.style.transform = "";
       if (containerRef.current) { containerRef.current.style.transition = ""; containerRef.current.style.transform = ""; }
       if (queueRef.current) { queueRef.current.style.transition = ""; queueRef.current.style.transform = ""; queueRef.current.style.visibility = ""; }
     },
@@ -198,7 +200,7 @@ export function MobileNowPlaying({
         </button>
 
         <button type="button" className="mobile-np-context" onClick={() => setActiveTab("player")} aria-label={activeTab === "player" ? "Now playing" : "Back to song"}>
-          <span>{activeTab === "queue" ? "Up next" : activeTab === "lyrics" ? "Lyrics" : "Now playing"}</span>
+          <span>{activeTab === "queue" ? "Up next" : "Now playing"}</span>
           <small>{track?.album || "Your music"}</small>
         </button>
 
@@ -218,7 +220,7 @@ export function MobileNowPlaying({
         <main className="mobile-np-main-view">
           {/* Centered Large Album Artwork */}
           <div className="mobile-np-artwork-container">
-            <div className={`mobile-np-artwork-card ${isPlaying ? "is-playing" : "is-paused"}`}>
+            <div ref={artworkRef} className={`mobile-np-artwork-card ${isPlaying ? "is-playing" : "is-paused"}`}>
               <Artwork url={track?.artworkUrl} className="mobile-np-artwork-img" />
             </div>
           </div>
@@ -247,6 +249,7 @@ export function MobileNowPlaying({
               type="button"
               className={`mobile-np-fav-btn ${isFavorite ? "is-favorite" : ""}`}
               aria-label={isFavorite ? "Remove favorite" : "Save to favorites"}
+              aria-pressed={isFavorite}
               onClick={() => track && onFavorite(track.id)}
             >
               <Heart
@@ -363,16 +366,6 @@ export function MobileNowPlaying({
         </main>
       )}
 
-      {/* View 2: Lyrics View (Synchronized, Multi-layer) */}
-      {activeTab === "lyrics" && (
-        <section className="mobile-np-lyrics-tab" aria-label="Synchronized lyrics">
-          <div id="expanded-lyrics-settings-slot" className="mobile-np-lyrics-settings-slot" />
-          <div className="mobile-np-lyrics-scroll-wrap">
-            {lyrics}
-          </div>
-        </section>
-      )}
-
       {/* View 3: Queue View (Up Next) */}
         <section ref={queueRef} className={`mobile-np-queue-tab ${activeTab === "queue" ? "is-open" : ""}`} aria-hidden={activeTab !== "queue"} inert={activeTab !== "queue"} aria-label="Playback queue">
           <div className="mobile-np-queue-header">
@@ -422,7 +415,7 @@ export function MobileNowPlaying({
             </div>
           )}
 
-          <div className="mobile-np-queue-scroll">
+          <div className="mobile-np-queue-scroll" data-queue-list>
             {/* Current Song */}
             {track && (
               <div className="mobile-np-queue-item current">
@@ -453,12 +446,12 @@ export function MobileNowPlaying({
                 <small>Select any song or album to queue it up next.</small>
               </div>
             ) : (
-              upcomingQueue.map((entry, idx) => {
-                const itemTrack = tracks.find((t) => t.id === entry.trackId);
+              upcomingQueue.map((entry) => {
+                const itemTrack = tracks.find((t) => t.id === entry.trackId) || session.queueTracks[entry.trackId];
                 if (!itemTrack) return null;
 
                 return (
-                  <div key={entry.id} className="mobile-np-queue-item">
+                  <div key={entry.id} className="mobile-np-queue-item" data-queue-entry={entry.id}>
                     <button
                       type="button"
                       className="mobile-np-queue-item-main"
@@ -481,24 +474,7 @@ export function MobileNowPlaying({
                     </button>
 
                     <div className="mobile-np-queue-actions">
-                      <button
-                        type="button"
-                        className="mobile-np-queue-action-btn"
-                        disabled={idx === 0}
-                        aria-label="Move track up"
-                        onClick={() => onReorderUpcoming(entry.id, -1)}
-                      >
-                        <ArrowUp size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        className="mobile-np-queue-action-btn"
-                        disabled={idx === upcomingQueue.length - 1}
-                        aria-label="Move track down"
-                        onClick={() => onReorderUpcoming(entry.id, 1)}
-                      >
-                        <ArrowDown size={15} />
-                      </button>
+                      <QueueDragHandle id={entry.id} title={itemTrack.title} onMove={onReorderUpcoming} />
                       <button
                         type="button"
                         className="mobile-np-queue-action-btn remove"
@@ -516,7 +492,6 @@ export function MobileNowPlaying({
         </section>
       <nav className="mobile-np-bottom-tabs" aria-label="Player views">
         <button type="button" aria-expanded={activeTab === "queue"} onClick={() => setActiveTab(activeTab === "queue" ? "player" : "queue")}><ListMusic size={18} />Up next</button>
-        <button type="button" aria-expanded={activeTab === "lyrics"} onClick={() => setActiveTab(activeTab === "lyrics" ? "player" : "lyrics")}><FileText size={18} />Lyrics</button>
       </nav>
     </div>
   );

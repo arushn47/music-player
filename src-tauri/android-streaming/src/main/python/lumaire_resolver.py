@@ -7,7 +7,36 @@ import re
 import subprocess
 import sys
 import tempfile
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
+
+AUDIO_FORMAT = 'bestaudio[ext=m4a][vcodec=none][protocol=https]/bestaudio[vcodec=none][protocol=https]'
+DOWNLOAD_FORMAT = 'bestaudio[ext=m4a][vcodec=none][protocol=https]'
+
+
+def validate_audio_only(info):
+    if info.get('vcodec') != 'none' or not info.get('acodec') or info['acodec'] == 'none':
+        raise RuntimeError('The provider did not verify an audio-only stream. Video is not allowed for music.')
+
+
+def playlist_url(value):
+    url = urlparse(value)
+    playlist = parse_qs(url.query).get('list', [''])[0]
+    if (len(value) > 2000 or url.scheme != 'https' or
+            url.netloc not in ('www.youtube.com', 'youtube.com', 'music.youtube.com') or
+            url.path != '/playlist' or not re.fullmatch(r'[A-Za-z0-9_-]{10,100}', playlist)):
+        raise ValueError('Use a public YouTube playlist link.')
+    return 'https://www.youtube.com/playlist?list=' + playlist
+
+
+def playlist_payload(info):
+    entries = []
+    for entry in (info.get('entries') or [])[:501]:
+        entry = entry or {}
+        entries.append({key: entry.get(key) for key in ('id', 'title', 'artist', 'channel', 'duration')})
+    payload = json.dumps({'title': info.get('title') or 'YouTube playlist', 'entries': entries})
+    if len(payload.encode('utf-8')) > 8_000_000:
+        raise ValueError('Playlist metadata exceeds 8 MB. Use a smaller playlist.')
+    return payload
 
 def run(request_json, qjs, cache, wheels):
     request = json.loads(request_json)
@@ -31,13 +60,15 @@ def run(request_json, qjs, cache, wheels):
         import yt_dlp_ejs
         diagnostic.update(ytDlp=yt_dlp.version.__version__, ejs=yt_dlp_ejs.version)
         options = {
-            'format': 'bestaudio[ext=m4a][protocol=https]/bestaudio[protocol=https]',
+            'format': AUDIO_FORMAT,
             'skip_download': True, 'noplaylist': True, 'socket_timeout': 10,
             'retries': 0, 'extractor_retries': 0, 'cachedir': False,
             'logger': Logger(), 'js_runtimes': {'quickjs': {'path': qjs}},
             'remote_components': set(),
         }
         op = request.get('operation')
+        if request.get('download'):
+            options['format'] = DOWNLOAD_FORMAT
         if op == 'probe':
             check = subprocess.run([qjs, '-e', 'print("LUMAIRE_QJS_OK")'], capture_output=True, text=True, timeout=10)
             if check.returncode or check.stdout.strip() != 'LUMAIRE_QJS_OK':
@@ -62,6 +93,14 @@ def run(request_json, qjs, cache, wheels):
                     'track': entry.get('track'), 'artist': entry.get('artist'), 'album': entry.get('album'),
                 })
             return json.dumps({'results': results})
+        if op == 'playlist':
+            url = playlist_url(request.get('url', ''))
+            options.update(noplaylist=False, extract_flat='in_playlist', playlistend=501, ignoreerrors=True)
+            with yt_dlp.YoutubeDL(options) as ydl:
+                info = ydl.extract_info(url, download=False)
+            if not info:
+                raise ValueError('This public playlist could not be read. Check its visibility and retry.')
+            return playlist_payload(info)
         if op not in ('resolve', 'challenge'):
             raise ValueError('Unsupported Android resolver operation.')
         video = request.get('videoId', '')
@@ -101,6 +140,7 @@ def run(request_json, qjs, cache, wheels):
                 raise RuntimeError('This live source did not yield a successfully solved JS challenge.')
             return json.dumps({'diagnostic': diagnostic, 'liveChallengeSolved': True})
         url = info.get('url', '')
+        validate_audio_only(info)
         parsed = urlparse(url)
         if parsed.scheme != 'https' or not (parsed.hostname or '').endswith('.googlevideo.com') or parsed.port not in (None, 443):
             raise RuntimeError('No supported HTTPS audio stream was returned.')
@@ -118,7 +158,7 @@ def run(request_json, qjs, cache, wheels):
             diagnostic['streamProbeStatus'] = response.status
         diagnostic.update(format=info.get('format_id'), codec=info.get('acodec'), headerNames=list(headers))
         return json.dumps({'url': url, 'headers': headers, 'duration': info.get('duration'),
-                           'title': info.get('title'), 'container': info.get('ext'), 'codec': info.get('acodec'),
+                           'title': info.get('title'), 'container': info.get('ext'), 'codec': info.get('acodec'), 'videoCodec': info.get('vcodec'),
                            'track': info.get('track'), 'artist': info.get('artist'), 'album': info.get('album'),
                            'diagnostic': diagnostic})
     except Exception as error:

@@ -5,7 +5,7 @@ import { isCatalogId, isQueuedCatalog } from '../domain/queue';
 import type { Track } from '../domain/types';
 
 const radio = new Map<string, { at: number; request: Promise<CatalogTrack[]> }>();
-function recommendations(id: string): Promise<CatalogTrack[]> {
+export function recommendations(id: string): Promise<CatalogTrack[]> {
   const cached = radio.get(id);
   if (cached && Date.now() - cached.at < 30 * 60000) return cached.request;
   const request = library.recommendCatalog(id).catch(error => { radio.delete(id); throw error; });
@@ -14,7 +14,7 @@ function recommendations(id: string): Promise<CatalogTrack[]> {
   return request;
 }
 const seedMatches = new Map<string, { at: number; request: Promise<string | undefined> }>();
-function seedId(track: Track): Promise<string | undefined> {
+export function seedId(track: Track): Promise<string | undefined> {
   const id = track.metadataSourceId || track.id;
   if (isCatalogId(id)) return Promise.resolve(id);
   if (!track.artist.trim() || /^unknown/i.test(track.artist)) return Promise.resolve(undefined);

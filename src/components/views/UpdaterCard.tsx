@@ -47,19 +47,19 @@ export function UpdaterCard() {
       {state.stage === 'development' && <p className="updater-details">Update checks are disabled in development builds. Signed installed releases can download and install updates without uninstalling Lumaire.</p>}
       {state.stage === 'unconfigured' && <p className="updater-details">No signed update feed is available yet. Updates appear here after a newer Windows release and its update manifest are published.</p>}
       {state.version && <div className="updater-details">
-        {state.date && <small>Released {new Date(state.date).toLocaleDateString()}</small>}
-        <h4>Release notes</h4><ReleaseNotes text={state.notes || "No release notes were supplied for this update."} />
         {state.stage === "downloading" && <div role="status">
           <p>Downloading update{state.progress === undefined ? "…" : ` · ${state.progress}%`}</p>
           <progress aria-label="Update download progress" max={100} value={state.progress} />
         </div>}
-        {(["available", "error"].includes(state.stage)) && <button onClick={() => void downloadUpdate()}><Download size={16} /> Download update</button>}
+        {(["available", "error"].includes(state.stage)) && <button className="primary updater-action" onClick={() => void downloadUpdate()}><Download size={18} /> Download update v{state.version}</button>}
         {["ready", "restarting"].includes(state.stage) && <>
           <p>Restarting will interrupt playback and close Lumaire while the update installs.</p>
-          <button disabled={busy} onClick={() => void restartAndUpdate()}><RefreshCw size={16} /> {state.stage === "restarting" ? "Restarting…" : "Restart & Update"}</button>
+          <button className="primary updater-action" disabled={busy} onClick={() => void restartAndUpdate()}><RefreshCw size={18} /> {state.stage === "restarting" ? "Restarting…" : "Restart & Update"}</button>
         </>}
+        {state.date && <small>Released {new Date(state.date).toLocaleDateString()}</small>}
+        <h4>Release notes</h4><ReleaseNotes text={state.notes || "No release notes were supplied for this update."} />
       </div>}
-      {state.installedRelease && <div className="updater-details"><h4>What's new in v{state.installedRelease.version}</h4><ReleaseNotes text={state.installedRelease.notes} /></div>}
+      {!state.version && state.installedRelease && <div className="updater-details"><h4>What's new in v{state.installedRelease.version}</h4><ReleaseNotes text={state.installedRelease.notes} /></div>}
       {state.error && <p className="updater-details" role="alert">{state.error}</p>}
     </div>
   </div>;

@@ -7,6 +7,33 @@ const song: CatalogTrack = { id: "saavn:12345678", title: 'Evening Sky (From "Fi
 const video: YtdlpSearchResult = { id: "abcdefghijk", title: "Evening Sky - Video Song | Guest | Film | HD", channel: "Film Label", duration: 216, thumbnail: null };
 
 describe("shared recording identity", () => {
+  it("verifies a complete match before extracting incomplete alternatives", async () => {
+    const incomplete = { ...video, id: "incomplete1", duration: null };
+    const search = vi.fn().mockResolvedValue([incomplete, video]);
+    const verify = vi.fn().mockResolvedValue({ duration: video.duration });
+    expect(await resolveCatalogSource(song, search, { verify })).toBe(video);
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(verify).toHaveBeenCalledExactlyOnceWith(video);
+  });
+  it("recovers incomplete metadata after a complete candidate fails stream verification", async () => {
+    const incomplete = { ...video, id: "incomplete1", duration: null };
+    const verify = vi.fn(async (candidate: YtdlpSearchResult) => ({ duration: candidate.id === video.id ? 90 : 216 }));
+    expect(await resolveCatalogSource(song, vi.fn().mockResolvedValue([incomplete, { ...video }]), { verify })).toBe(incomplete);
+    expect(verify.mock.calls.map(([candidate]) => candidate.id)).toEqual([video.id, incomplete.id]);
+  });
+  it("does not turn cancelled searches or extractions into new fallback work", async () => {
+    const cancelled = Error("Online lookup cancelled.");
+    const search = vi.fn().mockRejectedValue(cancelled);
+    await expect(resolveCatalogSource(song, search)).rejects.toBe(cancelled);
+    expect(search).toHaveBeenCalledTimes(2);
+    const verify = vi.fn().mockRejectedValue(cancelled);
+    await expect(resolveCatalogSource(song, vi.fn().mockResolvedValue([video, { ...video, id: "incomplete1" }]), { verify })).rejects.toBe(cancelled);
+    expect(verify).toHaveBeenCalledTimes(1);
+  });
+  it("still retries provider failures mentioning a cancelled recording", async () => {
+    const search = vi.fn().mockRejectedValueOnce(Error('Video "Cancelled" is unavailable')).mockResolvedValue([video]);
+    await expect(resolveCatalogSource(song, search)).resolves.toBe(video);
+  });
   it("resolves Claude's Plan from generic Topic search metadata using the recording's verified artist", async () => {
     const catalog = { ...song, title: "Claude's Plan (Lo-fi Version)", artist: "Jallidevs", artists: [{ name: "Jallidevs" }], album: "Claude's Plan (Lo-fi Version)", duration: 149 };
     const candidate = { ...video, id: "Jos0Nzvj-2s", title: catalog.title, channel: "Release - Topic", duration: 150, track: null, artist: null };

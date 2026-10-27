@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { addPluginListener, invoke, type PluginListener } from "@tauri-apps/api/core";
 import type { Track } from "../domain/types";
 import type { Playback } from "./controller";
 
@@ -15,6 +15,7 @@ export class AndroidPlaybackController {
   private polling = false;
   private preciseClock = false;
   private failedLoad = false;
+  private events: Promise<PluginListener | null> | null = null;
 
   constructor(
     private readonly metadata: (
@@ -40,6 +41,16 @@ export class AndroidPlaybackController {
     if (this.ended && !wasEnded) this.onEnded();
     if (rawState.pendingAction === "next") this.onNext();
     else if (rawState.pendingAction === "prev") this.onPrevious();
+  }
+  private watch() {
+    if (this.events) return;
+    this.events = addPluginListener<Playback & { id?: string }>(
+      "lumaire-android", "playback", state => {
+        // A late service event must not replace a newer catalog/source selection.
+        if (!this.listeners.size || !state.id || state.id !== this.state.trackId || this.failedLoad) return;
+        this.update(state);
+      },
+    ).catch(() => null);
   }
   private schedule() {
     if (this.timer) clearInterval(this.timer);
@@ -80,11 +91,17 @@ export class AndroidPlaybackController {
   }
   subscribe(fn: (state: Playback) => void) {
     this.listeners.add(fn);
+    this.watch();
     fn(this.state);
     this.schedule();
     return () => {
       this.listeners.delete(fn);
       this.schedule();
+      if (!this.listeners.size) {
+        const events = this.events;
+        this.events = null;
+        void events?.then(listener => listener?.unregister()).catch(() => {});
+      }
     };
   }
   precise(enabled: boolean) {

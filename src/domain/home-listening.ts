@@ -62,6 +62,6 @@ export function homeHistory(records: ListeningRecord[], saved: Track[], favorite
   const forgotten = all.filter(item => now - item.last >= forgottenAfter && (favorites.includes(item.track.id) || (!!item.track.metadataSourceId && favorites.includes(item.track.metadataSourceId)) || item.count >= 3)).sort((a, b) => b.count - a.count || a.last - b.last).slice(0, 12).map(item => item.track);
   const rotation = all.filter(item => item.recent >= 3 && !forgotten.includes(item.track)).sort((a, b) => b.recent - a.recent || b.last - a.last).slice(0, 12).map(item => item.track);
   // Activity must match Tracker chronology, even when a song also belongs to another shelf.
-  const recent = all.sort((a, b) => b.started - a.started).slice(0, 12).map(item => item.track);
+  const recent = all.sort((a, b) => b.started - a.started).slice(0, 20).map(item => item.track);
   return { recent, rotation, forgotten };
 }

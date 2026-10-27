@@ -1,5 +1,7 @@
 import { defaults, type QueueItem, type Session, type Track } from "./types";
 import { isCatalogId, isQueuedCatalog } from "./queue";
+import { restoreReplica } from './device-sync';
+import { repairYoutubeTrack } from './online-track';
 // Backups and database contents are untrusted. Normalize before rendering or playing.
 export function restoreSession(value: unknown, tracks: Track[]): Session {
   const base = defaults();
@@ -74,6 +76,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
         attribution: source.attribution,
       },
     };
+    queueTracks[id] = repairYoutubeTrack(queueTracks[id]);
   }
   const ids = new Set([...savedIds, ...Object.keys(queueTracks)]);
   const cleanItems = (items: unknown, validIds = ids): QueueItem[] =>
@@ -124,6 +127,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
         ]
       : [],
     queueTracks,
+    replica: restoreReplica(v.replica),
     listeningResumes: Array.isArray(v.listeningResumes) ? v.listeningResumes.slice(0, 12).flatMap(item => {
       if (!item || typeof item.id !== 'string' || typeof item.title !== 'string' || !['album', 'playlist', 'queue'].includes(item.kind) || !Number.isFinite(item.updatedAt) || !Array.isArray(item.queue)) return [];
       const restored = restoreSession({ queue: item.queue.slice(0, 1000), queueTracks: item.queueTracks, currentId: item.currentId, position: item.position, shuffleOrder: item.shuffleOrder }, tracks);
@@ -167,6 +171,14 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
                     l &&
                     typeof l.id === "string" &&
                     typeof l.text === "string" &&
+                    (l.words === undefined || (
+                      Array.isArray(l.words) &&
+                      l.words.every((w, i) => w && typeof w.text === "string" &&
+                        Number.isFinite(w.time) && w.time >= (l.time ?? 0) &&
+                        (i === 0 || w.time >= l.words![i - 1].time) &&
+                        (w.end === undefined || (Number.isFinite(w.end) && w.end >= w.time))) &&
+                      l.words.map(w => w.text).join("") === l.text
+                    )) &&
                     (l.time === null || Number.isFinite(l.time)),
                 ) &&
                 Number.isFinite(d.fileOffset) &&
@@ -189,6 +201,7 @@ export function restoreSession(value: unknown, tracks: Track[]): Session {
       : [],
     settings: {
       themeMode: p.themeMode === "light" ? "light" : "dark",
+      fullscreenLayout: p.fullscreenLayout === "minimal" ? "minimal" : "immersive",
       accentColor:
         typeof p.accentColor === "string" &&
         /^#[0-9a-fA-F]{6}$/.test(p.accentColor)

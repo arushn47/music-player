@@ -49,6 +49,7 @@ export interface ResolutionOptions {
 
 function failureKind(error: unknown): string {
   const message = String(error);
+  if (/\bOnline lookup (?:was )?cancel(?:led|ed)\b|\bPlayback selection changed\b|\bAbortError\b/i.test(message)) return "cancelled";
   if (/not installed|install.*engine|failed to execute|cannot find.*(?:file|engine)/i.test(message)) return "engine";
   if (/not a bot|sign in|verification|confirm you/i.test(message)) return "verification";
   if (/timed? out|timeout|network|offline|could not reach|connection|resolve host|HTTP (?:429|5\d\d)/i.test(message)) return "network";
@@ -73,7 +74,6 @@ export async function resolveCatalogSource(
     ...(coreTitle !== title ? [[...credits.slice(0, 4).map(artist => `${coreTitle} ${artist}`), `${coreTitle} ${catalog.album}`, `${await searchRoman(coreTitle)} ${romanArtist}`]] : []),
   ];
   const triedQueries = new Set<string>(), triedCandidates = new Set(options.exclude || []);
-  const verifiedCandidates = new Set<string>();
   let artistMetadataChecks = 0;
   let searches = 0, successfulSearches = 0, extractionFailures = 0;
   const searchFailures = new Set<string>(), streamFailures = new Set<string>();
@@ -89,38 +89,38 @@ export async function resolveCatalogSource(
     }));
     responses.forEach(response => {
       if (response.status === "fulfilled") response.value.forEach(candidate => { if (!candidates.has(candidate.id)) candidates.set(candidate.id, candidate); });
-      else { const reason = failureKind(response.reason); searchFailures.add(reason); playbackEvent({ trackId: catalog.id, stage: "search-failed", reason }); }
+      else {
+        const reason = failureKind(response.reason);
+        if (reason === "cancelled") throw response.reason;
+        searchFailures.add(reason); playbackEvent({ trackId: catalog.id, stage: "search-failed", reason });
+      }
     });
     const matches: { candidate: YtdlpSearchResult; score: number }[] = [];
+    const incomplete: { candidate: YtdlpSearchResult; reason: string }[] = [];
     for (const candidate of candidates.values()) {
       if (triedCandidates.has(candidate.id)) continue;
       triedCandidates.add(candidate.id);
-      let match = await matchSource(catalog, candidate);
-      if (options.verify && (match.reason === "duration-missing" || (match.reason === "artist-metadata-missing" && artistMetadataChecks++ < 3))) {
-        try {
-          Object.assign(candidate, await options.verify(candidate));
-          match = await matchSource(catalog, candidate);
-          if (match.accepted) verifiedCandidates.add(candidate.id);
-        }
-        catch (error) { const reason = failureKind(error); streamFailures.add(reason); extractionFailures++; playbackEvent({ trackId: catalog.id, stage: "extraction-failed", candidateId: candidate.id, reason }); }
-      }
+      const match = await matchSource(catalog, candidate);
+      if (options.verify && ["duration-missing", "artist-metadata-missing"].includes(match.reason)) incomplete.push({ candidate, reason: match.reason });
       playbackEvent({ trackId: catalog.id, stage: match.accepted ? "matched" : "rejected", candidateId: candidate.id, reason: match.reason });
       if (match.accepted) matches.push({ candidate, score: match.score });
     }
     matches.sort((a, b) => a.score - b.score);
-    for (const { candidate } of matches) {
+    // Verify credible complete matches before spending network calls filling metadata gaps.
+    for (const { candidate, reason: missing } of [...matches.map(row => ({ ...row, reason: "" })), ...incomplete]) {
+      if (missing === "artist-metadata-missing" && artistMetadataChecks++ >= 3) continue;
       try {
-        const details = verifiedCandidates.has(candidate.id) ? undefined : await options.verify?.(candidate);
-        if (details) {
-          Object.assign(candidate, details);
-          const verified = await matchSource(catalog, candidate);
-          if (!verified.accepted) { playbackEvent({ trackId: catalog.id, stage: "rejected", candidateId: candidate.id, reason: `stream-${verified.reason}` }); continue; }
-        }
+        const details = await options.verify?.(candidate);
+        if (details) Object.assign(candidate, details);
+        const verified = await matchSource(catalog, candidate);
+        if (!verified.accepted) { playbackEvent({ trackId: catalog.id, stage: "rejected", candidateId: candidate.id, reason: `stream-${verified.reason}` }); continue; }
         playbackEvent({ trackId: catalog.id, stage: options.verify ? "source-resolved" : "candidate-selected", candidateId: candidate.id });
         return candidate;
       } catch (error) {
         extractionFailures++;
-        const reason = failureKind(error); streamFailures.add(reason);
+        const reason = failureKind(error);
+        if (reason === "cancelled") throw error;
+        streamFailures.add(reason);
         playbackEvent({ trackId: catalog.id, stage: "extraction-failed", candidateId: candidate.id, reason });
       }
     }

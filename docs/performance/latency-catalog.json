@@ -1,0 +1,71 @@
+[
+  {
+    "playCount": null,
+    "genre": "Pop",
+    "language": null,
+    "id": "itunes:1773293184",
+    "title": "Never Gonna Give You Up",
+    "artist": "Rick Astley",
+    "artistId": "itunes:669771",
+    "artists": [
+      {
+        "name": "Rick Astley",
+        "id": "itunes:669771"
+      }
+    ],
+    "album": "The Best Of Me: Never Edition",
+    "albumId": "itunes:1773292758",
+    "duration": 213.96,
+    "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/db/9e/2a/db9e2ae0-cb9f-f2a9-2774-de399dff2580/4099964133639.jpg/600x600bb.jpg"
+  },
+  {
+    "playCount": null,
+    "genre": "Pop Latino",
+    "language": null,
+    "id": "itunes:1447401620",
+    "title": "Despacito",
+    "artist": "Luis Fonsi & Daddy Yankee",
+    "artistId": "itunes:102834",
+    "artists": [
+      {
+        "name": "Luis Fonsi",
+        "id": "artist:name:Luis%20Fonsi"
+      },
+      {
+        "name": "Daddy Yankee",
+        "id": "artist:name:Daddy%20Yankee"
+      }
+    ],
+    "album": "VIDA",
+    "albumId": "itunes:1447401519",
+    "duration": 229.387,
+    "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e2/ef/f0/e2eff0bc-c51d-7de5-9280-6891ddcee71b/18UMGIM85289.rgb.jpg/600x600bb.jpg"
+  },
+  {
+    "playCount": null,
+    "genre": "Tamil",
+    "language": null,
+    "id": "itunes:1693819972",
+    "title": "Naa Ready (From \"Leo\")",
+    "artist": "Anirudh Ravichander, Vijay & Asal Kolaar",
+    "artistId": "itunes:480976476",
+    "artists": [
+      {
+        "name": "Anirudh Ravichander",
+        "id": "artist:name:Anirudh%20Ravichander"
+      },
+      {
+        "name": "Vijay",
+        "id": "artist:name:Vijay"
+      },
+      {
+        "name": "Asal Kolaar",
+        "id": "artist:name:Asal%20Kolaar"
+      }
+    ],
+    "album": "Naa Ready (From \"Leo\") - Single",
+    "albumId": "itunes:1693819969",
+    "duration": 248.182,
+    "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/b0/bf/d4/b0bfd46c-da95-2f95-1f7d-a75aa51c2465/196871252386.jpg/600x600bb.jpg"
+  }
+]

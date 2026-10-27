@@ -40,5 +40,28 @@
             <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
         </service>
         <service android:name="app.lumaire.player.ResolverService" android:exported="false" android:process=":resolver" android:enabled="${lumaireStreamingEnabled}" />
+            <receiver
+            android:name="app.lumaire.player.NowPlayingWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.lumaire.player.ACTION_WIDGET_PLAY_PAUSE" />
+                <action android:name="app.lumaire.player.ACTION_WIDGET_PREV" />
+                <action android:name="app.lumaire.player.ACTION_WIDGET_NEXT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_now_playing_info" />
+        </receiver>
+        <receiver
+            android:name="app.lumaire.player.LyricsWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_lyrics_info" />
+        </receiver>
     </application>
 </manifest>

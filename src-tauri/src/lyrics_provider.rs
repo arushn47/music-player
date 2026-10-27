@@ -91,7 +91,7 @@ fn plain_text(record: &Record) -> Option<String> {
         return Some(text.clone());
     }
     static TAG: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    let tags = TAG.get_or_init(|| regex::Regex::new(r"\[[^\]\r\n]*\]").unwrap());
+    let tags = TAG.get_or_init(|| regex::Regex::new(r"\[[^\]\r\n]*\]|<\d{1,3}:[0-5]\d(?:[.:]\d{1,3})?>").unwrap());
     let text = record
         .synced_lyrics
         .as_deref()?
@@ -224,7 +224,18 @@ async fn fetch_with_fallback(
     let original = tokio::time::timeout(std::time::Duration::from_secs(30),
         fetch_from(primary, title.clone(), artist.clone(), album, duration)).await
         .unwrap_or_else(|_| Err("LRCLIB lookup timed out. Please retry.".into()));
-    if matches!(&original, Ok(LyricResult::Synced { .. } | LyricResult::Instrumental)) {
+    if let Ok(LyricResult::Synced { lrc, .. }) = &original {
+        if !lrc.contains('<') {
+            // A bounded enrichment attempt must never discard working line lyrics on failure.
+            if let Ok(Ok(found @ LyricResult::Synced { .. })) = tokio::time::timeout(
+                std::time::Duration::from_secs(3), fetch_red(backup, &title, &artist, duration)
+            ).await {
+                if matches!(&found, LyricResult::Synced { lrc, .. } if lrc.contains('<')) { return Ok(found); }
+            }
+        }
+        return original;
+    }
+    if matches!(&original, Ok(LyricResult::Instrumental)) {
         return original;
     }
     let fallback = tokio::time::timeout(std::time::Duration::from_secs(18),
@@ -294,10 +305,7 @@ async fn fetch_red(base: &str, title: &str, artist: &str, duration: f64) -> Resu
                 return Err(format!("lrc.red lyrics are unavailable (HTTP {}). Please retry.", response.status()));
             }
             let raw = bounded_red_text(response).await?;
-            // The current reader is line-synced; enhanced LRC word markers must not become visible text.
-            static WORD_TIMING: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-            let lrc = WORD_TIMING.get_or_init(|| regex::Regex::new(r"<\d{1,3}:[0-5]\d(?:[.:]\d{1,3})?>").unwrap())
-                .replace_all(&raw, "").into_owned();
+            let lrc = raw;
             let record = Record { id: None, album_name: hit.album.clone(), track_name: hit.title.clone(),
                 artist_name: hit.artist.clone(), duration: hit.duration, instrumental: false,
                 synced_lyrics: Some(lrc.clone()), plain_lyrics: None };
@@ -570,7 +578,7 @@ mod tests {
         match found {
             LyricResult::Synced { lrc, matched: Some(info) } => {
                 assert!(lrc.contains("வணக்கம்"));
-                assert!(!lrc.contains('<'));
+                assert!(lrc.contains('<'));
                 assert!(lrc.contains("[00:01.00]"));
                 assert_eq!(info.provider, "lrc.red");
                 assert_eq!(info.id, serde_json::json!("INAAA2400006"));
@@ -600,6 +608,20 @@ mod tests {
             let (backup, second) = provider_http::tests::server(vec![("200 OK", hits.to_string()), ("200 OK", "[00:01]fixture".into())]);
             let found = runtime.block_on(fetch_with_fallback(&primary, &backup, "Song".into(), "Artist".into(), "".into(), 200.0)).unwrap();
             assert!(matches!(found, LyricResult::Synced { matched: Some(MatchInfo { provider: "lrc.red", .. }), .. }));
+            first.join().unwrap(); second.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn enriches_line_lyrics_only_with_verified_word_data() {
+        let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+        for (text, expected) in [("[00:01]<00:01>fixture<00:02>", "lrc.red"), ("[00:01]fixture", "lrclib")] {
+            let record = r#"{"id":42,"trackName":"Song","artistName":"Artist","duration":200,"syncedLyrics":"[00:01]fixture"}"#;
+            let (primary, first) = provider_http::tests::server(vec![("200 OK", record.into())]);
+            let hits = serde_json::json!({"hits": [red_hit("INAAA2400001", "Song", "Artist", 200.0)]});
+            let (backup, second) = provider_http::tests::server(vec![("200 OK", hits.to_string()), ("200 OK", text.into())]);
+            let found = runtime.block_on(fetch_with_fallback(&primary, &backup, "Song".into(), "Artist".into(), "".into(), 200.0)).unwrap();
+            assert!(matches!(found, LyricResult::Synced { matched: Some(info), .. } if info.provider == expected));
             first.join().unwrap(); second.join().unwrap();
         }
     }

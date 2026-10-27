@@ -1,0 +1,6640 @@
+{
+  "platform": "android",
+  "label": "resolver-fix",
+  "samples": 20,
+  "startedAt": "2026-10-27T07:20:15.747Z",
+  "trials": [
+    {
+      "kind": "cold",
+      "index": 0,
+      "ok": true,
+      "ms": 13978.300000011921,
+      "clickedAt": 1537.699999988079,
+      "endedAt": 15516,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1564.3999999761581,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 1570.5,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 5453.399999976158,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 9332.699999988079,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 9335.599999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9352.199999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9352.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 9357.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9358.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9358.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "6PLatPMoxGw",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9359,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9364.199999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9364.800000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 9365.300000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "QFK09y01me0",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9365.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9366.099999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9366.300000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14391.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 19955712,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 0,
+      "ok": true,
+      "ms": 1102.5,
+      "clickedAt": 15601.300000011921,
+      "endedAt": 16703.80000001192,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 19968000,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 0,
+      "ok": true,
+      "ms": 13387.100000023842,
+      "clickedAt": 16806.899999976158,
+      "endedAt": 30194,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16830,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 16832.19999998808,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 20680.599999964237,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 24481.19999998808,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 24484.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 24492.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24494.599999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24496.599999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24498.30000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24499.599999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24501.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24503.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24504.899999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24506.099999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24511.099999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29103,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo"
+        }
+      ],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2408448,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 20291584,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 1,
+      "ok": true,
+      "ms": 13558.900000035763,
+      "clickedAt": 1665,
+      "endedAt": 15223.900000035763,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1676,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 1677.5,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 5260.400000035763,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 9542,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 9563.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9573.400000035763,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9574.300000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9574.800000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9575.200000047684,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9575.700000047684,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9575.900000035763,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9576.300000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9577.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9577.800000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9578.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "CRs2zs47o4E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9578.400000035763,
+          "trackId": "itunes:1447401620",
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14161.600000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE"
+        }
+      ],
+      "nativeId": "youtube:t3IyUATcAbE",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24260608,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 1,
+      "ok": true,
+      "ms": 1082.0999999642372,
+      "clickedAt": 15347.400000035763,
+      "endedAt": 16429.5,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:t3IyUATcAbE",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24268800,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 1,
+      "ok": true,
+      "ms": 14456.199999988079,
+      "clickedAt": 16551.200000047684,
+      "endedAt": 31007.400000035763,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16575.200000047684,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 16580.30000001192,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 20271.700000047684,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 24171.5,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 24173.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24176.400000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24178.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24180,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24181.700000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24184.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24186.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24187.700000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24189.900000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24191.200000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24192.400000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24193.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24194.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29910.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2543616,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24768512,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 2,
+      "ok": true,
+      "ms": 13786,
+      "clickedAt": 1482.800000011921,
+      "endedAt": 15268.800000011921,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1490.300000011921,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 1491.800000011921,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 5100.5,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 9622.400000035763,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 9640.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9643.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9645.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9648.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9650,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9651.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "matched",
+          "at": 9652.199999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9653,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9653.900000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9655,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9655.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9656.699999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9657.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9658.199999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14195.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24485888,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 2,
+      "ok": true,
+      "ms": 1027.7999999523163,
+      "clickedAt": 15364.400000035763,
+      "endedAt": 16392.19999998808,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24494080,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 2,
+      "ok": true,
+      "ms": 13776.699999988079,
+      "clickedAt": 16501.100000023842,
+      "endedAt": 30277.80000001192,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16531.400000035763,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 16532.900000035763,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 20473.900000035763,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 24519.30000001192,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 24520.19999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 24522.19999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24522.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 24524.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24526.400000035763,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24527.400000035763,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24539.19999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24540.69999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-pC9hWGNdMI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24542,
+          "trackId": "itunes:1773293184",
+          "candidateId": "OWGRrOo7l5E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24542.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24543.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24544.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "matched",
+          "at": 24545.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24546.69999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24547.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29235.400000035763,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2646016,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24956928,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 3,
+      "ok": true,
+      "ms": 12981.699999988079,
+      "clickedAt": 1744.1000000238419,
+      "endedAt": 14725.800000011921,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1755.199999988079,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 1756.699999988079,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 5279.699999988079,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 9203.600000023842,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 9206.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9220.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9223.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9224.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9224.800000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9225.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9229.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9229.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9230.300000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9230.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9231,
+          "trackId": "itunes:1773293184",
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 9232,
+          "trackId": "itunes:1773293184",
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 13686.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24289280,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 3,
+      "ok": true,
+      "ms": 2031.4000000357628,
+      "clickedAt": 14835.699999988079,
+      "endedAt": 16867.100000023842,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2347008,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24416256,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 3,
+      "ok": true,
+      "ms": 13384.5,
+      "clickedAt": 17013.399999976158,
+      "endedAt": 30397.899999976158,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 17051.5,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 17052.899999976158,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 20862.100000023842,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 24868,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 24870.30000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 24876.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24878.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24879.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24880.899999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24882.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24885.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24886.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24887.80000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24889.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24891.80000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24893,
+          "trackId": "itunes:1447401620",
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29327.600000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE"
+        }
+      ],
+      "nativeId": "youtube:t3IyUATcAbE",
+      "resolver": {
+        "cacheBytes": 2408448,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24809472,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 4,
+      "ok": true,
+      "ms": 14785.599999964237,
+      "clickedAt": 1567.5,
+      "endedAt": 16353.099999964237,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1576.0999999642372,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 1578.199999988079,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 5252.899999976158,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 9418.199999988079,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 9431.899999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9446.199999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9449.099999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9451,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9452.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9453.899999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9455.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9456.899999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9458,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9458.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9460.699999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9461.300000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 15299.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo"
+        }
+      ],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24305664,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 4,
+      "ok": true,
+      "ms": 1031.300000011921,
+      "clickedAt": 16456.69999998808,
+      "endedAt": 17488,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24313856,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 4,
+      "ok": true,
+      "ms": 12884.300000011921,
+      "clickedAt": 17581.899999976158,
+      "endedAt": 30466.19999998808,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 17624.19999998808,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 17625.5,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 21173.599999964237,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 24941.899999976158,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 24943.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24945.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24946.69999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24948.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24949.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24951,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24952.099999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24953.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3dCuy93IvuQ",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24955,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24956.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24957.399999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24958.599999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24959.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24960.899999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29444.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2543616,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24731648,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 5,
+      "ok": true,
+      "ms": 12936.600000023842,
+      "clickedAt": 1585.1000000238419,
+      "endedAt": 14521.700000047684,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1593.4000000357628,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 1595.7000000476837,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 5161.600000023842,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 9242.200000047684,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 9257.900000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9260,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9261.700000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9262.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "LKql670RMMY",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9263.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "N3J8NXRuwEU",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 9265.200000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9265.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "jFnMsap6WQ0",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 9266.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9266.900000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9267.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9268.200000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9268.700000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9269.400000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9270,
+          "trackId": "itunes:1693819972",
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9270.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 13460.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24395776,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 5,
+      "ok": true,
+      "ms": 1005.4000000357628,
+      "clickedAt": 14610.300000011921,
+      "endedAt": 15615.700000047684,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24403968,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 5,
+      "ok": true,
+      "ms": 13881.199999988079,
+      "clickedAt": 15725.800000011921,
+      "endedAt": 29607,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 15764.200000047684,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 15766,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 19778.5,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 23964,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 23965.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 23967.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23969.400000035763,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23970.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 23971.900000035763,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 23973.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 23987.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 23988.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23989.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 23991.30000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23992.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 28564.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2646016,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24870912,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 6,
+      "ok": true,
+      "ms": 13702.300000011921,
+      "clickedAt": 1521.5999999642372,
+      "endedAt": 15223.899999976158,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1529.0999999642372,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 1532.8999999761581,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 5060,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 9250.299999952316,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 9255.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9268.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9270.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9274.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9275.099999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9276.599999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9287.599999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9289.099999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9289.799999952316,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9290.599999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "YEzjD-qvIhQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9291.299999952316,
+          "trackId": "itunes:1773293184",
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 9292.199999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "qWNQUvIk954",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14162.299999952316,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24289280,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 6,
+      "ok": true,
+      "ms": 1028.699999988079,
+      "clickedAt": 15292.899999976158,
+      "endedAt": 16321.599999964237,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24371200,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 6,
+      "ok": true,
+      "ms": 13854.600000023842,
+      "clickedAt": 16447.799999952316,
+      "endedAt": 30302.399999976158,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16460.5,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 16465.5,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 20311,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 24455.399999976158,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 24457.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 24461.799999952316,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24463.299999952316,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24464.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24465.599999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24467.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24468.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24469.899999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24470.599999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24472.299999952316,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24473.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29310.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE"
+        }
+      ],
+      "nativeId": "youtube:t3IyUATcAbE",
+      "resolver": {
+        "cacheBytes": 2408448,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 25038848,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 7,
+      "ok": true,
+      "ms": 13264.099999964237,
+      "clickedAt": 1567.6000000238419,
+      "endedAt": 14831.699999988079,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1574.800000011921,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 1576.300000011921,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 5240,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 9187.399999976158,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 9202.699999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9215.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9217.600000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9219.300000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9220.300000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9221.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9222.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9223.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9224,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9225.800000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9226.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 13761.699999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo"
+        }
+      ],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24383488,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 7,
+      "ok": true,
+      "ms": 1039.5,
+      "clickedAt": 14936.399999976158,
+      "endedAt": 15975.899999976158,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24391680,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 7,
+      "ok": true,
+      "ms": 13296.800000011921,
+      "clickedAt": 16103.300000011921,
+      "endedAt": 29400.100000023842,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16132.800000011921,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 16142.399999976158,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 19700.5,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 23624.80000001192,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 23626.69999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 23629.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23631.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23632.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 23634.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23636.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23637.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23639.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 23641.19999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23642.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "0tehCcx72hg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23644,
+          "trackId": "itunes:1693819972",
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23645.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23646.899999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 28343.899999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2543616,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24887296,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 8,
+      "ok": true,
+      "ms": 12785,
+      "clickedAt": 1515.3999999761581,
+      "endedAt": 14300.399999976158,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1522.3999999761581,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 1523.800000011921,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 4945.099999964237,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 8820.899999976158,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 8839.399999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 8843,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 8844.699999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 8846.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 8849.699999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 8852.099999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 8853.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 8855.099999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 8857,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 8858.699999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ll_k-q9LAHQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 8859.599999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 8860.099999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 8861,
+          "trackId": "itunes:1693819972",
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 13267.199999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24481792,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 8,
+      "ok": true,
+      "ms": 1000.8999999761581,
+      "clickedAt": 14409,
+      "endedAt": 15409.899999976158,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24489984,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 8,
+      "ok": true,
+      "ms": 13796.199999988079,
+      "clickedAt": 15518.800000011921,
+      "endedAt": 29315,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 15556.300000011921,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 15558.5,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 19354,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 23578.5,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 23579.599999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 23581.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23584,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 23585.599999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23587.30000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23587.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 23589.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 23604.69999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 23605.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23607.099999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23608.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 23609.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "OWGRrOo7l5E",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 28121.599999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2646016,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24956928,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 9,
+      "ok": true,
+      "ms": 13685.300000011921,
+      "clickedAt": 1467.3999999761581,
+      "endedAt": 15152.699999988079,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1475.1000000238419,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 1476.5,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 5111.300000011921,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 9060.399999976158,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 9065,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9078.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9082,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9083.800000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9084.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9085.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9095.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9096.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9097.199999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9097.800000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9098.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "OWGRrOo7l5E",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14071.300000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24289280,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 9,
+      "ok": true,
+      "ms": 1032.300000011921,
+      "clickedAt": 15265.800000011921,
+      "endedAt": 16298.100000023842,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24371200,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 9,
+      "ok": false,
+      "error": "Error: Android could not play this audio (HTTP 403). Try the source again.",
+      "elapsedMs": 16320.399999976158,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16448.19999998808,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 16452.30000001192,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 20228.80000001192,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 24290,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 24292.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 24299.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24301.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24303.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24305,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24306.30000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24308.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24310.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24312,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24313.80000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24315.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2TzIBedPhPg",
+          "reason": "matched"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29229.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo"
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 10,
+      "ok": true,
+      "ms": 15624.199999988079,
+      "clickedAt": 1566.800000011921,
+      "endedAt": 17191,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1715.5,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 1716.8999999761581,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 5643.100000023842,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 9650.699999988079,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 9677.199999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9692.300000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9694.800000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9696.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9699.199999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9700.199999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9701.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9702.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9704,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2TzIBedPhPg",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9705.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9706.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 15895.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2TzIBedPhPg"
+        }
+      ],
+      "nativeId": "youtube:2TzIBedPhPg",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24428544,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 10,
+      "ok": true,
+      "ms": 1321,
+      "clickedAt": 17304.30000001192,
+      "endedAt": 18625.30000001192,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:2TzIBedPhPg",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24481792,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 10,
+      "ok": true,
+      "ms": 13373.700000047684,
+      "clickedAt": 18735.899999976158,
+      "endedAt": 32109.600000023842,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 18756.100000023842,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 18758.100000023842,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 22429,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 26288.19999998808,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 26290.19999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 26292.19999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 26294.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 26295.399999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 26297.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 26298.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 26299.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3dCuy93IvuQ",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 26301.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 26302.69999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 26303.899999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 26304.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 26305.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 26306.399999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 26307,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 31042.399999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2543616,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 25206784,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 11,
+      "ok": true,
+      "ms": 13286.199999988079,
+      "clickedAt": 1589.199999988079,
+      "endedAt": 14875.399999976158,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1596.800000011921,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 1598.699999988079,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 5186.800000011921,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 9005.899999976158,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 9012.899999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9014.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9015.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9017.099999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9017.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9018.699999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9019.199999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9019.699999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3dCuy93IvuQ",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9020.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9021.199999988079,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 9021.899999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9022.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9022.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9023.099999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 13835.099999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24494080,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 11,
+      "ok": true,
+      "ms": 1143.699999988079,
+      "clickedAt": 14965.199999988079,
+      "endedAt": 16108.899999976158,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24641536,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 11,
+      "ok": true,
+      "ms": 13635.100000023842,
+      "clickedAt": 16237.599999964237,
+      "endedAt": 29872.69999998808,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16259.099999964237,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 16262.199999988079,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 20102.899999976158,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 24146.399999976158,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 24147.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 24149.30000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24152,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24152.599999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 24154.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24155.69999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24173.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24175,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24176.19999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24177.30000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "OWGRrOo7l5E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24178.69999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "BKCPCHLCTJU",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24179.19999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "ym1vpxhtkX4",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 24179.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24181.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "vxUxkCQR_EM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24182.30000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7R9jOENtJHw",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 24182.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "5JEbc51kgLo",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 24183.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "la-GFyRzIRA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24184.30000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 28828.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2646016,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 25329664,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 12,
+      "ok": true,
+      "ms": 13471.800000011921,
+      "clickedAt": 1439.8999999761581,
+      "endedAt": 14911.699999988079,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1448.3999999761581,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 1450.3999999761581,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 5066,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 9019.199999988079,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 9023.800000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9038.300000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9041.800000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9043.199999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9043.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9044.800000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9056.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9057.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9057.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9058.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9058.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9059.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 13851.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24297472,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 12,
+      "ok": true,
+      "ms": 1086.4000000357628,
+      "clickedAt": 15008.199999988079,
+      "endedAt": 16094.600000023842,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24305664,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 12,
+      "ok": true,
+      "ms": 13291.600000023842,
+      "clickedAt": 16212.899999976158,
+      "endedAt": 29504.5,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16242.399999976158,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 16243.600000023842,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 20096.5,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 24100.100000023842,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 24102.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 24107.899999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24109.600000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24111.30000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24112.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24113.80000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24115.30000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24116.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24117.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24119,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24121.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24122.80000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2TzIBedPhPg",
+          "reason": "matched"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 28460.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo"
+        }
+      ],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2408448,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24723456,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 13,
+      "ok": true,
+      "ms": 13722.299999952316,
+      "clickedAt": 1541.4000000357628,
+      "endedAt": 15263.699999988079,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1548.199999988079,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 1549.699999988079,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 5308.199999988079,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 9422.600000023842,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 9438.400000035763,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9450.699999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9452.199999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9453.300000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9454.900000035763,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9455.699999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9456.400000035763,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9456.900000035763,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9457.699999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9459.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9462.300000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9463.800000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14234.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo"
+        }
+      ],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24391680,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 13,
+      "ok": true,
+      "ms": 1026.300000011921,
+      "clickedAt": 15396.100000023842,
+      "endedAt": 16422.400000035763,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24449024,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 13,
+      "ok": true,
+      "ms": 13488.399999976158,
+      "clickedAt": 16588.80000001192,
+      "endedAt": 30077.19999998808,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16618,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 16619.19999998808,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 20301.30000001192,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 24249.5,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 24252.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24255.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24258.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24260.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24261.400000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24263.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24265.400000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ll_k-q9LAHQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24266.900000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24268.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24270,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24271.19999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24272.69999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24274.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24275.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24276.900000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "sqazwaUAJto",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29025.69999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2543616,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 25255936,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 14,
+      "ok": true,
+      "ms": 12956.400000035763,
+      "clickedAt": 1491.300000011921,
+      "endedAt": 14447.700000047684,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1499.800000011921,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 1501.2000000476837,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 4856.100000023842,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 8581.700000047684,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 8597.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 8600.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 8601.700000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 8604,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 8604.700000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 8605.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 8606.400000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3dCuy93IvuQ",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 8607.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 8608.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 8609.400000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "6dEul2CZYuQ",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 8610.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 8611.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qnyeDNkGpS0",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 8612.200000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 8613,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 13410.200000047684,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24494080,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 14,
+      "ok": true,
+      "ms": 1108.800000011921,
+      "clickedAt": 14534.900000035763,
+      "endedAt": 15643.700000047684,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24502272,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 14,
+      "ok": true,
+      "ms": 13604.600000023842,
+      "clickedAt": 15763.5,
+      "endedAt": 29368.100000023842,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 15799.200000047684,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 15800.400000035763,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 19575.700000047684,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 23580.30000001192,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 23581.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 23582.900000035763,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23584.900000035763,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23585.400000035763,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 23587,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 23588.30000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 23606.700000047684,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 23608.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 23609.30000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23610.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 23611.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 23612.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "OWGRrOo7l5E",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 28295.900000035763,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2646016,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24965120,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 15,
+      "ok": true,
+      "ms": 13532.299999952316,
+      "clickedAt": 1470.1000000238419,
+      "endedAt": 15002.399999976158,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1477,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 1478.5,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 5063.199999988079,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 9027,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 9032,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 9047.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9052.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9054.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9055.199999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 9056.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9057.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9070.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9071.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9072.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 9072.300000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "IO9XlQrEt2Y",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 9072.800000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "z93i3GrmtAY",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9073.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "zL19uMsnpSU",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9074.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "rTga41r3a4s",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9074.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "arp8UmQeHNI",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 13929.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24297472,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 15,
+      "ok": true,
+      "ms": 1127.9000000357628,
+      "clickedAt": 15138.199999988079,
+      "endedAt": 16266.100000023842,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24305664,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 15,
+      "ok": true,
+      "ms": 14151.700000047684,
+      "clickedAt": 16375.399999976158,
+      "endedAt": 30527.100000023842,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16397.5,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 16400.600000023842,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 20632.19999998808,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 24870.80000001192,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 24873.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 24878.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24880.600000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24882.899999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24884.600000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24885.80000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24887.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24889.19999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24890.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24891.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24892.600000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29486,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE"
+        }
+      ],
+      "nativeId": "youtube:t3IyUATcAbE",
+      "resolver": {
+        "cacheBytes": 2408448,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24735744,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 16,
+      "ok": true,
+      "ms": 13849.5,
+      "clickedAt": 1635.1000000238419,
+      "endedAt": 15484.600000023842,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1642.5,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 1644.1000000238419,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 5441.199999988079,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 9496.800000011921,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 9511.600000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9519.800000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "vYJEgQsj-Ag",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9520.300000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9522,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9523.900000035763,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9524.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "9SBWt55Zr4Y",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9524.800000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "hRezta6mdFI",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 9525.800000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9526.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "634AKiUQzg8",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 9527.199999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "dr_GAJZviR0",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9527.800000011921,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9528.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9529.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9529.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9530.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9530.699999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9531.100000023842,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14464.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo"
+        }
+      ],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24391680,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 16,
+      "ok": true,
+      "ms": 1095.8999999761581,
+      "clickedAt": 15623.300000011921,
+      "endedAt": 16719.19999998808,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:72UO0v5ESUo",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24403968,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 16,
+      "ok": true,
+      "ms": 13428.400000035763,
+      "clickedAt": 16844.69999998808,
+      "endedAt": 30273.100000023842,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16884.600000023842,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 16885.900000035763,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 20495.80000001192,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 24502.69999998808,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 24504.400000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24506.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24507.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24509.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24510.80000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24512.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24513.900000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3dCuy93IvuQ",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24515.19999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24516.900000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24518.19999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24519.30000001192,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24520.400000035763,
+          "trackId": "itunes:1693819972",
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24521.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24522.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29234.69999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2543616,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24809472,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 17,
+      "ok": true,
+      "ms": 13709.700000047684,
+      "clickedAt": 1601.8999999761581,
+      "endedAt": 15311.600000023842,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1609.8999999761581,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 1613.300000011921,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 5360.100000023842,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 9534.800000011921,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 9547.899999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9551.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9553,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9554.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9556.600000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9557.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9557.800000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 9558.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9559.100000023842,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9559.899999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9560.399999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9560.899999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9561.5,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14248.300000011921,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24494080,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 17,
+      "ok": true,
+      "ms": 1077.699999988079,
+      "clickedAt": 15417.5,
+      "endedAt": 16495.19999998808,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2428928,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24502272,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 17,
+      "ok": true,
+      "ms": 13491.899999976158,
+      "clickedAt": 16615,
+      "endedAt": 30106.899999976158,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16635.600000023842,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 16637.399999976158,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 20417.19999998808,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 24521.69999998808,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 24522.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 24524.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24526.399999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24527.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24528.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 24530.19999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24543,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24544.19999998808,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24545,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24545.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 24546.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24547.80000001192,
+          "trackId": "itunes:1773293184",
+          "candidateId": "5SZYz7lZRRI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24548.600000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24549.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29070.100000023842,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk"
+        }
+      ],
+      "nativeId": "youtube:7FwDP17XPlk",
+      "resolver": {
+        "cacheBytes": 2646016,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24965120,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 18,
+      "ok": true,
+      "ms": 14163.100000023842,
+      "clickedAt": 1828.8999999761581,
+      "endedAt": 15992,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1839.300000011921,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "search",
+          "at": 1841.3999999761581,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 5865.599999964237,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "discovered",
+          "at": 10079.099999964237,
+          "trackId": "itunes:1773293184"
+        },
+        {
+          "stage": "rejected",
+          "at": 10092.699999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 10093.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 10096,
+          "trackId": "itunes:1773293184",
+          "candidateId": "SB4V4LyCBo4",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 10098.300000011921,
+          "trackId": "itunes:1773293184",
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 10098.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 10101,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 10104.199999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 10116.199999988079,
+          "trackId": "itunes:1773293184",
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 10117.5,
+          "trackId": "itunes:1773293184",
+          "candidateId": "hvL1339luv0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 10117.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "8leAAwMIigI",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 10118.899999976158,
+          "trackId": "itunes:1773293184",
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 10120,
+          "trackId": "itunes:1773293184",
+          "candidateId": "OWGRrOo7l5E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 10120.599999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14922.099999964237,
+          "trackId": "itunes:1773293184",
+          "candidateId": "MOcQaR7_Wro"
+        }
+      ],
+      "nativeId": "youtube:MOcQaR7_Wro",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24301568,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 18,
+      "ok": true,
+      "ms": 1122.3999999761581,
+      "clickedAt": 16103.199999988079,
+      "endedAt": 17225.599999964237,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:MOcQaR7_Wro",
+      "resolver": {
+        "cacheBytes": 2273280,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24309760,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 18,
+      "ok": true,
+      "ms": 13041,
+      "clickedAt": 17317.69999998808,
+      "endedAt": 30358.69999998808,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 17338.599999964237,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 17339.899999976158,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 20975.19999998808,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 24918.399999976158,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 24920.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 24926,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24927.599999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24928.69999998808,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24930.80000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24932.30000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24934.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24935.399999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24936.80000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24938.599999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 29361.80000001192,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE"
+        }
+      ],
+      "nativeId": "youtube:t3IyUATcAbE",
+      "resolver": {
+        "cacheBytes": 2408448,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24940544,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "cold",
+      "index": 19,
+      "ok": true,
+      "ms": 13429.699999988079,
+      "clickedAt": 1669.5,
+      "endedAt": 15099.199999988079,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1681.5,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "search",
+          "at": 1683.0999999642372,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 5322.899999976158,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "discovered",
+          "at": 9188.099999964237,
+          "trackId": "itunes:1447401620"
+        },
+        {
+          "stage": "rejected",
+          "at": 9206.899999976158,
+          "trackId": "itunes:1447401620",
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 9221.699999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9223.099999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9223.799999952316,
+          "trackId": "itunes:1447401620",
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 9224.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 9225.099999964237,
+          "trackId": "itunes:1447401620",
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 9225.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9226.199999988079,
+          "trackId": "itunes:1447401620",
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9231.799999952316,
+          "trackId": "itunes:1447401620",
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9232.799999952316,
+          "trackId": "itunes:1447401620",
+          "candidateId": "CRs2zs47o4E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 9233.5,
+          "trackId": "itunes:1447401620",
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 14029.799999952316,
+          "trackId": "itunes:1447401620",
+          "candidateId": "t3IyUATcAbE"
+        }
+      ],
+      "nativeId": "youtube:t3IyUATcAbE",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24391680,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 1,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "repeat",
+      "index": 19,
+      "ok": true,
+      "ms": 1112.699999988079,
+      "clickedAt": 15198.899999976158,
+      "endedAt": 16311.599999964237,
+      "playingAt": null,
+      "events": [],
+      "nativeId": "youtube:t3IyUATcAbE",
+      "resolver": {
+        "cacheBytes": 2334720,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 24543232,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 2,
+        "resolverExecutions": 3,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    },
+    {
+      "kind": "queue",
+      "index": 19,
+      "ok": true,
+      "ms": 13993.5,
+      "clickedAt": 16447.399999976158,
+      "endedAt": 30440.899999976158,
+      "playingAt": null,
+      "events": [
+        {
+          "stage": "search",
+          "at": 16483,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "search",
+          "at": 16485,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 20239,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "discovered",
+          "at": 24092.099999964237,
+          "trackId": "itunes:1693819972"
+        },
+        {
+          "stage": "rejected",
+          "at": 24092.69999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24093.19999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24093.69999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24094,
+          "trackId": "itunes:1693819972",
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24094.19999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24094.599999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24094.799999952316,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 24095,
+          "trackId": "itunes:1693819972",
+          "candidateId": "3dCuy93IvuQ",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 24095.299999952316,
+          "trackId": "itunes:1693819972",
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 24095.69999998808,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 24096,
+          "trackId": "itunes:1693819972",
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24096.299999952316,
+          "trackId": "itunes:1693819972",
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24096.599999964237,
+          "trackId": "itunes:1693819972",
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 24097,
+          "trackId": "itunes:1693819972",
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 28747.399999976158,
+          "trackId": "itunes:1693819972",
+          "candidateId": "qz_aO_Hfxv4"
+        }
+      ],
+      "nativeId": "youtube:qz_aO_Hfxv4",
+      "resolver": {
+        "cacheBytes": 2543616,
+        "challengesRequested": 0,
+        "challengesSolved": 0,
+        "codec": "mp4a.40.2",
+        "dataBytes": 25264128,
+        "ejs": "0.8.0",
+        "format": "140",
+        "headerNames": [
+          "User-Agent",
+          "Accept",
+          "Accept-Language",
+          "Sec-Fetch-Mode"
+        ],
+        "installedAppBytes": 145267200,
+        "python": "3.11.17",
+        "resolverCacheHits": 3,
+        "resolverExecutions": 6,
+        "streamProbeStatus": 206,
+        "ytDlp": "2026.08.19"
+      }
+    }
+  ],
+  "definitions": {
+    "cold": "Process restart, unresolved catalogue selection. OS/DNS/CDN caches are not cleared.",
+    "repeat": "Select a second queue entry for the same catalogue song without restarting; this loads again, rather than resuming.",
+    "queue": "Select the next different catalogue entry immediately; no near-end warmup or artificial seek.",
+    "audio": "Windows playing event / Android native playing plus media time > 50 ms. No acoustic speaker measurement.",
+    "p95": "Nearest-rank empirical p95 of successes; failures reported separately."
+  },
+  "originalStayAwake": "15",
+  "summary": {
+    "cold": {
+      "attempted": 20,
+      "blocked": 0,
+      "succeeded": 20,
+      "medianMs": 13622.100000023842,
+      "p95Ms": 14785.599999964237
+    },
+    "repeat": {
+      "attempted": 20,
+      "blocked": 0,
+      "succeeded": 20,
+      "medianMs": 1084.25,
+      "p95Ms": 1321
+    },
+    "queue": {
+      "attempted": 20,
+      "blocked": 0,
+      "succeeded": 19,
+      "medianMs": 13491.899999976158,
+      "p95Ms": 14456.199999988079
+    }
+  },
+  "device": {
+    "model": "motorola edge 50 pro",
+    "api": "36"
+  },
+  "apkSha256": "fd481c706fdb7d98d2869a2725069a4643e1bc94c5c5a14b0e2755e82a0efd98",
+  "url": "http://tauri.localhost/",
+  "corpus": [
+    {
+      "id": "itunes:1773293184",
+      "title": "Never Gonna Give You Up",
+      "artist": "Rick Astley",
+      "duration": 213.96
+    },
+    {
+      "id": "itunes:1447401620",
+      "title": "Despacito",
+      "artist": "Luis Fonsi & Daddy Yankee",
+      "duration": 229.387
+    },
+    {
+      "id": "itunes:1693819972",
+      "title": "Naa Ready (From \"Leo\")",
+      "artist": "Anirudh Ravichander, Vijay & Asal Kolaar",
+      "duration": 248.182
+    }
+  ],
+  "finishedAt": "2026-10-27T07:31:06.483Z"
+}

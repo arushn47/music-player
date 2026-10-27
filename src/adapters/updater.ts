@@ -35,7 +35,10 @@ function publish(next: Partial<UpdateState>): void {
 function failed(error: unknown): void {
   const message = String(error);
   const missing = /404|not found|pubkey|public key|could not fetch a valid release json/i.test(message);
-  publish({ stage: missing ? "unconfigured" : "error", error: missing ? undefined : `Unable to update. Check your connection and try again. ${message}` });
+  const network = /error sending request|network|timed?\s*out|dns|connection|certificate|tls/i.test(message);
+  publish({ stage: missing ? "unconfigured" : "error", error: missing ? undefined : network
+    ? "Could not reach the update server on GitHub. Check your connection and whether your VPN, proxy or firewall allows GitHub release downloads, then try again. Your installed app has not changed."
+    : `Unable to update. ${message}` });
 }
 const VERSION_KEY = "lumaire:last-installed-version";
 const NOTES_KEY = "lumaire:installed-release-notes";
@@ -52,7 +55,7 @@ function saveRelease(key: string, value: unknown): void {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* Optional local release log. */ }
 }
 let initialized: Promise<void> | undefined;
-/** Read installed version and local notes only; never checks a server on startup. */
+/** Check once per launch in the background; downloading and installing remain explicit. */
 export function initializeUpdates(): Promise<void> {
   return initialized ??= (async () => {
     if (!supportsWindowsUpdates() && !supportsAndroidUpdates()) return;
@@ -71,6 +74,7 @@ export function initializeUpdates(): Promise<void> {
         if (pending?.version === version) localStorage.removeItem(PENDING_KEY);
       } catch { /* Optional. */ }
     } catch { /* Keep the bundled version if the native version cannot be read. */ }
+    if (supportsWindowsUpdates() && !import.meta.env.DEV && configured()) await checkForUpdates();
   })();
 }
 export function dismissReleaseNotes(): void { publish({ unreadNotes: false }); }

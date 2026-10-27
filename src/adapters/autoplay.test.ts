@@ -1,0 +1,50 @@
+import { afterEach, expect, it, vi } from 'vitest';
+vi.mock('./native', () => ({ library: { recommendCatalog: vi.fn(), lookupCatalog: vi.fn(), searchCatalog: vi.fn() } }));
+import { library, type CatalogTrack } from './native';
+import { loadAutoplayPool } from './autoplay';
+import { catalogQuickPick } from '../domain/quick-picks';
+const song = (id: string): CatalogTrack => ({ id: `itunes:${id}`, title: id, artist: id, artists: [], album: id, duration: 180, language: 'tamil' });
+afterEach(() => { vi.useRealTimers(); vi.clearAllMocks(); });
+it('recovers Apple tracks lacking language through an exact same-recording catalog match', async () => {
+  const original = song('931'), match = {...original, id: 'saavn:abcd1234'};
+  vi.mocked(library.lookupCatalog).mockResolvedValue({...original, language: null});
+  vi.mocked(library.searchCatalog).mockResolvedValue([{...match, id: 'saavn:wrong123', title: `${original.title} (Remix)`}, match]);
+  vi.mocked(library.recommendCatalog).mockResolvedValue([song('932')]);
+  const anchor = catalogQuickPick(original).track;
+  const result = await loadAutoplayPool(anchor, () => true);
+  expect(result.metadata).toEqual([match]);
+  expect(library.recommendCatalog).toHaveBeenCalledWith(match.id);
+  expect(result.candidates.every(item => item.sources.join(',') === 'anchor')).toBe(true);
+  await loadAutoplayPool(anchor, () => true);
+  expect(library.searchCatalog).toHaveBeenCalledTimes(1);
+});
+it('bounds seed count and shares cached radios and metadata across advances', async () => {
+  const anchor = catalogQuickPick(song('901')).track;
+  vi.mocked(library.lookupCatalog).mockResolvedValue(song('901'));
+  vi.mocked(library.recommendCatalog).mockResolvedValue([song('902')]);
+  await loadAutoplayPool(anchor, () => true);
+  await loadAutoplayPool(anchor, () => true);
+  expect(library.recommendCatalog).toHaveBeenCalledTimes(1);
+  expect(library.lookupCatalog).toHaveBeenCalledTimes(1);
+});
+it('does not fetch radio when the seed language cannot be recovered', async () => {
+  const anchor = catalogQuickPick(song('911')).track;
+  vi.mocked(library.lookupCatalog).mockRejectedValue(Error('Metadata offline'));
+  vi.mocked(library.searchCatalog).mockResolvedValue([]);
+  const result = await loadAutoplayPool(anchor, () => true);
+  expect(result.candidates).toEqual([]);
+  expect(library.recommendCatalog).not.toHaveBeenCalled();
+});
+it('returns partial results within the shared time budget and discards cancelled results', async () => {
+  vi.useFakeTimers();
+  const anchor = catalogQuickPick(song('921')).track;
+  vi.mocked(library.lookupCatalog).mockReturnValue(new Promise(() => {}));
+  vi.mocked(library.recommendCatalog).mockImplementation(id => id === anchor.id ? Promise.resolve([song('923')]) : new Promise(() => {}));
+  let active = true;
+  const pending = loadAutoplayPool(anchor, () => active);
+  await vi.advanceTimersByTimeAsync(5000);
+  expect((await pending).candidates).toEqual([]);
+  const cancelled = loadAutoplayPool(anchor, () => active); active = false;
+  await vi.advanceTimersByTimeAsync(5000);
+  expect((await cancelled).candidates).toEqual([]);
+});

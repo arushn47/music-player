@@ -7,6 +7,8 @@ import { UpdateDialog } from "./components/modals/UpdateDialog";
 import { downloadProgressText } from "./domain/downloads";
 import { mergePlaylistImport, type PlaylistImportOptions } from "./domain/playlist-import";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { flushSync } from 'react-dom';
+import { dismissAndroidLayer, useAndroidBack } from './hooks/useAndroidBack';
 import { Disc3, Minimize2 } from "lucide-react";
 import { desktop, mobile, library, type CatalogTrack } from "./adapters/native";
 import { TopBar, Banners, MobileTabBar } from "./components/common";
@@ -45,18 +47,19 @@ import { historyTrack, type ListeningRecord } from "./domain/listening";
 import { clearListening } from "./player/listening-service";
 import { reorderUpcoming } from "./domain/queue";
 import { applyTheme, storeTheme } from "./theme";
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { emit } from "@tauri-apps/api/event";
 import type { CatalogAction } from "./components/common/CatalogTrackActions";
-import { EngineSetupCard } from "./components/common/EngineSetupCard";
+import { EngineSetupDialog } from "./components/modals/EngineSetupDialog";
 import { clearDiscoverySearches } from "./adapters/discovery-home";
 import { catalogQueueTrack } from "./domain/catalog-track";
 import { CollectionHub } from "./components/views/CollectionHub";
 import { useNearby } from "./hooks/useNearby";
+import { useJam } from "./hooks/useJam";
 import { useLyricOverlay } from "./hooks/useLyricOverlay";
 import { overlaySnapshot } from "./domain/lyric-overlay";
-import { mergeSharedPlaylists, type SharedState } from "./domain/nearby";
+import { mergePlaylistReplica, replicaTracks } from './domain/device-sync';
 import { item } from "./domain/types";
 import { collections as collectionAdapter } from "./adapters/collections";
 
@@ -84,6 +87,8 @@ export function App() {
     busy,
     message,
     setMessage,
+    messageAction,
+    setMessageAction,
     error,
     setError,
     downloads,
@@ -119,6 +124,7 @@ export function App() {
     onInstallYoutubeEngine: libraryManager.installYoutubeEngine,
     onCancelYoutubeEngineInstall: libraryManager.cancelYoutubeEngineInstall,
   };
+  const needsEngineSetup = desktop && (!ytdlpAvailable || engineSetup.engineState === "installing");
 
   const [view, setRawView] = useState<View>("home");
   const [discoverRoute, setDiscoverRoute] = useState<View>("home");
@@ -159,6 +165,7 @@ export function App() {
     }
     setRawView((prev) => {
       const resolved = typeof next === "function" ? (next as (prev: View) => View)(prev) : next;
+      if (mobile && viewKey(prev) === viewKey(resolved)) return prev;
       setNavHistory((hist) => [...hist.slice(0, navIndex + 1), resolved]);
       setNavIndex((i) => i + 1);
       return resolved;
@@ -169,9 +176,6 @@ export function App() {
   const [historyTab, setHistoryTab] = useState<"stats" | "history">("stats");
 
   function selectView(next: View, targetHistoryTab: "stats" | "history" = "stats") {
-    if (next === "lyrics" && (mobile || window.innerWidth <= 768)) {
-      setMobilePlayerTab("lyrics"); setExpanded(true); return;
-    }
     if (next === "history") {
       setHistoryTab(targetHistoryTab);
     }
@@ -235,9 +239,23 @@ export function App() {
     if (typeof window === "undefined") return 240;
     const saved = localStorage.getItem("lumaire:sidebar-width");
     const parsed = saved ? parseInt(saved, 10) : 240;
-    return Number.isFinite(parsed) && parsed >= 180 && parsed <= 440 ? parsed : 240;
+    return Number.isFinite(parsed) && parsed >= 180 ? Math.min(parsed, 320) : 240;
   });
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const [queueWidth, setQueueWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return 315;
+    const saved = localStorage.getItem("lumaire:queue-width");
+    const parsed = saved ? parseInt(saved, 10) : 315;
+    return Number.isFinite(parsed) && parsed >= 260 ? Math.min(parsed, 380) : 315;
+  });
+  useEffect(() => {
+    if (queueWidth > 380) {
+      setQueueWidth(380);
+      localStorage.setItem("lumaire:queue-width", "380");
+      document.documentElement.style.setProperty("--queue-width", "380px");
+    }
+  }, [queueWidth]);
+  const [isResizingQueue, setIsResizingQueue] = useState(false);
   const [dialog, setDialog] = useState<PromptDialogData | null>(null);
   const [playlistTarget, setPlaylistTarget] = useState<Track | null>(null);
   const [addMusicPlaylist, setAddMusicPlaylist] = useState<Playlist | null>(null);
@@ -267,7 +285,6 @@ export function App() {
 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
-  const messageTimeoutRef = useRef<number | null>(null);
 
   const current = session.queue.find((i) => i.id === session.currentId);
   const listeningTracks = [
@@ -292,10 +309,33 @@ export function App() {
   useEffect(() => { if (updateState.unreadNotes) setUpdatesOpen(true); }, [updateState.unreadNotes]);
   const closeUpdates = () => { dismissReleaseNotes(); setUpdatesOpen(false); };
   const [expanded, setExpanded] = useState(false);
-  const [mobilePlayerTab, setMobilePlayerTab] = useState<"player" | "lyrics" | "queue">("player");
+  const [mobilePlayerTab, setMobilePlayerTab] = useState<"player" | "queue">("player");
   function openExpanded() { setMobilePlayerTab("player"); setExpanded(true); }
   function closeExpanded() { setExpanded(false); requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(".cover-expand, .mobile-cover-expand")?.focus()); }
-  const [collectionHub, setCollectionHub] = useState<"import" | "devices" | false>(false);
+  useAndroidBack(mobile, `${viewKey(view)}:${navIndex}`, {
+    // Returning to Home reaches Android's root even when earlier tabs remain in desktop history.
+    canGoBack: view !== 'home' && canGoBack,
+    goBack,
+    dismiss: () => {
+      if (dismissAndroidLayer(document, !expanded)) return true;
+      if (expanded) {
+        if (mobilePlayerTab === 'queue') setMobilePlayerTab('player');
+        else if (history.state?.mobileNowPlaying) history.back();
+        else closeExpanded();
+        return true;
+      }
+      if (view === 'settings' && history.state?.mobileSettings) { history.back(); return true; }
+      return false;
+    },
+  });
+  function openDiscoverSearch() {
+    flushSync(() => selectView('search'));
+    const input = document.querySelector<HTMLInputElement>('.discover-search-bar input');
+    input?.focus({ preventScroll: true });
+    input?.scrollIntoView({ block: 'center', behavior: 'instant' });
+    if (mobile && input) void invoke('plugin:lumaire-android|navigation', { action: 'keyboard' }).catch(() => {});
+  }
+  const [collectionHub, setCollectionHub] = useState<"import" | "devices" | "jam" | false>(false);
   const followRef = useRef<(f: boolean) => void>(() => {});
   const [isFullscreen, setIsFullscreen] = useState(false);
   const restoreMaximized = useRef(false);
@@ -347,6 +387,7 @@ export function App() {
   }, []);
 
   const playbackEngine = usePlayback({
+    listeningRecords: listeningHistory.records,
     resolveQueuedTrack: async (queued) =>
       resolveDiscovery({ ...queued, artists: [] }),
     session,
@@ -355,7 +396,7 @@ export function App() {
     tracksRef,
     tracks,
     currentTrack: track,
-    view: typeof view === "object" ? "discover" : view,
+    view: expanded && !mobile ? "lyrics" : typeof view === "object" ? "discover" : view,
     setView: selectView,
     notify,
     persist,
@@ -373,7 +414,7 @@ export function App() {
     update,
     sessionRef,
     ready,
-    view: expanded ? "lyrics" : typeof view === "object" ? "discover" : view,
+    view: expanded && !mobile && window.innerWidth > 768 ? "lyrics" : typeof view === "object" ? "discover" : view,
     notify,
     action,
     setError,
@@ -465,13 +506,29 @@ export function App() {
     }, skip, setError,
   );
 
-  const nearby = useNearby({ session, tracks, track, playback, update, resolve: async queued => resolveDiscovery(await library.lookupCatalog(queued.id)) });
-  useEffect(() => { if (nearby.error) setError(`Nearby connection: ${nearby.error}`); }, [nearby.error]);
+  const nearby = useNearby({ ready, session, tracks, track, playback, update,
+    resolve: async queued => resolveDiscovery(await library.lookupCatalog(queued.id)),
+    applyReplica: async state => {
+      await keepImportedTracks(replicaTracks([...Object.values(sessionRef.current.replica?.cells || {}), ...state.cells]));
+      update(s => mergePlaylistReplica(s, state, tracksRef.current));
+    },
+    flush: async () => {
+      const snapshot = restoreSession(sessionRef.current, tracksRef.current);
+      const saving = saveChain.current.then(() => library.save(snapshot));
+      saveChain.current = saving.catch(e => setError(`Sync could not save local changes. ${String(e)}`));
+      await saving;
+    },
+  });
+
+  const jam = useJam({ ready, session, tracks, track, playback, update,
+    resolve: async queued => resolveDiscovery(await library.lookupCatalog(queued.id)),
+  });
 
   async function keepImportedTracks(imported: Track[]) {
     const fresh = imported.filter(track => !tracksRef.current.some(saved => saved.id === track.id));
     const catalog = fresh.filter(track => track.format === "catalog");
-    const saved = catalog.length ? await collectionAdapter.saveCatalogTracks(catalog) : [];
+    const saved: Track[] = [];
+    for (let offset = 0; offset < catalog.length; offset += 500) saved.push(...await collectionAdapter.saveCatalogTracks(catalog.slice(offset, offset + 500)));
     for (const track of fresh.filter(track => track.format !== "catalog")) saved.push(await library.saveOnline(track));
     tracksRef.current = [...tracksRef.current, ...saved.filter(track => !tracksRef.current.some(existing => existing.id === track.id))];
     setTracks(tracksRef.current);
@@ -483,12 +540,6 @@ export function App() {
     update(s => ({ ...s, playlists: result.playlists }));
     setCollectionHub(false); setView(result.playlist.id);
     notify(result.merged ? result.added ? `Added ${result.added} new songs to ${result.playlist.name}.` : `Already imported—all ${result.playlist.items.length} songs are in your playlist.` : `Imported ${result.added} tracks. Audio is resolved when played.`);
-  }
-  async function syncPlaylists(data: SharedState) {
-    await keepImportedTracks([...new Map(data.playlists.flatMap(playlist => playlist.tracks).map(track => [track.id, track])).values()]);
-    let report = "";
-    update(session => { const merged = mergeSharedPlaylists(session, data.playlists); report = `${merged.added} playlists synced · ${merged.conflicts} conflicting edits kept as device copies`; return merged.session; });
-    notify(report || "Shared playlists synced.");
   }
 
   function handleQueueTrack(id: string, next = false) {
@@ -600,7 +651,44 @@ export function App() {
   }
 
   function choosePlaylist(t: Track) {
-    setPlaylistTarget(t);
+    let lastPlaylistId: string | null = null;
+    try {
+      lastPlaylistId = localStorage.getItem("lumaire:last-playlist-id");
+    } catch {
+      // Local storage unavailable
+    }
+    const targetPlaylist =
+      (lastPlaylistId ? session.playlists.find((p) => p.id === lastPlaylistId) : null) ||
+      (session.playlists.length === 1 ? session.playlists[0] : null);
+
+    if (!targetPlaylist) {
+      setPlaylistTarget(t);
+      return;
+    }
+
+    const isAlreadyIn = targetPlaylist.items.some((i) => {
+      if (i.trackId === t.id) return true;
+      if (t.metadataSourceId) {
+        const saved = tracks.find((entry) => entry.id === i.trackId) || session.queueTracks[i.trackId];
+        if (saved?.metadataSourceId === t.metadataSourceId) return true;
+      }
+      return false;
+    });
+
+    if (isAlreadyIn) {
+      notify(`Already in ${targetPlaylist.name}`, {
+        label: "Change",
+        onClick: () => setPlaylistTarget(t),
+      });
+      return;
+    }
+
+    void addOnlineToPlaylist(t, targetPlaylist.id, undefined, {
+      action: {
+        label: "Change",
+        onClick: () => setPlaylistTarget(t),
+      },
+    });
   }
 
   const collections = libraryCollections(tracks, session.playlists);
@@ -645,6 +733,7 @@ export function App() {
   }) : collectionTracks;
 
   const lyricsPanel = (<LyricsView embedded={expanded}
+              mediaTime={playback.time}
               onNavigateArtist={id => { setExpanded(false); navigateCatalog({ type: "artist", id }); }}
               track={track}
               doc={doc}
@@ -738,7 +827,7 @@ export function App() {
       if (clientX < 120) {
         setSidebarCollapsed(true);
       } else {
-        const clamped = Math.min(Math.max(clientX, 180), 440);
+        const clamped = Math.min(Math.max(clientX, 180), 320);
         setSidebarCollapsed(false);
         setSidebarWidth(clamped);
         document.documentElement.style.setProperty("--sidebar-width", `${clamped}px`);
@@ -752,7 +841,7 @@ export function App() {
       setIsResizingSidebar(false);
       const finalX = upEvent.clientX;
       if (finalX >= 120) {
-        const clamped = Math.min(Math.max(finalX, 180), 440);
+        const clamped = Math.min(Math.max(finalX, 180), 320);
         setSidebarWidth(clamped);
         localStorage.setItem("lumaire:sidebar-width", String(clamped));
         document.documentElement.style.setProperty("--sidebar-width", `${clamped}px`);
@@ -771,10 +860,55 @@ export function App() {
     document.documentElement.style.setProperty("--sidebar-width", "240px");
   };
 
+  const handleQueueResizeStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    setIsResizingQueue(true);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const width = window.innerWidth - moveEvent.clientX;
+      if (width < 180) {
+        setQueueOpen(false);
+      } else {
+        const clamped = Math.min(Math.max(width, 260), 380);
+        setQueueOpen(true);
+        setQueueWidth(clamped);
+        document.documentElement.style.setProperty("--queue-width", `${clamped}px`);
+      }
+    };
+
+    const onPointerUp = (upEvent: PointerEvent) => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      setIsResizingQueue(false);
+      const finalWidth = window.innerWidth - upEvent.clientX;
+      if (finalWidth >= 180) {
+        const clamped = Math.min(Math.max(finalWidth, 260), 380);
+        setQueueWidth(clamped);
+        localStorage.setItem("lumaire:queue-width", String(clamped));
+        document.documentElement.style.setProperty("--queue-width", `${clamped}px`);
+      }
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+  };
+
+  const handleQueueResizeReset = () => {
+    setQueueWidth(315);
+    localStorage.setItem("lumaire:queue-width", "315");
+    document.documentElement.style.setProperty("--queue-width", "315px");
+  };
+
   return (
     <div
-      className={`app ${queueOpen ? "with-queue" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isResizingSidebar ? "is-resizing" : ""} ${isFullscreen ? "is-fullscreen" : ""} ${mobile ? "android" : ""}`}
-      style={{ "--sidebar-width": `${sidebarWidth}px` } as React.CSSProperties}
+      className={`app ${queueOpen ? "with-queue" : ""} ${sidebarCollapsed ? "sidebar-collapsed" : ""} ${isResizingSidebar || isResizingQueue ? "is-resizing" : ""} ${isFullscreen ? "is-fullscreen" : ""} ${mobile ? "android" : ""}`}
+      style={{
+        "--sidebar-width": `${sidebarWidth}px`,
+        "--queue-width": `${queueWidth}px`,
+      } as React.CSSProperties}
     >
       {isFullscreen && (
         <button
@@ -789,6 +923,7 @@ export function App() {
         </button>
       )}
       {updatesOpen && <UpdateDialog onClose={closeUpdates} />}
+      {ready && needsEngineSetup && engineSetup.engineState !== "checking" && <EngineSetupDialog {...engineSetup} />}
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -863,7 +998,9 @@ export function App() {
         <Banners
           error={error}
           playbackError={playback.error}
+          playbackErrorId={playback.playbackId}
           message={message}
+          messageAction={messageAction}
           hasTrack={Boolean(track || libraryManager.pendingTrack)}
           onRetryPlayback={() => {
             if (pendingTrackActive) libraryManager.retryPendingPlayback(playTrack);
@@ -872,14 +1009,10 @@ export function App() {
           onDismissError={() => setError("")}
           onDismissMessage={() => {
             setMessage("");
-            if (messageTimeoutRef.current) {
-              window.clearTimeout(messageTimeoutRef.current);
-              messageTimeoutRef.current = null;
-            }
+            setMessageAction(null);
           }}
         />
         <main id="main" tabIndex={-1}>
-          {ready && !mobile && view === "library" && tracks.length === 0 && !ytdlpAvailable && <EngineSetupCard {...engineSetup} />}
           {!ready && (
             <div className="empty">
               <Disc3 className="spin" size={32} />
@@ -951,16 +1084,39 @@ export function App() {
                     "Type DELETE to remove this playlist. Your files stay on disk.",
                     "",
                     (value) => {
-                      if (value === "DELETE") {
+                      if (value.trim().toUpperCase() === "DELETE") {
                         update((s) => ({
                           ...s,
                           playlists: s.playlists.filter((pl) => pl.id !== p.id),
                         }));
+                        try {
+                          if (localStorage.getItem("lumaire:last-playlist-id") === p.id) {
+                            localStorage.removeItem("lumaire:last-playlist-id");
+                          }
+                        } catch {
+                          // Storage unavailable
+                        }
                         setView("library");
+                        notify(`Deleted playlist "${p.name}"`);
                       }
                     },
                   )
                 }
+                onDownloadPlaylist={playlist && rows.length > 0 ? () => {
+                  const catalogTracks = rows.map(({ t }) => ({
+                    id: t.metadataSourceId || t.id,
+                    title: t.title,
+                    artist: t.artist,
+                    artists: [],
+                    album: t.album,
+                    duration: t.duration,
+                    artworkUrl: t.artworkUrl,
+                  }));
+                  void albumDownloads.start(playlist.id, catalogTracks);
+                } : undefined}
+                downloadProgress={playlist ? albumDownloads.progress[playlist.id] : undefined}
+                onPauseDownload={playlist ? () => albumDownloads.pause(playlist.id) : undefined}
+                onCancelDownload={playlist ? () => albumDownloads.cancel(playlist.id) : undefined}
                 onFavorite={favorite}
                 onNavigateArtist={id => navigateCatalog({ type: "artist", id })}
                 onNavigateAlbum={id => navigateCatalog({ type: "album", id })}
@@ -997,23 +1153,6 @@ export function App() {
             <HistoryView
               initialTab={historyTab}
               {...listeningHistory}
-              records={listeningHistory.records.map((record) => {
-                const current = listeningTracks.find(
-                  (t) => t.id === record.trackId,
-                );
-                if (!current) return record;
-                return {
-                  ...record,
-                  title: current.title || record.title,
-                  artist:
-                    current.artist &&
-                    !/^unknown(?: artist)?$/i.test(current.artist)
-                      ? current.artist
-                      : record.artist,
-                  album: current.album?.trim() || record.album,
-                  artworkUrl: current.artworkUrl || record.artworkUrl,
-                };
-              })}
               onRefresh={listeningHistory.refresh}
               onNavigateArtist={id => navigateCatalog({ type: "artist", id })}
               onNavigateAlbum={id => navigateCatalog({ type: "album", id })}
@@ -1042,7 +1181,7 @@ lyricsPanel
           )}
           {ready && view === "home" && (
             <div className="home-view-state">
-              <DiscoveryHome
+              <DiscoveryHome mobile={mobile}
                 resumes={session.listeningResumes}
                 onResume={resumeListening}
                 onPlayQuickPick={handleQuickPick}
@@ -1242,7 +1381,7 @@ lyricsPanel
                   await clearListening();
                   update((s) => ({ ...s, history: [] }));
                   listeningHistory.refresh();
-                  notify("Local listening history cleared");
+                  notify("Listening history cleared. If history sync is enabled on both devices, the clear will propagate when connected.");
                 });
               }}
               onClearLyricCache={() =>
@@ -1288,6 +1427,8 @@ lyricsPanel
           onFavorite={favorite}
           isFavorite={Boolean(activeTrack && session.favorites.includes(activeTrack.id))}
           onChoosePlaylist={choosePlaylist}
+          onResizeStart={handleQueueResizeStart}
+          onResizeReset={handleQueueResizeReset}
         />
       )}
       {!expanded && playerControls}
@@ -1338,7 +1479,6 @@ lyricsPanel
           onClearQueue={clearQueue}
           onUndoRemoval={undoRemoval}
           undo={undo}
-          lyrics={lyricsPanel}
           doc={doc}
           sessionVolume={session.settings.volume ?? 0.72}
         />
@@ -1350,14 +1490,15 @@ lyricsPanel
           playlists={session.playlists}
           onImport={importPlaylist}
           nearby={nearby}
-          onSync={syncPlaylists}
+          jam={jam}
         />
       )}
       <MobileTabBar
         view={typeof view === "object" ? "discover" : view}
         setView={selectView}
+        onDiscoverSearch={openDiscoverSearch}
       />
-      {ready && <MusicLanguageOnboarding />}
+      {ready && !needsEngineSetup && <MusicLanguageOnboarding />}
       <dialog
         ref={dialogRef}
         className={playlistTarget || addMusicPlaylist ? "save-playlist-modal" : ""}
@@ -1400,6 +1541,11 @@ lyricsPanel
             busy={busy}
             onClose={() => setPlaylistTarget(null)}
             onSave={async (target, playlistId, newName) => {
+              try {
+                localStorage.setItem("lumaire:last-playlist-id", playlistId);
+              } catch {
+                // Local storage unavailable
+              }
               await addOnlineToPlaylist(target, playlistId, newName);
             }}
             onRemove={(playlistId, trackId, playlistName) => {
@@ -1409,12 +1555,18 @@ lyricsPanel
                   p.id === playlistId
                     ? {
                         ...p,
-                        items: p.items.filter((i) => i.trackId !== trackId),
+                        items: p.items.filter((i) => {
+                          if (i.trackId === trackId) return false;
+                          if (playlistTarget.metadataSourceId) {
+                            const saved = tracks.find((entry) => entry.id === i.trackId) || session.queueTracks[i.trackId];
+                            if (saved?.metadataSourceId === playlistTarget.metadataSourceId) return false;
+                          }
+                          return true;
+                        }),
                       }
                     : p,
                 ),
               }));
-              setPlaylistTarget(null);
               notify(`Removed from ${playlistName}`);
             }}
           />

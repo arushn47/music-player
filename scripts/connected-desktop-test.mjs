@@ -79,12 +79,12 @@ try {
   await host.page.reload(); await delay(600);
   assert((await host.invoke('load_library')).session.playlists.some(playlist => playlist.id === imported.id));
   report.checks.push('Real catalog CSV preview, explicit matching, duplicate skip and persisted metadata-only playlist remain playable after SQLite reload');
-  await openHub(host.page); await host.page.getByRole('button', { name: 'Devices & listening together', exact: true }).click();
+  await openHub(host.page); await host.page.getByRole('button', { name: 'Devices', exact: true }).click();
   await host.page.getByRole('button', { name: 'Share from this device', exact: true }).click();
   const linkField = host.page.getByLabel('Pairing link (expires after 2 hours)'); await linkField.waitFor();
   const localLink = new URL(await linkField.inputValue()); localLink.hostname = '127.0.0.1'; const link = localLink.href;
   await delay(1900); // First publication must reach the native host before connection.
-  await openHub(guest.page); await guest.page.getByRole('button', { name: 'Devices & listening together', exact: true }).click();
+  await openHub(guest.page); await guest.page.getByRole('button', { name: 'Devices', exact: true }).click();
   await guest.page.getByPlaceholder('Paste a Lumaire pairing link').fill(link); await guest.page.getByRole('button', { name: 'Connect', exact: true }).click();
   await guest.page.getByRole('button', { name: 'Sync playlists now', exact: true }).waitFor();
   await guest.page.getByRole('button', { name: 'Sync playlists now', exact: true }).click(); await guest.page.locator('.collection-hub [role="status"]').getByText('Playlists synced.', { exact: false }).waitFor();
@@ -119,7 +119,7 @@ try {
   await host.page.locator('footer.transport').getByRole('button', { name: 'Pause', exact: true }).click();
   await guest.page.waitForFunction(() => document.querySelector('[data-testid="playback-state"]')?.textContent === 'paused', { timeout: 12000 });
   report.checks.push('Listening together starts independently cached synthetic audio on the guest, aligns media clocks and follows host pause over actual TCP');
-  await openHub(host.page); await host.page.getByRole('button', { name: 'Devices & listening together', exact: true }).click();
+  await openHub(host.page); await host.page.getByRole('button', { name: 'Devices', exact: true }).click();
   await host.page.getByRole('button', { name: 'Disconnect & stop sharing', exact: true }).click();
   await delay(200); await assert.rejects(guest.invoke('nearby_fetch', { link }));
   report.checks.push('Stopping the host revokes the link and closes the listener');

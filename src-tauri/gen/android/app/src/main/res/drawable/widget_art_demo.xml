@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Album art background gradient -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="14dp" />
+            <gradient
+                android:angle="45"
+                android:startColor="#8B5CF6"
+                android:centerColor="#EC4899"
+                android:endColor="#F59E0B"
+                android:type="linear" />
+        </shape>
+    </item>
+    <!-- Centered vinyl disc / music icon -->
+    <item
+        android:gravity="center"
+        android:width="28dp"
+        android:height="28dp"
+        android:drawable="@drawable/ic_widget_art_fallback" />
+</layer-list>

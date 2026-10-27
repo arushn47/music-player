@@ -39,8 +39,8 @@ export function AppleCountryChart({ disabled, onPlay }: { disabled: boolean; onP
   }, [country, revision]);
 
   return <section className="discover-editorial-section" aria-label="Countrywise Top 10">
-    <div className="discover-editorial-header">
-      <div>
+    <div className="discover-editorial-header apple-chart-header">
+      <div className="apple-chart-title-wrap">
         <h2>Countrywise Top 10</h2>
       </div>
       <div className="apple-chart-controls">

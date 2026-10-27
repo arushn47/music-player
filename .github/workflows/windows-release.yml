@@ -128,9 +128,4 @@ jobs:
           node scripts/check-windows-release.mjs --artifacts $checkDir
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Publish verified release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release edit $env:RELEASE_TAG --repo arushn47/music-player --draft=false --latest
-          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed; inspect the draft.' }
+      # Publish after both final Windows and Android packages pass upgrade smoke checks.

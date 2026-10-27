@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pair with Lumaire</title>
+<style>
+  :root { color-scheme: dark; font: 16px/1.6 system-ui,sans-serif; background: #111; color: #eee; }
+  body { max-width: 440px; margin: 10vh auto; padding: 24px; }
+  h1 { line-height: 1.2; }
+  input,button { box-sizing: border-box; width: 100%; padding: 14px; border: 1px solid #555; border-radius: 12px; font: inherit; }
+  input { background: #222; color: #eee; }
+  button { margin-top: 12px; background: #ff7892; color: #111; font-weight: 650; cursor: pointer; }
+  button:disabled { opacity: .5; }
+  small { display: block; margin-top: 24px; color: #aaa; }
+</style>
+<h1>Pair with Lumaire</h1>
+<p>Copy this pairing link, then open <strong>Lumaire → Sync</strong> on this device, paste it and choose <strong>Connect</strong>.</p>
+<label for="link">Pairing link</label>
+<input id="link" readonly autocomplete="off" spellcheck="false">
+<button id="copy" type="button">Copy pairing link</button>
+<p id="status" role="status" aria-live="polite"></p>
+<small>Keep both apps open on the same Wi-Fi. Pairing survives restarts until you disconnect. Only share the link with trusted devices on your private network.</small>
+<script>
+  const field = document.getElementById('link');
+  const copy = document.getElementById('copy');
+  const status = document.getElementById('status');
+  if (/^#[a-f0-9]{32}$/i.test(location.hash)) field.value = location.href;
+  else { copy.disabled = true; status.textContent = 'Scan a fresh pairing QR code from Lumaire.'; }
+  field.addEventListener('focus', () => field.select());
+  copy.addEventListener('click', async () => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(field.value);
+      else { field.select(); if (!document.execCommand('copy')) throw new Error('Copy unavailable'); }
+      status.textContent = 'Copied. Open Lumaire → Sync and paste the link to connect.';
+    } catch { field.select(); status.textContent = 'Touch and hold the selected link, choose Copy, then paste it in Lumaire → Sync.'; }
+  });
+</script>
+</html>

@@ -143,7 +143,7 @@ fn safe_artwork(value: &str, track_id: &str) -> bool {
         })
 }
 
-fn validate(record: &mut ListeningRecord) -> Result<()> {
+pub(crate) fn validate(record: &mut ListeningRecord) -> Result<()> {
     let text_valid = [&record.title, &record.artist, &record.album]
         .iter()
         .all(|s| s.len() <= 2048 && !s.chars().any(char::is_control));
@@ -182,7 +182,7 @@ fn validate(record: &mut ListeningRecord) -> Result<()> {
     Ok(())
 }
 
-fn read(db: &Connection) -> Result<ListeningHistory> {
+pub(crate) fn read(db: &Connection) -> Result<ListeningHistory> {
     let mut stmt = db.prepare("SELECT data FROM listening_records WHERE listened_ms>=?1 ORDER BY started_at DESC,id DESC").map_err(err)?;
     let rows = stmt
         .query_map([QUALIFIED_MS], |r| r.get::<_, String>(0))
@@ -196,7 +196,7 @@ fn read(db: &Connection) -> Result<ListeningHistory> {
     })
 }
 
-fn checkpoint(
+pub(crate) fn checkpoint(
     db: &mut Connection,
     expected_generation: i64,
     mut record: ListeningRecord,
@@ -206,7 +206,15 @@ fn checkpoint(
     if generation(&tx)? != expected_generation {
         return Ok(false);
     }
-    let existing: Option<String> = tx
+    let accepted = write_record(&tx, record.clone())?;
+    if accepted { crate::device_sync::checkpoint(&tx, &record)?; }
+    tx.commit().map_err(err)?;
+    Ok(accepted)
+}
+
+pub(crate) fn write_record(db: &Connection, mut record: ListeningRecord) -> Result<bool> {
+    validate(&mut record)?;
+    let existing: Option<String> = db
         .query_row(
             "SELECT data FROM listening_records WHERE id=?1",
             [&record.id],
@@ -235,28 +243,23 @@ fn checkpoint(
         }
     }
     let data = serde_json::to_string(&record).map_err(err)?;
-    tx.execute(
+    db.execute(
         "INSERT INTO listening_records(id,started_at,listened_ms,data) VALUES(?1,?2,?3,?4)
         ON CONFLICT(id) DO UPDATE SET listened_ms=excluded.listened_ms,data=excluded.data",
         params![record.id, record.started_at, record.listened_ms, data],
     )
     .map_err(err)?;
-    tx.commit().map_err(err)?;
     Ok(true)
 }
 
-fn clear(db: &mut Connection) -> Result<i64> {
+pub(crate) fn clear(db: &mut Connection) -> Result<i64> {
     let tx = db.transaction().map_err(err)?;
     let next = generation(&tx)?
         .checked_add(1)
         .ok_or("Listening history generation limit reached.")?;
-    tx.execute(
-        "UPDATE listening_state SET generation=?1 WHERE id=1",
-        [next],
-    )
-    .map_err(err)?;
     tx.execute("DELETE FROM listening_records", [])
         .map_err(err)?;
+    crate::device_sync::local(&tx, crate::device_sync::key(&["clear"]), serde_json::json!(true))?;
     tx.commit().map_err(err)?;
     Ok(next)
 }

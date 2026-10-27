@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_now_playing_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background">
+
+    <!-- Dynamic tinted background (rendered 1:1 with rounded corners) -->
+    <ImageView
+        android:id="@+id/widget_bg_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:contentDescription="" />
+
+    <!-- 1. COMPACT HORIZONTAL BAR (for 1-row / 2x1, 3x1, 4x1, height <= 85dp) -->
+    <LinearLayout
+        android:id="@+id/widget_compact_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:visibility="visible">
+
+        <ImageView
+            android:id="@+id/widget_art"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/widget_art_bg"
+            android:src="@drawable/widget_art_demo"
+            android:scaleType="centerCrop"
+            android:contentDescription="Album artwork" />
+
+        <LinearLayout
+            android:id="@+id/widget_info_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:text="Not Playing" />
+
+            <TextView
+                android:id="@+id/widget_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="#C4B5FD"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:layout_marginTop="2dp"
+                android:text="Lumaire" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_controls"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/widget_btn_prev"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/widget_button_bg"
+                android:src="@drawable/ic_widget_prev"
+                android:scaleType="centerInside"
+                android:contentDescription="Previous track" />
+
+            <ImageButton
+                android:id="@+id/widget_btn_play_pause"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/widget_play_btn_bg"
+                android:src="@drawable/ic_widget_play"
+                android:scaleType="centerInside"
+                android:contentDescription="Play or pause" />
+
+            <ImageButton
+                android:id="@+id/widget_btn_next"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/widget_button_bg"
+                android:src="@drawable/ic_widget_next"
+                android:scaleType="centerInside"
+                android:contentDescription="Next track" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 2. EXPANDED MEDIUM WIDE (for 4x2, 3x2, height 86..145dp, width >= 220dp) -->
+    <LinearLayout
+        android:id="@+id/widget_expanded_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/widget_art_expanded"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_gravity="center_vertical"
+                android:background="@drawable/widget_art_bg"
+                android:src="@drawable/widget_art_demo"
+                android:scaleType="centerCrop"
+                android:contentDescription="Album artwork" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="10dp"
+                android:orientation="vertical"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/widget_title_expanded"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:text="Not Playing" />
+
+                <TextView
+                    android:id="@+id/widget_artist_expanded"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="#C4B5FD"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:layout_marginTop="2dp"
+                    android:text="Lumaire" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/widget_btn_prev_expanded"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/widget_button_bg"
+                    android:src="@drawable/ic_widget_prev"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Previous track" />
+
+                <ImageButton
+                    android:id="@+id/widget_btn_play_pause_expanded"
+                    android:layout_width="46dp"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/widget_play_btn_bg"
+                    android:src="@drawable/ic_widget_play"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Play or pause" />
+
+                <ImageButton
+                    android:id="@+id/widget_btn_next_expanded"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/widget_button_bg"
+                    android:src="@drawable/ic_widget_next"
+                    android:scaleType="centerInside"
+                    android:contentDescription="Next track" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_progress_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp">
+
+            <ProgressBar
+                android:id="@+id/widget_progress_expanded"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:indeterminate="false"
+                android:max="1000"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_progress_drawable" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="3dp">
+
+                <TextView
+                    android:id="@+id/widget_time_elapsed_expanded"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="11sp"
+                    android:textColor="#A1A1AA"
+                    android:text="0:00" />
+
+                <TextView
+                    android:id="@+id/widget_time_total_expanded"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="11sp"
+                    android:textColor="#A1A1AA"
+                    android:text="0:00" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 3. CARD / SQUARE / TALL (for 2x2, 3x3, 4x3, height > 145dp or narrow-tall) -->
+    <LinearLayout
+        android:id="@+id/widget_card_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/widget_art_card"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/widget_art_bg"
+                android:src="@drawable/widget_art_demo"
+                android:scaleType="centerCrop"
+                android:contentDescription="Album artwork" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="14dp"
+                android:orientation="vertical"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/widget_title_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:text="Not Playing" />
+
+                <TextView
+                    android:id="@+id/widget_artist_card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="#C4B5FD"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:layout_marginTop="3dp"
+                    android:text="Lumaire" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="12dp">
+
+            <ProgressBar
+                android:id="@+id/widget_progress_card"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:indeterminate="false"
+                android:max="1000"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_progress_drawable" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:id="@+id/widget_time_elapsed_card"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="11sp"
+                    android:textColor="#A1A1AA"
+                    android:text="0:00" />
+
+                <TextView
+                    android:id="@+id/widget_time_total_card"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="11sp"
+                    android:textColor="#A1A1AA"
+                    android:text="0:00" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/widget_btn_prev_card"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/widget_button_bg"
+                android:src="@drawable/ic_widget_prev"
+                android:scaleType="centerInside"
+                android:contentDescription="Previous track" />
+
+            <ImageButton
+                android:id="@+id/widget_btn_play_pause_card"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/widget_play_btn_bg"
+                android:src="@drawable/ic_widget_play"
+                android:scaleType="centerInside"
+                android:contentDescription="Play or pause" />
+
+            <ImageButton
+                android:id="@+id/widget_btn_next_card"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/widget_button_bg"
+                android:src="@drawable/ic_widget_next"
+                android:scaleType="centerInside"
+                android:contentDescription="Next track" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

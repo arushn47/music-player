@@ -116,6 +116,19 @@ describe("saved library and listening session stay independent", () => {
     expect(advance(reordered, 1)).toBe(continuation.id);
     expect(reorderUpcoming(s, s.currentId!, 1)).toBe(s);
   });
+  it("inserts dragged upcoming tracks without swapping neighbors or moving the current track", () => {
+    for (const shuffle of [false, true]) {
+      const queue = ['current', 'a', 'b', 'c', 'd'].map(item);
+      const s = { ...defaults(), queue, currentId: queue[0].id, settings: { ...defaults().settings, shuffle }, shuffleOrder: shuffle ? queue.map(entry => entry.id) : [] };
+      const result = reorderUpcoming(s, queue[1].id, 2);
+      expect(result.queue.map(entry => entry.trackId)).toEqual(['current', 'b', 'c', 'a', 'd']);
+      expect(result.currentId).toBe(s.currentId);
+      expect(s.queue.map(entry => entry.trackId)).toEqual(['current', 'a', 'b', 'c', 'd']);
+      expect(reorderUpcoming(s, queue[1].id, -1)).toBe(s);
+      expect(reorderUpcoming(s, queue[1].id, 99)).toBe(s);
+      expect(reorderUpcoming(s, queue[1].id, NaN)).toBe(s);
+    }
+  });
   it("discards expired temporary metadata and prevents unsaved playlist/favorite membership", () => {
     const s = playSelection(defaults(), remote, false);
     s.queueTracks.expired = { ...remote, id: "expired" };

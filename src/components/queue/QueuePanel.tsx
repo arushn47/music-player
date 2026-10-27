@@ -1,8 +1,6 @@
 import { ArtistLinks } from "../common/ArtistLinks";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
-  ArrowDown,
-  ArrowUp,
   Heart,
   ListMusic,
   ListPlus,
@@ -22,7 +20,7 @@ export interface QueuePanelProps {
   undo: Session["queue"] | null;
   onClose: () => void;
   onSelectQueue: (entryId: string, play: boolean) => void;
-  onReorderUpcoming: (entryId: string, delta: 1 | -1) => void;
+  onReorderUpcoming: (entryId: string, delta: number) => void;
   onRemoveQueue: (entryId: string) => void;
   onUndoRemoval: () => void;
   onClearQueue: () => void;
@@ -32,6 +30,8 @@ export interface QueuePanelProps {
   onFavorite?: (trackId: string) => void;
   isFavorite?: boolean;
   onChoosePlaylist?: (track: Track) => void;
+  onResizeStart?: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onResizeReset?: () => void;
 }
 
 const clock = (s: number) =>
@@ -54,6 +54,8 @@ export function QueuePanel({
   onFavorite,
   isFavorite,
   onChoosePlaylist,
+  onResizeStart,
+  onResizeReset,
 }: QueuePanelProps) {
   const queue = playbackQueue(session);
   const currentIndex = queue.findIndex(
@@ -61,8 +63,112 @@ export function QueuePanel({
   );
   const upNextCount = queue.slice(currentIndex + 1).length;
 
+  const activeCleanupRef = useRef<(() => void) | null>(null);
+  const didDragRef = useRef(false);
+
+  useEffect(() => () => activeCleanupRef.current?.(), []);
+
+  const handleRowPointerDown = (entry: { id: string }, event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || !event.isPrimary) return;
+    if ((event.target as HTMLElement).closest(".icon-button, a")) return;
+
+    const row = event.currentTarget;
+    const scroll = row.closest<HTMLElement>("[data-queue-list]");
+    if (!scroll) return;
+
+    const rows = [...scroll.querySelectorAll<HTMLElement>("[data-queue-entry]")];
+    const from = rows.indexOf(row);
+    if (from === -1) return;
+
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startScrollTop = scroll.scrollTop;
+    const centers = rows.map((item) => {
+      const r = item.getBoundingClientRect();
+      return r.y + r.height / 2;
+    });
+
+    let isDragging = false;
+    let targetIndex = from;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      if (!isDragging) {
+        const dist = Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY);
+        if (dist < 4) return;
+        isDragging = true;
+        didDragRef.current = true;
+        row.dataset.queueDragging = "true";
+        document.body.style.cursor = "grabbing";
+      }
+
+      moveEvent.preventDefault();
+      const bounds = scroll.getBoundingClientRect();
+      if (moveEvent.clientY < bounds.top + 48) scroll.scrollTop -= 16;
+      else if (moveEvent.clientY > bounds.bottom - 48) scroll.scrollTop += 16;
+
+      const scrollDelta = scroll.scrollTop - startScrollTop;
+      row.style.transform = `translateY(${moveEvent.clientY - startY + scrollDelta}px)`;
+
+      const currentY = moveEvent.clientY + scrollDelta;
+      const best = centers.reduce(
+        (acc, center, idx) =>
+          Math.abs(center - currentY) < Math.abs(centers[acc] - currentY) ? idx : acc,
+        0
+      );
+
+      if (best !== targetIndex) {
+        delete rows[targetIndex].dataset.queueDrop;
+        targetIndex = best;
+        if (targetIndex !== from) {
+          rows[targetIndex].dataset.queueDrop = "true";
+        }
+      }
+    };
+
+    const cleanup = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", cleanup);
+      row.style.transform = "";
+      delete row.dataset.queueDragging;
+      rows.forEach((r) => delete r.dataset.queueDrop);
+      document.body.style.cursor = "";
+      activeCleanupRef.current = null;
+    };
+
+    const onPointerUp = (upEvent: PointerEvent) => {
+      cleanup();
+      if (isDragging) {
+        upEvent.preventDefault();
+        upEvent.stopPropagation();
+        if (targetIndex !== from) {
+          onReorderUpcoming(entry.id, targetIndex - from);
+        }
+        setTimeout(() => {
+          didDragRef.current = false;
+        }, 80);
+      }
+    };
+
+    activeCleanupRef.current = cleanup;
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", cleanup);
+  };
+
   return (
     <aside className="queue-pane now-playing-dock">
+      {onResizeStart && (
+        <div
+          className="queue-resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize queue"
+          title="Drag to resize queue · Double-click to reset"
+          onPointerDown={onResizeStart}
+          onDoubleClick={onResizeReset}
+        />
+      )}
       <header className="now-playing-header">
         <h2>Now Playing</h2>
         <IconButton label="Collapse panel" onClick={onClose}>
@@ -138,7 +244,7 @@ export function QueuePanel({
           {upNextCount > 0 && <span className="up-next-count">{upNextCount}</span>}
         </div>
 
-        <div className="queue-items">
+        <div className="queue-items" data-queue-list>
           {session.queue.length ? (
             queue.map((entry, index) => {
               if (index < currentIndex) return null;
@@ -147,10 +253,31 @@ export function QueuePanel({
               );
               if (!t) return null;
 
+              const isUpcoming = entry.id !== session.currentId;
+
               return (
                 <div
                   key={entry.id}
+                  data-queue-entry={isUpcoming ? entry.id : undefined}
                   className={`queue-entry ${entry.id === session.currentId ? "current" : ""}`}
+                  title={isUpcoming ? "Hold and drag anywhere to reorder · Click to play" : undefined}
+                  onPointerDown={isUpcoming ? (e) => handleRowPointerDown(entry, e) : undefined}
+                  onClick={(e) => {
+                    if (didDragRef.current) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      return;
+                    }
+                    if ((e.target as HTMLElement).closest(".icon-button, a, .track-title-button")) return;
+                    onSelectQueue(entry.id, true);
+                  }}
+                  onKeyDown={(event) => {
+                    if (isUpcoming && event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onReorderUpcoming(entry.id, event.key === "ArrowUp" ? -1 : 1);
+                    }
+                  }}
                 >
                   <div className="queue-select">
                     <Artwork
@@ -161,7 +288,14 @@ export function QueuePanel({
                       <button
                         className="track-title-button"
                         aria-label={`Play queued ${t.title}`}
-                        onClick={() => onSelectQueue(entry.id, true)}
+                        onClick={(e) => {
+                          if (didDragRef.current) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return;
+                          }
+                          onSelectQueue(entry.id, true);
+                        }}
                       >
                         <strong dir="auto">{t.title}</strong>
                       </button>
@@ -183,24 +317,6 @@ export function QueuePanel({
                     <span className="queue-item-duration">{clock(t.duration)}</span>
                   ) : null}
                   <div className="queue-controls">
-                    {entry.id !== session.currentId && (
-                      <>
-                        <IconButton
-                          label={`Move ${t.title} up`}
-                          disabled={index <= currentIndex + 1}
-                          onClick={() => onReorderUpcoming(entry.id, -1)}
-                        >
-                          <ArrowUp size={13} />
-                        </IconButton>
-                        <IconButton
-                          label={`Move ${t.title} down`}
-                          disabled={index === queue.length - 1}
-                          onClick={() => onReorderUpcoming(entry.id, 1)}
-                        >
-                          <ArrowDown size={13} />
-                        </IconButton>
-                      </>
-                    )}
                     <IconButton
                       label={`Remove queued ${t.title}`}
                       onClick={() => onRemoveQueue(entry.id)}

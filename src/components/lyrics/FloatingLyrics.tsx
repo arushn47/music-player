@@ -22,7 +22,10 @@ export function FloatingLyrics() {
   const [opacity, setOpacity] = useState(() => {
     try { return overlayOpacity(Number(localStorage.getItem('lyric-overlay-opacity') ?? '45')); } catch { return 45; }
   });
-  const effectiveOpacity = interaction.locked ? 0 : opacity;
+  const [textColor, setTextColor] = useState<'white' | 'black'>(() => {
+    try { return localStorage.getItem('lyric-overlay-text-color') === 'black' ? 'black' : 'white'; } catch { return 'white'; }
+  });
+  const effectiveOpacity = opacity;
   async function control(action: string) {
     try { await invoke('lyric_overlay_control', { action }); setError(''); }
     catch (e) { setError(String(e)); }
@@ -65,22 +68,23 @@ export function FloatingLyrics() {
     const dx = key === 'ArrowRight' ? 20 : key === 'ArrowLeft' ? -20 : 0;
     const dy = key === 'ArrowDown' ? 20 : key === 'ArrowUp' ? -20 : 0;
     try {
-      if (resize) { const size = await window.innerSize(); const scale = await window.scaleFactor(); await window.setSize(new PhysicalSize(Math.max(300 * scale, size.width + dx), Math.max(180 * scale, size.height + dy))); }
+      if (resize) { const size = await window.innerSize(); const scale = await window.scaleFactor(); await window.setSize(new PhysicalSize(Math.max(280 * scale, size.width + dx), Math.max(72 * scale, size.height + dy))); }
       else { const position = await window.outerPosition(); await window.setPosition(new PhysicalPosition(position.x + dx, position.y + dy)); }
     } catch (e) { setError(String(e)); }
   }
   const lockHint = interaction.shortcutAvailable ? 'Ctrl+Alt+L to lock or unlock' : 'Hover the top-right corner to unlock · Shortcut unavailable';
-  return <main className={`floating-lyrics${interaction.locked ? ' is-locked' : ''}`} data-hovered={interaction.hovered} aria-label="Floating lyrics"
+  return <main className={`floating-lyrics${interaction.locked ? ' is-locked' : ''}`} data-text-color={textColor} data-hovered={interaction.hovered} aria-label="Floating lyrics"
     style={{ backgroundColor: `rgb(15 17 14 / ${effectiveOpacity}%)`, borderColor: effectiveOpacity === 0 ? 'transparent' : undefined, boxShadow: effectiveOpacity === 0 ? 'none' : undefined }}>
-    {interaction.locked && <button className="floating-unlock" aria-label="Unlock floating lyrics" title={`Unlock lyrics · ${lockHint}`} onClick={() => void control('unlock')}><LockOpen size={17} /></button>}
+    {interaction.locked && <button className="floating-unlock" aria-label="Unlock floating lyrics" title={`Unlock lyrics · ${lockHint}`} onClick={() => void control('unlock')}><LockOpen size={15} /></button>}
     <header className="floating-toolbar" inert={interaction.locked} aria-hidden={interaction.locked}>
-      <button aria-label="Move lyric window" title="Drag or use arrow keys to move" onKeyDown={event => { if (event.key.startsWith('Arrow')) { event.preventDefault(); void adjustWindow(event.key); } }} onMouseDown={event => { if (event.button === 0) void getCurrentWindow().startDragging().catch(e => setError(String(e))); }}><GripHorizontal size={18} /></button>
+      <button aria-label="Move lyric window" title="Drag or use arrow keys to move" onKeyDown={event => { if (event.key.startsWith('Arrow')) { event.preventDefault(); void adjustWindow(event.key); } }} onMouseDown={event => { if (event.button === 0) void getCurrentWindow().startDragging().catch(e => setError(String(e))); }}><GripHorizontal size={15} /></button>
       <span className="floating-title" title={`${snapshot.title} · ${snapshot.artist}`}>
         <span className="floating-title-main">{snapshot.title}</span>
         {snapshot.artist && <span className="floating-artist"> · {snapshot.artist}</span>}
       </span>
-      <button aria-label="Enable click-through" title={`Show lyrics only · ${lockHint}`} onClick={() => void control('lock')}><Lock size={15} /></button>
-      <button aria-label="Close floating lyrics" onClick={() => void control('close')}><X size={18} /></button>
+      <button aria-label="Black PiP text and controls" aria-pressed={textColor === 'black'} title="Toggle black or white text and controls" onClick={() => { const value = textColor === 'white' ? 'black' : 'white'; setTextColor(value); try { localStorage.setItem('lyric-overlay-text-color', value); } catch { /* Text color still works without storage. */ } }}>Aa</button>
+      <button aria-label="Enable click-through" title={`Show lyrics only · ${lockHint}`} onClick={() => void control('lock')}><Lock size={14} /></button>
+      <button aria-label="Close floating lyrics" onClick={() => void control('close')}><X size={16} /></button>
     </header>
     <section className="floating-lines" aria-label="Current lyrics" aria-live="off" tabIndex={0}>
       {snapshot.message && <p className="floating-message">{snapshot.message}</p>}
@@ -90,9 +94,9 @@ export function FloatingLyrics() {
       </div>)}
     </section>
     <footer className="floating-toolbar" inert={interaction.locked} aria-hidden={interaction.locked}>
-      <button aria-label="Previous track" onClick={() => void control('previous')}><SkipBack size={17} /></button>
-      <button aria-label={playing ? 'Pause' : 'Play'} disabled={['idle', 'loading', 'buffering'].includes(snapshot.status)} onClick={() => void control('toggle')}>{playing ? <Pause size={19} /> : <Play size={19} />}</button>
-      <button aria-label="Next track" onClick={() => void control('next')}><SkipForward size={17} /></button>
+      <button aria-label="Previous track" onClick={() => void control('previous')}><SkipBack size={15} /></button>
+      <button aria-label={playing ? 'Pause' : 'Play'} disabled={['idle', 'loading', 'buffering'].includes(snapshot.status)} onClick={() => void control('toggle')}>{playing ? <Pause size={16} /> : <Play size={16} />}</button>
+      <button aria-label="Next track" onClick={() => void control('next')}><SkipForward size={15} /></button>
       <label className="floating-opacity">Background<input aria-label="Background opacity" title="Background opacity" type="range" min="0" max="85" value={opacity} onChange={event => { const value = Number(event.target.value); setOpacity(value); try { localStorage.setItem('lyric-overlay-opacity', String(value)); } catch { /* Opacity still works without storage. */ } }} /></label>
       {['loading', 'buffering'].includes(snapshot.status) && <span role="status">Loading…</span>}
     </footer>

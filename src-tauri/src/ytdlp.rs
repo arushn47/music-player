@@ -26,6 +26,7 @@ pub struct YtdlpStreamInfo {
     pub title: Option<String>,
     pub container: Option<String>,
     pub codec: Option<String>,
+    pub video_codec: Option<String>,
     pub track: Option<String>,
     pub artist: Option<String>,
     pub album: Option<String>,
@@ -40,6 +41,7 @@ struct YtdlpJson {
     thumbnail: Option<String>,
     ext: Option<String>,
     acodec: Option<String>,
+    vcodec: Option<String>,
     channel: Option<String>,
     track: Option<String>,
     artist: Option<String>,
@@ -340,7 +342,7 @@ pub async fn ytdlp_get_stream(video_id: String) -> Result<YtdlpStreamInfo, Strin
 }
 
 fn resolve(video_id: String) -> Result<YtdlpStreamInfo, String> {
-    resolve_audio(video_id, "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio")
+    resolve_audio(video_id, "bestaudio[ext=m4a][vcodec=none]/bestaudio[ext=webm][vcodec=none]/bestaudio[vcodec=none]")
 }
 
 pub async fn download_audio(video_id: String) -> Result<YtdlpStreamInfo, String> {
@@ -354,7 +356,7 @@ pub async fn download_audio(video_id: String) -> Result<YtdlpStreamInfo, String>
     // Store a native-playable audio container without conversion or video tracks.
     tokio::time::timeout(
         std::time::Duration::from_secs(60),
-        tauri::async_runtime::spawn_blocking(move || resolve_audio(video_id, "bestaudio[ext=m4a]")),
+        tauri::async_runtime::spawn_blocking(move || resolve_audio(video_id, "bestaudio[ext=m4a][vcodec=none]")),
     )
     .await
     .map_err(|_| "YouTube audio lookup timed out. Try again when online.".to_string())?
@@ -386,14 +388,12 @@ fn resolve_audio(video_id: String, format: &str) -> Result<YtdlpStreamInfo, Stri
     let stdout = match run_ytdlp(&args) {
         Ok(stdout) => stdout,
         Err(error) if is_youtube_verification_error(&error) => {
-            // YouTube may challenge the default web client. The public Android
-            // client often still exposes a progressive audio-bearing format;
-            // use it only for this source and only after the normal path fails.
+            // Changing client must never broaden an audio-only request into video.
             let fallback_args = [
                 "--ignore-config",
                 "--skip-download",
                 "-f",
-                "best[acodec!=none]/bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
+                format,
                 "--socket-timeout",
                 "10",
                 "--retries",
@@ -421,9 +421,7 @@ fn resolve_audio(video_id: String, format: &str) -> Result<YtdlpStreamInfo, Stri
     })?;
 
     validate_stream_url(&stream_url)?;
-    if info.acodec.as_deref() == Some("none") {
-        return Err("Stream extraction returned a video without an audio track. Try another recording.".into());
-    }
+    validate_audio_codecs(info.acodec.as_deref(), info.vcodec.as_deref())?;
     debug!(
         "[yt-dlp] Got stream for '{}', duration: {:?}s",
         info.title.as_deref().unwrap_or("Unknown"),
@@ -436,12 +434,20 @@ fn resolve_audio(video_id: String, format: &str) -> Result<YtdlpStreamInfo, Stri
         title: info.title,
         container: info.ext,
         codec: info.acodec,
+        video_codec: info.vcodec,
         track: info.track,
         artist: info
             .artist
             .or_else(|| info.artists.map(|artists| artists.join(", "))),
         album: info.album,
     })
+}
+
+pub(crate) fn validate_audio_codecs(audio: Option<&str>, video: Option<&str>) -> Result<(), String> {
+    if audio.is_none_or(|codec| codec.is_empty() || codec == "none") || video != Some("none") {
+        return Err("The provider did not verify an audio-only stream. Video downloads are not allowed for music.".into());
+    }
+    Ok(())
 }
 
 fn validate_stream_url(value: &str) -> Result<(), String> {
@@ -467,6 +473,14 @@ pub async fn ytdlp_check_available() -> bool {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn accepts_only_verified_audio_without_video() {
+        assert!(super::validate_audio_codecs(Some("mp4a.40.2"),Some("none")).is_ok());
+        assert!(super::validate_audio_codecs(Some("opus"),Some("none")).is_ok());
+        for (audio,video) in [(Some("aac"),Some("h264")),(Some("aac"),None),(None,Some("none")),(Some("none"),Some("none"))] {
+            assert!(super::validate_audio_codecs(audio,video).is_err());
+        }
+    }
     use super::*;
     #[test]
     fn extracted_streams_reject_invalid_hosts_and_preserve_signed_queries() {

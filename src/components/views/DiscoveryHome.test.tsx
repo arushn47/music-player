@@ -13,6 +13,12 @@ const record = (track: Track, age: number, id = track.id): ListeningRecord => ({
 const base: DiscoveryHomeProps = { onPlayAlbum: async () => {}, onPlayQuickPick: noop, searches: [], records: [], savedTracks: [], busy: false, onlineAvailable: false, onSearch: noop, onClearSearches: noop, onReplay: noop };
 
 describe('Home shelves', () => {
+  it('shows every mobile shelf with honest guidance until real history qualifies', () => {
+    const html = renderToStaticMarkup(<DiscoveryHome {...base} mobile />);
+    expect([...html.matchAll(/<section aria-label="([^"]+)"/g)].map(match => match[1])).toEqual(['Recently Played', 'Continue Listening', 'Quick Picks', 'Your Rotation', 'Forgotten Favorites']);
+    expect(html).toContain('on this device');
+    expect(html).not.toContain('recent-track-item');
+  });
   it('renders real activity and recommendations in the requested order', () => {
     const [recent, rotation, forgotten, unheard, resumeA, resumeB] = ['Recent song', 'Rotation song', 'Old favorite', 'Unheard song', 'Continue A', 'Continue B'].map(song);
     const tracks = [recent, rotation, forgotten, unheard, resumeA, resumeB];

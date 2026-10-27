@@ -1,4 +1,4 @@
-.mobile-library-navigation, .mobile-settings-back, .mobile-settings-chevron, .mobile-actions-close, .mobile-track-favorite { display: none; }
+.mobile-library-navigation, .mobile-settings-back, .mobile-settings-chevron, .menu-popover .mobile-actions-close, .mobile-track-favorite { display: none; }
 
 @media (max-width: 768px) {
   #root .app {
@@ -11,7 +11,7 @@
   #root .app .mobile-header .brand-text { font-size: 24px !important; }
   #root .app .mobile-header .brand-icon { width: 30px !important; height: 30px !important; }
   #root .app .mobile-header-actions { gap: 4px !important; }
-  #root .app :is(.icon-button, .icon-only, .mobile-header-btn, .topbar-arrow-btn, .track-menu summary, .mobile-np-icon-btn, .mobile-np-queue-action-btn, .discover-refresh-btn, .apple-chart-refresh-btn, .search-clear-button) {
+  #root .app :is(.icon-button, .icon-only, .mobile-header-btn, .topbar-arrow-btn, .track-menu summary, .mobile-np-icon-btn, .mobile-np-queue-action-btn, .discover-refresh-btn, .search-clear-button) {
     width: 44px !important; height: 44px !important; min-width: 44px !important; min-height: 44px !important;
     flex: 0 0 44px; aspect-ratio: 1; padding: 0 !important; border-radius: 50% !important;
     display: inline-flex; align-items: center; justify-content: center;
@@ -33,8 +33,90 @@
   #root .app .page-heading .subtitle { font-size: 13px; line-height: 1.5; margin-top: 6px; }
   #root .app :is(.discover-section-heading, .discover-editorial-header, .recent-section-heading) { margin-bottom: 12px; gap: 8px; }
   #root .app :is(.discover-section-nav, .recent-section-nav) { display: none; }
+  #root .app .apple-chart-header,
+  .app.android .apple-chart-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+  #root .app .apple-chart-title-wrap,
+  .app.android .apple-chart-title-wrap {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  #root .app .apple-chart-title-wrap h2,
+  .app.android .apple-chart-title-wrap h2 {
+    font-size: 20px !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.025em !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+  }
+  #root .app .apple-chart-controls,
+  .app.android .apple-chart-controls {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+  #root .app .apple-chart-country-picker,
+  .app.android .apple-chart-country-picker {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+  }
+  #root .app .apple-chart-country-label,
+  .app.android .apple-chart-country-label {
+    display: none !important;
+  }
+  #root .app .apple-chart-select .apple-select-trigger,
+  .app.android .apple-chart-select .apple-select-trigger {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    min-width: 94px !important;
+    max-width: 130px !important;
+    padding: 0 10px 0 12px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    border-radius: 9999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
+  }
+  #root .app .apple-chart-select .apple-select-value,
+  .app.android .apple-chart-select .apple-select-value {
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #root .app .apple-chart-refresh-btn,
+  .app.android .apple-chart-refresh-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    flex: 0 0 36px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+  }
+  #root .app .apple-chart-refresh-btn:active,
+  .app.android .apple-chart-refresh-btn:active {
+    transform: scale(0.92) !important;
+  }
   #root .app :is(.discover-home-section, .discover-editorial-section) { margin: 0 0 28px; }
-  #root .app :is(.discover-albums, .discover-release-row, .discover-trending-row, .discover-chart-row, .recent-tracks-grid) {
+  #root .app :is(.discover-albums, .discover-release-row, .discover-trending-row, .discover-chart-row) {
     overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none;
   }
   #root .app :is(.discover-release-row, .discover-trending-row, .discover-rotation-carousel) { gap: 14px; grid-auto-columns: minmax(145px, 40vw); }
@@ -55,10 +137,97 @@
   #root .app :is(.explore-grid, .albums-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   #root .app .explore-card { min-height: 112px; height: 116px; padding: 14px; border-radius: 14px; }
   #root .app .explore-card-title { font-size: 18px; }
-  #root .app .recent-tracks-grid { grid-auto-columns: minmax(260px, 82vw); gap: 8px 14px; }
-  #root .app .recent-track-item { padding: 6px 0; min-height: 56px; }
-  #root .app .recent-track-title { font-size: 15px; }
-  #root .app .recent-track-artist { font-size: 12px; }
+  #root .app .recent-tracks-grid,
+  .app.android .recent-tracks-grid {
+    --recent-row-height: 56px;
+    margin-left: -18px;
+    margin-right: -18px;
+    padding: 2px 18px 8px;
+    grid-auto-columns: calc(100vw - 60px);
+    gap: 4px 12px;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 18px;
+    scroll-padding-inline: 18px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+    scrollbar-width: none;
+  }
+  #root .app .recent-tracks-grid::-webkit-scrollbar,
+  .app.android .recent-tracks-grid::-webkit-scrollbar {
+    display: none;
+  }
+  #root .app .recent-track-item,
+  .app.android .recent-track-item {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    min-height: 56px;
+    padding: 4px 8px 4px 4px;
+    border-radius: 10px;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s cubic-bezier(0.2, 0, 0, 1), transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+  }
+  #root .app .recent-track-item:active,
+  .app.android .recent-track-item:active {
+    transform: scale(0.98);
+    background: var(--bg-subtle-button-hover, rgba(255, 255, 255, 0.08));
+  }
+  #root .app .recent-track-art-wrap,
+  .app.android .recent-track-art-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+  #root .app .recent-track-art,
+  .app.android .recent-track-art {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+  #root .app .recent-track-play-badge,
+  .app.android .recent-track-play-badge {
+    display: none;
+  }
+  #root .app .recent-track-details,
+  .app.android .recent-track-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    gap: 2px;
+  }
+  #root .app .recent-track-title,
+  .app.android .recent-track-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.28;
+    color: var(--text-strong, #ffffff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #root .app .recent-track-artist,
+  .app.android .recent-track-artist {
+    font-size: 12.5px;
+    color: var(--muted, rgba(255, 255, 255, 0.6));
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
 
   #root .app .mobile-library-navigation { display: block; margin-bottom: 18px; }
   #root .app .mobile-library-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -92,11 +261,12 @@
   #root .app :is(.track-header, .catalog-tracks .track-header) { display: none; }
   #root .app :is(.track-row, .catalog-tracks .track-row) { grid-template-columns: minmax(0, 1fr) 44px; gap: 8px; min-height: 68px; padding: 8px 0; border-radius: 10px; }
   #root .app .track-row > :is(.track-play, .duration, .album) { display: none; }
-  #root .app .track-meta { grid-column: 1; gap: 12px; min-width: 0; }
+  #root .app .track-meta { grid-column: 1; grid-row: 1; gap: 12px; min-width: 0; }
   #root .app .track-meta .cover { width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px; }
   #root .app .track-title-button { font-size: 15px; line-height: 1.4; text-align: start; }
   #root .app .track-meta-text small { font-size: 12px; line-height: 1.5; }
-  #root .app .track-actions { grid-column: 2; gap: 0; }
+  #root .app .track-actions { grid-column: 2; grid-row: 1; gap: 0; }
+  #root .app .track-row > :is(.album, .duration, .track-play) { display: none !important; }
   #root .app .track-actions > .icon-button { display: none; }
   #root .app .catalog-fav-menu-btn { display: flex; }
   #root .app .track-row { -webkit-user-select: none; user-select: none; }
@@ -143,7 +313,7 @@
   #root .app .transport { min-height: 56px !important; height: 56px !important; padding: 6px 12px !important; gap: 8px !important; border-radius: 0; background: var(--bg-panel, var(--panel)); touch-action: none; }
   #root .app .transport .now-playing { min-width: 0 !important; gap: 10px !important; flex: 1 !important; }
   #root .app .transport-cover { width: 44px !important; height: 44px !important; border-radius: 8px !important; }
-  #root .app .transport .now-playing-meta { width: auto !important; }
+  #root .app .transport .now-playing-meta { width: auto !important; max-width: none !important; }
   #root .app .transport .now-playing-artist .link-button { pointer-events: none; }
   #root .app .transport .current-track-menu { display: none; }
   #root .app .transport .player-buttons { gap: 0 !important; }
@@ -164,19 +334,58 @@
   #root .app .mobile-np-segmented-tabs { padding: 2px; backdrop-filter: none; }
   #root .app .mobile-np-tab { min-height: 44px; padding: 8px 10px; font-size: 13px; transition: color 120ms, background 120ms; }
   @media (max-width: 400px) { #root .app .mobile-np-tab svg { display: none; } }
-  #root .app .mobile-np-main-view { padding: 16px 20px 12px; gap: 8px; min-height: 0; }
+  #root .app .mobile-np-main-view { padding: 16px 20px 28px; gap: 6px; min-height: 0; }
   #root .app .mobile-np-artwork-container { padding: 0; }
   #root .app .mobile-np-artwork-card { width: min(calc(100vw - 40px), calc(100dvh - 340px), 430px); max-height: none; flex-shrink: 0; border-radius: 10px; box-shadow: 0 14px 38px #0003; transform: none; transition: none; touch-action: none; }
-  #root .app .mobile-np-identity-row { margin: 16px 0 10px; }
+  #root .app .mobile-np-identity-row { margin: 0 0 2px; }
   #root .app .mobile-np-title { font-size: 23px; letter-spacing: -.025em; }
   #root .app .mobile-np-slider-wrap, #root .app .mobile-np-seek-slider { height: 44px; touch-action: none; }
   #root .app .mobile-np-scrubber-section { margin-bottom: 0; }
+  #root .app .mobile-np-time-row { height: 24px; margin-top: -10px; }
+  #root .app .mobile-np-time-row button { padding: 0; margin-block: -10px; min-width: 44px; background: transparent; }
   #root .app .mobile-np-play-button { width: 68px; height: 68px; min-width: 68px; background: var(--accent); color: var(--accent-text); box-shadow: none; }
   #root .app .mobile-np-queue-tab { position: absolute; inset: calc(68px + env(safe-area-inset-top, 0px)) 0 calc(56px + env(safe-area-inset-bottom, 0px)); height: auto; padding: 16px; background: var(--bg); z-index: 20; border-radius: 20px 20px 0 0; transform: translateY(calc(100% + 80px)); visibility: hidden; pointer-events: none; transition: transform 220ms cubic-bezier(.2,.8,.2,1), visibility 0s 220ms; }
   #root .app .mobile-np-queue-tab.is-open { transform: translateY(0); visibility: visible; pointer-events: auto; transition: transform 220ms cubic-bezier(.2,.8,.2,1); }
   #root .app .mobile-np-queue-scroll { touch-action: pan-y; overscroll-behavior: contain; }
+  #root .app .mobile-np-toggle-switch,
+  .app.android .mobile-np-toggle-switch {
+    width: 48px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    border-radius: 9999px !important;
+    padding: 0 !important;
+    border: none !important;
+    box-sizing: border-box !important;
+    background: rgba(120, 120, 128, 0.35) !important;
+  }
+  #root .app .mobile-np-toggle-switch.is-on,
+  .app.android .mobile-np-toggle-switch.is-on {
+    background: var(--accent) !important;
+  }
+  #root .app .mobile-np-switch-thumb,
+  .app.android .mobile-np-switch-thumb {
+    top: 3px !important;
+    left: 3px !important;
+    width: 22px !important;
+    height: 22px !important;
+  }
+  #root .app .mobile-np-toggle-switch.is-on .mobile-np-switch-thumb,
+  .app.android .mobile-np-toggle-switch.is-on .mobile-np-switch-thumb {
+    transform: translateX(20px) !important;
+  }
   #root .app .mobile-np-queue-item { border-radius: 8px; margin: 0; padding: 10px 0; border: 0; background: transparent; }
-  #root .app .mobile-np-queue-item.current { box-shadow: none; border-color: var(--line-accent); background: var(--accent-subtle); }
+  #root .app .mobile-np-queue-item.current,
+  .app.android .mobile-np-queue-item.current {
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: var(--accent-subtle);
+    border: 1px solid var(--line-accent);
+    box-shadow: 0 4px 16px var(--accent-glow, rgba(155, 135, 245, 0.08));
+    margin-bottom: 12px;
+  }
   #root .app .mobile-np-queue-actions { gap: 0; }
   #root .app .mobile-np-queue-info strong { font-size: 15px; }
   #root .app .mobile-np-queue-info small { font-size: 12px; }
@@ -192,6 +401,117 @@
   #root .app .mobile-np-bottom-tabs { position: relative; z-index: 30; margin-top: auto; flex-shrink: 0; height: calc(56px + env(safe-area-inset-bottom, 0px)); padding: 4px 20px calc(4px + env(safe-area-inset-bottom, 0px)); display: flex; border-top: 1px solid var(--line); background: var(--bg); }
   #root .app .mobile-np-bottom-tabs button { display: flex; flex: 1; min-height: 48px; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
   #root .app .mobile-np-bottom-tabs [aria-expanded="true"] { color: var(--accent); }
+  #root .app .track-row.current { padding-inline: 12px; background: var(--accent-subtle); box-shadow: inset 3px 0 0 var(--accent); }
+  dialog.collection-hub .hub-close { width: 44px; min-width: 44px; height: 44px; min-height: 44px; flex: 0 0 44px; aspect-ratio: 1; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+  #root .app .listening-view { padding: 4px 0 24px; }
+  #root .app .listening-heading { align-items: flex-start; gap: 8px; margin-bottom: 18px; }
+  #root .app .listening-heading .eyebrow { font-size: 10px; letter-spacing: .08em; margin: 0 0 8px; }
+  #root .app .listening-heading h1 { font-size: 28px; line-height: 1.15; margin: 0; }
+  #root .app .listening-toolbar { display: grid; gap: 12px; padding-bottom: 16px; }
+  #root .app .listening-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; background: var(--bg-panel); border-radius: 12px; gap: 4px; }
+  #root .app .listening-tabs button { min-height: 44px; padding: 8px 12px; font-size: 13px; }
+  #root .app .listening-range { justify-content: space-between; flex-wrap: nowrap; gap: 8px; }
+  #root .app .listening-range > span { font-size: 11px; }
+  #root .app .listening-recap-overview { grid-template-columns: 1fr; margin: 16px 0; border-radius: 16px; }
+  #root .app .listening-recap-total { padding: 18px 18px 12px; gap: 2px; }
+  #root .app .listening-recap-total > strong { font-size: 38px; }
+  #root .app .listening-recap-total .eyebrow { font-size: 10px; margin: 0 0 4px; }
+  #root .app .listening-recap-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 12px 14px 18px; gap: 8px; }
+  #root .app .listening-recap-metrics dd { font-size: 23px; }
+  #root .app .listening-recap-metrics dt { font-size: 10px; line-height: 1.3; }
+  #root .app .listening-panels { display: flex; overflow-x: auto; gap: 12px; scroll-snap-type: x mandatory; padding-bottom: 4px; }
+  #root .app .listening-ranking { flex: 0 0 88%; padding: 16px 12px; scroll-snap-align: start; }
+  #root .app .listening-ranking h2 { font-size: 18px; margin-bottom: 12px; }
+  #root .app .listening-ranking li { margin-top: 10px; gap: 8px; min-height: 48px; }
+  #root .app .listening-rank-detail > button { min-height: 24px; font-size: 13px; }
+  #root .app .listening-recap-bottom { grid-template-columns: 1fr; gap: 12px; margin-top: 16px; }
+  #root .app :is(.listening-months, .listening-patterns) { padding: 16px; }
+  #root .app .listening-days > section { margin: 18px 0 8px; }
+  #root .app .listening-days h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  #root .app .listening-history-row {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 3px;
+    padding: 8px 4px;
+    border-radius: 10px;
+    border-bottom: 1px solid var(--line);
+    min-height: 58px;
+  }
+  #root .app .listening-history-row:active { background: var(--accent-subtle); }
+  #root .app .listening-history-row .listening-artwork-wrap,
+  #root .app .listening-history-row .listening-artwork {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 8px;
+    align-self: center;
+    cursor: pointer;
+  }
+  #root .app .listening-history-identity {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+  #root .app .listening-history-identity > button {
+    min-height: unset;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: start;
+  }
+  #root .app .listening-history-identity > span {
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  #root .app .listening-history-meta {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.3;
+    min-width: 0;
+  }
+  #root .app .listening-history-dot {
+    display: inline;
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.6;
+  }
+  #root .app .listening-history-duration,
+  #root .app .listening-history-meta time {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  #root .app .listening-history-actions {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    align-self: center;
+  }
+  #root .app .listening-queue-action { opacity: 1; }
+  #root .app .listening-history-actions .icon-button {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    flex: 0 0 40px;
+  }
+  #root .app .listening-summary { margin: 14px 0 10px; gap: 14px; font-size: 12px; flex-wrap: wrap; }
+  #root .app .listening-summary strong { font-size: 20px; }
+  #root .app .listening-pagination { justify-content: space-between; gap: 10px; padding: 14px 0 8px; margin-top: 12px; border-top: 1px solid var(--line); }
+  #root .app .listening-pagination button { min-height: 40px; padding: 8px 16px; border-radius: 10px; font-weight: 500; }
   @media (prefers-reduced-motion: reduce) {
     #root .app :is(.mobile-now-playing, .menu-popover, .mobile-tab, .collection-card, .lyric-line) { animation: none; transition: none !important; }
   }

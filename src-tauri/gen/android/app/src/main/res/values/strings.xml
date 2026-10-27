@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">"Lumaire"</string>
     <string name="main_activity_title">"Lumaire"</string>
+    <string name="widget_now_playing_name">"Now Playing"</string>
+    <string name="widget_now_playing_desc">"Controls and artwork for Lumaire"</string>
+    <string name="widget_lyrics_name">"Live Lyrics"</string>
+    <string name="widget_lyrics_desc">"Synchronized lyrics for Lumaire"</string>
 </resources>

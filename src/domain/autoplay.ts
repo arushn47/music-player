@@ -24,22 +24,31 @@ export async function resolveAutoplayCandidate(
   candidates: CatalogTrack[],
   resolve: (track: Track) => Promise<Track>,
   active: () => boolean,
+  accept: (track: Track) => boolean = () => true,
 ): Promise<Track | null> {
-  // Check two recordings at a time so one slow source cannot hold up a playable alternative.
-  const choices = candidates.slice(0, 5);
-  for (let index = 0; index < choices.length; index += 2) {
-    if (!active()) return null;
-    try {
-      const track = await Promise.any(choices.slice(index, index + 2).map(async candidate => {
-        if (!active()) throw new Error('Cancelled');
-        const resolved = await resolve(catalogQueueTrack(candidate));
-        if (!active() || isQueuedCatalog(resolved) || resolved.missing) throw new Error('Unavailable');
-        return resolved;
-      }));
-      return active() ? track : null;
-    } catch {
-      if (!active()) return null;
+  let expired = false;
+  const available = () => !expired && active();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const check = async (): Promise<Track | null> => {
+    // Check two recordings at a time so one slow source cannot hold up a playable alternative.
+    const choices = candidates.slice(0, 8);
+    for (let index = 0; index < choices.length; index += 2) {
+      if (!available()) return null;
+      try {
+        const track = await Promise.any(choices.slice(index, index + 2).map(async candidate => {
+          if (!available()) throw new Error('Cancelled');
+          const resolved = await resolve(catalogQueueTrack(candidate));
+          if (!available() || isQueuedCatalog(resolved) || resolved.missing || !accept(resolved)) throw new Error('Unavailable');
+          return resolved;
+        }));
+        return available() ? track : null;
+      } catch {
+        if (!available()) return null;
+      }
     }
-  }
-  return null;
+    return null;
+  };
+  try {
+    return await Promise.race([check(), new Promise<null>(resolve => { timer = setTimeout(() => { expired = true; resolve(null); }, 12000); })]);
+  } finally { expired = true; clearTimeout(timer); }
 }

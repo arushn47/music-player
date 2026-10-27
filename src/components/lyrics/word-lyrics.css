@@ -1,0 +1,73 @@
+@property --word-progress { syntax: "<percentage>"; inherits: true; initial-value: 0%; }
+.lyric-word {
+  display: inline-block;
+  white-space: nowrap;
+  vertical-align: baseline;
+  transform: translateY(var(--word-lift, 0px));
+  transition: transform 80ms linear, --word-progress 80ms linear;
+  color: #fff !important;
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none !important;
+}
+.lyric-word-ink {
+  background: linear-gradient(to right, #fff calc(var(--word-progress) - .35em), #999 calc(var(--word-progress) + .35em));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.lyric-word[data-word-state="upcoming"] .lyric-word-ink { background: #999; background-clip: text; -webkit-background-clip: text; }
+.lyric-word[data-word-state="sung"] .lyric-word-ink { background: #fff; background-clip: text; -webkit-background-clip: text; }
+
+/* Lyric text remains neutral regardless of the selected app accent or fullscreen mode. */
+:root .lyric-room .lyric-lines .lyric-line {
+  will-change: transform, opacity, filter;
+}
+:root .lyric-room .lyric-lines .lyric-line > .lyric-primary { font-weight: 700; }
+:root .lyric-room .lyric-lines .lyric-line > span {
+  color: #bbb !important;
+  text-shadow: none !important;
+}
+:root .lyric-room .lyric-lines .lyric-line.is-active > .lyric-primary { color: #fff !important; }
+:root .lyric-room .lyric-lines .lyric-line.is-active > :not(.lyric-primary) { color: #ddd !important; }
+:root .lyric-room .lyric-lines .lyric-line > span .lyric-word { text-shadow: none !important; }
+/* Light mode overrides for all lyric room views (tab, embedded, minimal, & immersive) */
+:root[data-theme="light"] .lyric-room {
+  background: transparent;
+  color: var(--text);
+}
+:root[data-theme="light"] .lyric-room .lyric-lines .lyric-line > span {
+  color: #6b7363 !important;
+  text-shadow: none !important;
+}
+:root[data-theme="light"] .lyric-room .lyric-lines .lyric-line.is-active > .lyric-primary {
+  color: #111210 !important;
+}
+:root[data-theme="light"] .lyric-room .lyric-lines .lyric-line.is-active > :not(.lyric-primary) {
+  color: #383c33 !important;
+}
+:root[data-theme="light"] .lyric-room .lyric-word-ink,
+:root[data-theme="light"] .is-immersive .lyric-word-ink {
+  background: linear-gradient(to right, #171717 calc(var(--word-progress) - .35em), #767676 calc(var(--word-progress) + .35em)) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+:root[data-theme="light"] .lyric-room .lyric-word[data-word-state="upcoming"] .lyric-word-ink,
+:root[data-theme="light"] .is-immersive .lyric-word[data-word-state="upcoming"] .lyric-word-ink {
+  background: #767676 !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+}
+:root[data-theme="light"] .lyric-room .lyric-word[data-word-state="sung"] .lyric-word-ink,
+:root[data-theme="light"] .is-immersive .lyric-word[data-word-state="sung"] .lyric-word-ink {
+  background: #171717 !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+}
+:root[data-theme="light"] .lyric-room .lyric-word,
+:root[data-theme="light"] .is-immersive .lyric-word {
+  color: #171717 !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+@media (prefers-reduced-motion: reduce) { .lyric-word { transform: none; transition: none; } }
+@media (forced-colors: active) { .lyric-word, .lyric-word-ink { color: CanvasText !important; background: none; -webkit-text-fill-color: currentColor; } }

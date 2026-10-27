@@ -5,6 +5,9 @@ import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.view.inputmethod.InputMethodManager
+import android.webkit.WebView
+import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.core.content.ContextCompat
 import androidx.media3.common.C
@@ -25,11 +28,40 @@ import java.util.concurrent.Executors
 
 @TauriPlugin
 class LumairePlugin(private val activity: Activity) : Plugin(activity) {
+    private var webView: WebView? = null
+    override fun load(webView: WebView) { this.webView = webView }
+
+    @Command
+    fun navigation(invoke: Invoke) {
+        val action = invoke.getArgs().optString("action")
+        activity.runOnUiThread {
+            when (action) {
+                "minimize" -> activity.moveTaskToBack(true)
+                "backHint" -> Toast.makeText(activity, "Press Back again to minimize Lumaire", Toast.LENGTH_SHORT).show()
+                "keyboard" -> webView?.let {
+                    it.requestFocus()
+                    activity.getSystemService(InputMethodManager::class.java).showSoftInput(it, InputMethodManager.SHOW_IMPLICIT)
+                }
+                else -> { invoke.reject("Unknown navigation action."); return@runOnUiThread }
+            }
+            invoke.resolve()
+        }
+    }
     private var controller: MediaController? = null
     private val resolver = ResolverClient(activity.applicationContext)
     private val io = Executors.newSingleThreadExecutor()
     private var connecting = false
     private val waiting = mutableListOf<Pair<Invoke, (MediaController) -> Unit>>()
+    private val playbackListener = object : Player.Listener {
+        override fun onEvents(player: Player, events: Player.Events) {
+            if (events.contains(Player.EVENT_PLAYER_ERROR) && player.playerError != null) resolver.invalidate()
+            // Native completion/error events bypass hidden WebView timer throttling.
+            if (events.containsAny(Player.EVENT_PLAYBACK_STATE_CHANGED, Player.EVENT_IS_PLAYING_CHANGED,
+                    Player.EVENT_PLAYER_ERROR, Player.EVENT_PLAY_WHEN_READY_CHANGED)) {
+                controller?.let { trigger("playback", state(it)) }
+            }
+        }
+    }
 
     private fun withPlayer(invoke: Invoke, operation: (MediaController) -> Unit) {
         activity.runOnUiThread {
@@ -45,6 +77,7 @@ class LumairePlugin(private val activity: Activity) : Plugin(activity) {
                 val pending = waiting.toList(); waiting.clear()
                 try {
                     val player = future.get(); controller = player
+                    player.addListener(playbackListener)
                     pending.forEach { (request, action) ->
                         try { action(player) } catch (_: Exception) { request.reject("Playback action failed.") }
                     }
@@ -71,7 +104,15 @@ class LumairePlugin(private val activity: Activity) : Plugin(activity) {
             .filterIsInstance<androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException>().firstOrNull() }
         put("error", if (failure != null) "Android could not play this audio (${http?.let { "HTTP ${it.responseCode}" } ?: failure.errorCodeName}). Try the source again." else org.json.JSONObject.NULL)
         put("id", player.currentMediaItem?.mediaId ?: "")
+        if (PlaybackService.listenedTrackId == player.currentMediaItem?.mediaId) {
+            put("nativeListenedMs", PlaybackService.listenedMs)
+        }
         put("seekable", player.isCurrentMediaItemSeekable)
+        put("autoplay", player.playWhenReady)
+        val pending = WidgetUpdateHelper.consumePendingAction()
+        if (pending != null) {
+            put("pendingAction", pending)
+        }
     }
 
     @Command
@@ -84,12 +125,19 @@ class LumairePlugin(private val activity: Activity) : Plugin(activity) {
                     // The only caller is the Rust adapter, which resolves stored IDs.
                     require(uri.scheme == "file" || uri.scheme == "https")
                     ScopedHttpHeaders.register(uri, args.optJSONObject("headers"))
+                    val artString = args.optString("artwork")
+                    val meta = MediaMetadata.Builder()
+                        .setTitle(args.getString("title"))
+                        .setArtist(args.getString("artist"))
+                    if (!artString.isNullOrBlank()) {
+                        try { meta.setArtworkUri(Uri.parse(artString)) } catch (_: Exception) {}
+                    }
                     val media = MediaItem.Builder().setMediaId(args.getString("id") ?: "")
-                        .setUri(uri).setMediaMetadata(MediaMetadata.Builder()
-                            .setTitle(args.getString("title")).setArtist(args.getString("artist")).build()).build()
+                        .setUri(uri).setMediaMetadata(meta.build()).build()
                     player.setMediaItem(media, (args.optDouble("position", 0.0)*1000).toLong())
                     player.prepare()
                     player.playWhenReady = args.optBoolean("autoplay", false)
+                    WidgetUpdateHelper.updateTrackInfo(activity, args.getString("title"), args.getString("artist"), artString)
                 }
                 "play" -> player.play()
                 "pause" -> player.pause()
@@ -100,6 +148,39 @@ class LumairePlugin(private val activity: Activity) : Plugin(activity) {
                 else -> { invoke.reject("Unknown audio command."); return@withPlayer }
             }
             invoke.resolve(state(player))
+        }
+    }
+
+    @Command
+    fun setLyrics(invoke: Invoke) {
+        val args = invoke.getArgs()
+        val trackId = args.getString("trackId") ?: ""
+        val linesArray = args.optJSONArray("lines")
+        val parsedLines = mutableListOf<NativeLyricLine>()
+        if (linesArray != null) {
+            for (i in 0 until linesArray.length()) {
+                val item = linesArray.optJSONObject(i) ?: continue
+                val time = if (item.has("time") && !item.isNull("time")) item.optLong("time") else null
+                val text = item.optString("text", "")
+                if (time != null && text.isNotBlank()) {
+                    parsedLines.add(NativeLyricLine(time, text))
+                }
+            }
+        }
+        activity.runOnUiThread {
+            WidgetUpdateHelper.setLyrics(activity, trackId, parsedLines)
+            invoke.resolve()
+        }
+    }
+
+    @Command
+    fun setTheme(invoke: Invoke) {
+        val args = invoke.getArgs()
+        val themeMode = args.optString("themeMode", "dark")
+        val accentColor = args.optString("accentColor", "#C4DCA3")
+        activity.runOnUiThread {
+            WidgetUpdateHelper.setTheme(activity, themeMode, accentColor)
+            invoke.resolve()
         }
     }
 
@@ -236,7 +317,11 @@ class LumairePlugin(private val activity: Activity) : Plugin(activity) {
 
     override fun onDestroy() {
         // Release this Activity's controller, not the service's active player.
-        activity.runOnUiThread { resolver.cancel(); controller?.release(); controller = null }
+        activity.runOnUiThread {
+            resolver.cancel()
+            controller?.run { removeListener(playbackListener); release() }
+            controller = null
+        }
         io.shutdown()
     }
 }

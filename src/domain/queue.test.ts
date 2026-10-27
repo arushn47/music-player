@@ -66,6 +66,15 @@ describe("collection playback sequence", () => {
     expect(session.favoriteArtists).toEqual([artist, { id: "itunes:7", name: "Artist", artworkUrl: null }]);
     expect(restoreSession({}, []).favoriteArtists).toEqual([]);
   });
+  it("retains multiple favorite artist identities through repeated save/load normalization", () => {
+    const artists = [
+      { id: "saavn:artist:42", name: "Artist", artworkUrl: null },
+      { id: "saavn:artist:name:Darshana%20Rajendran", name: "Darshana Rajendran", artworkUrl: null },
+      { id: "itunes:7", name: "Another artist", artworkUrl: null },
+    ];
+    const saved = restoreSession({ ...defaults(), favoriteArtists: artists }, []);
+    expect(restoreSession(JSON.parse(JSON.stringify(saved)), []).favoriteArtists).toEqual(artists);
+  });
   it("round-trips favorite album metadata and rejects untrusted IDs without disturbing old sessions", () => {
     const album = { id: "saavn:album:42", title: "Album", artist: "Artist", artworkUrl: "https://c.saavncdn.com/cover.jpg" };
     const restored = restoreSession({ ...defaults(), favoriteAlbums: [album, album, { ...album, id: "https://evil.test" }] }, []);

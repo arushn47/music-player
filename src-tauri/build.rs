@@ -4,5 +4,8 @@ fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("android") {
         println!("cargo:rustc-link-arg-cdylib=-Wl,-z,max-page-size=16384");
     }
-    tauri_build::build()
+    tauri_build::try_build(tauri_build::Attributes::new().plugin(
+        "lumaire-android",
+        tauri_build::InlinedPlugin::new().commands(&["navigation", "register_listener", "remove_listener"]),
+    )).expect("Failed to build Lumaire platform permissions")
 }

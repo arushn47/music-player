@@ -42,6 +42,7 @@ export interface LyricLine {
   id: string;
   time: number | null;
   text: string;
+  words?: { time: number; end?: number; text: string }[];
 }
 export interface LyricDocument {
   origin?: "provider" | "imported";
@@ -72,6 +73,7 @@ export interface LyricDocument {
   };
 }
 export interface Preferences {
+  fullscreenLayout?: "immersive" | "minimal";
   themeMode: "dark" | "light";
   accentColor: string;
   volume: number;
@@ -102,6 +104,7 @@ export interface ListeningResume {
   updatedAt: number;
 }
 export interface Session {
+  replica?: import('./device-sync').PlaylistReplica;
   listeningResumes?: ListeningResume[];
   favoriteArtists: { id: string; name: string; artworkUrl?: string | null }[];
   favoriteAlbums: { id: string; title: string; artist: string; artworkUrl?: string | null; year?: number | null }[];

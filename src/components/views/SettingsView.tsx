@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import {
   Download,
   FolderOpen,
@@ -26,6 +26,8 @@ import { Select } from "../common";
 import { MusicPreferences } from "../common/MusicLanguagePicker";
 import { SoftwareLicencesSection } from "./SoftwareLicencesSection";
 import { UpdaterCard } from "./UpdaterCard";
+import { GeminiKeySettings } from "../lyrics/GeminiKeySettings";
+import { getUpdateState, subscribeToUpdates } from "../../adapters/updater";
 import { SupportSection } from "./SupportSection";
 import type { Preferences, Session, Track } from "../../domain/types";
 import { mobile } from "../../adapters/native";
@@ -85,7 +87,7 @@ const categories: CategoryDef[] = [
   { id: "shortcuts", label: "Keyboard Shortcuts", icon: Keyboard },
   { id: "history", label: "History", icon: BarChart3 },
   { id: "storage", label: "Storage", icon: HardDrive },
-  { id: "support", label: "Support & contribute", icon: Heart },
+  { id: "support", label: "Support", icon: Heart },
   { id: "about", label: "About", icon: Info },
 ];
 
@@ -112,6 +114,7 @@ export function SettingsView({
   onRetryDownload,
   onDeleteOffline,
 }: SettingsViewProps) {
+  const { currentVersion } = useSyncExternalStore(subscribeToUpdates, getUpdateState, getUpdateState);
   const [activeCategory, setActiveCategory] = useState<Category | null>(mobile ? null : "appearance");
   useEffect(() => {
     if (mobile) document.getElementById("main")?.scrollTo({ top: 0 });
@@ -260,6 +263,19 @@ export function SettingsView({
                 </button>
               </div>
             </div>
+
+            {!mobile && <div className="settings-section">
+              <h3 className="section-label">Desktop fullscreen player</h3>
+              <div className="theme-mode-toggle" role="group" aria-label="Fullscreen layout">
+                {(["immersive", "minimal"] as const).map(layout => <button key={layout}
+                  className={`theme-option ${(session.settings.fullscreenLayout ?? "immersive") === layout ? "selected" : ""}`}
+                  aria-pressed={(session.settings.fullscreenLayout ?? "immersive") === layout}
+                  onClick={() => onSetting("fullscreenLayout", layout)}>
+                  {layout === "immersive" ? "Immersive" : "Minimal"}
+                </button>)}
+              </div>
+              <p className="setting-description">Cinematic imagery and lyrics, or the classic centered artwork player.</p>
+            </div>}
 
             <div className="settings-section">
               <h3 className="section-label">Accent Color</h3>
@@ -628,6 +644,10 @@ export function SettingsView({
         {activeCategory === "lyrics" && (
           <div className="settings-category">
             <h2>Lyrics</h2>
+            {!mobile && <div className="settings-section">
+              <h3 className="section-label">Gemini API key</h3>
+              <div className="settings-card-group gemini-key-settings"><GeminiKeySettings /></div>
+            </div>}
             <p className="category-subtitle">
               Control lyric display, romanization, and translations.
             </p>
@@ -717,7 +737,7 @@ export function SettingsView({
                     <div className="switch-text">
                       <strong>Automatic pronunciation & translation (Gemini)</strong>
                       <small>
-                        With a Gemini key saved in Lyric room → Lyrics settings,
+                        With a saved Gemini key,
                         send each selected song’s lyrics for pronunciation and
                         English meaning. Cached results are reused.
                       </small>
@@ -1002,7 +1022,7 @@ export function SettingsView({
           <div className="settings-category">
             <h2>History & Privacy</h2>
             <p className="category-subtitle">
-              Control listening history and cached data on this device.
+              Control listening history and cached data. History sync is optional in Sync → Devices.
             </p>
 
             <div className="settings-card-group">
@@ -1011,7 +1031,7 @@ export function SettingsView({
                   <strong>Record listening history</strong>
                   <small>
                     Nothing is sent to external services. History stays private
-                    on this device.
+                    on your devices; paired history sharing is opt-in.
                   </small>
                 </div>
                 <div className="apple-switch">
@@ -1030,7 +1050,7 @@ export function SettingsView({
                 <div className="row-text">
                   <strong>Clear Data</strong>
                   <small>
-                    Remove local playback history or cached lyric records.
+                    Clear playback history or cached lyric records. History clears also propagate when both devices enable history sync.
                   </small>
                 </div>
                 <div className="button-row">
@@ -1178,7 +1198,7 @@ export function SettingsView({
                   </svg>
                 </div>
                 <div className="about-hero-text">
-                  <h3>Lumaire 1.0.4</h3>
+                  <h3>Lumaire {currentVersion}</h3>
                   <p>
                     Local-first audio player with private lyric synchronization.
                   </p>
@@ -1233,7 +1253,7 @@ export function SettingsView({
             <p className="settings-footnote">
               Format compatibility depends on system codecs. No required
               accounts or telemetry. Your library and listening history remain
-              on this device. Optional online services receive searches or
+              on your devices. Optional online services receive searches or
               lyrics when used.
             </p>
           </div>

@@ -57,11 +57,12 @@ it("renders the mobile Now Playing screen with track metadata and transport cont
   expect(html).toContain('aria-label="Repeat mode: off"');
 });
 
-it("renders the switchable player view tabs: Up next and Lyrics", () => {
+it("keeps only Up next in the expanded mobile player", () => {
   const html = renderToStaticMarkup(<MobileNowPlaying {...baseProps} />);
   expect(html).toContain("Up next");
-  expect(html).toContain("Lyrics");
   expect(html).toContain('aria-label="Player views"');
+  expect(html).not.toContain("Lyrics");
+  expect(html).not.toContain("mobile-np-lyrics");
 });
 
 it("renders collapse button and drag handle for dismissal", () => {

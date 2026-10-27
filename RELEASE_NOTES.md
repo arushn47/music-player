@@ -1,30 +1,30 @@
-# Lumaire v1.0.6
+# Lumaire v1.0.7
 
-A Windows desktop update with better discovery, more personal recommendations, improved lyrics, and smoother playback controls. Android work continues separately; this release contains no APK.
+Less waiting when you replay a song, more consistent listening history, and a more comfortable Lumaire on your phone. This update is available for Windows and Android.
 
-## Discover more music
+## Playback that gets along better
 
-- Search combines regional catalog results with Apple results and improved artist, album, release and credit metadata. Artist pages and discographies have stronger provider fallbacks.
-- Discover brings together new releases, country-specific Top 10, trending music, curated charts, moods and genres, with clearer sources and fewer duplicates.
-- Search in the top bar without leaving your current page; suggestions close when you click outside.
+- Android no longer fetches the same stream twice just to start playback. In our Motorola Edge 50 Pro tests, selecting the same song again went from about 5.5 seconds to 1.1 seconds. First-time song searches can still take a while.
+- Searches no longer cancel each other unexpectedly. Switching songs still cancels the old request, so a late result cannot take over your player.
+- Better candidate checking avoids unnecessary lookups while keeping the checks for the right artist, recording and version.
+- Streaming and downloads enforce audio-only formats. Older affected downloads can be repaired without re-encoding their audio.
 
-## A Home page shaped by your listening
+## Your music across devices
 
-- Recently Played now follows your actual listening history. Continue Listening resumes unfinished albums, playlists and saved queues.
-- Quick Picks balances familiar music and discoveries with album and artist diversity. Your Rotation and Forgotten Favorites use real listening history.
-- Liked songs, saved albums and favorite artists have separate library views. Recently updated playlists move to the top of the sidebar.
+- Listening history uses the metadata saved with each play, fixing artist and album counts that could differ between your phone and PC.
+- Favorites can sync alongside playlists and listening history on the same Wi-Fi. A separate Favorites switch lets you choose what to share; both devices need this update for favorite syncing.
+- Autoplay keeps the language of the song you started with. When genre or mood information is missing, it uses same-language recommendations rather than guessing.
 
-## Playback and lyrics
+## A little easier every day
 
-- Queue actions respond immediately while source checks run in the background. Loading is clearer on the Play button.
-- Restored real audio-reactive visualization, improved expanded-player performance and artwork atmosphere, and fixed fullscreen sizing.
-- Improved lyric lookup and provider fallback, cleaned up video titles before searching, and strengthened translation/romanization handling and caching.
-- Refined the Windows title bar, taskbar icons and playback controls. Added player context actions and quicker playlist actions.
+- Refined Android navigation, player controls and layouts, with home-screen playback and lyrics widgets.
+- Android Back closes the current panel or returns through your screens. Double-tap Discover to jump into search.
+- Clearer lyric settings and word-timed lyrics when available, plus smaller fixes to playlist saving, notifications and library controls.
 
-## Updating
+## Installing the update
 
-**Windows 1.0.5:** open Settings → About → Check for updates, review the notes, then download and choose Restart & Update. Your library and settings stay in place; no uninstall is needed.
+**Windows:** use Settings → About → Check for updates, or run the Windows installer below. Keep your existing installation to retain your library and settings.
 
-**1.0.4 preview:** install the newer Windows installer manually once, since that preview does not contain the in-app updater.
+**Android:** download the ARM64 APK below and install it over Lumaire. Android will ask you to confirm the update. Do not uninstall first; that would remove the app's local data. Android updates are installed manually.
 
-Android is not released in this update. Audio and catalog availability still depend on providers; optional AI lyrics features require your own configured key.
+Playback was checked on Windows and a Motorola Edge 50 Pro. Online audio still depends on its provider: a new song may take time to start, and temporary availability errors can still happen. Background Autoplay across the end of a song remains a known Android limitation. Optional AI lyric features require your own configured key.

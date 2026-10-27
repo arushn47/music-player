@@ -1,0 +1,2094 @@
+[
+  {
+    "seed": {
+      "id": "saavn:IJ3C0q7f",
+      "title": "Vaathi Coming",
+      "artist": "Anirudh Ravichander, Gana Balachandar",
+      "artists": [
+        {
+          "name": "Anirudh Ravichander"
+        },
+        {
+          "name": "Gana Balachandar"
+        }
+      ],
+      "album": "Master",
+      "albumId": "saavn:album:19479273",
+      "duration": 228,
+      "language": "tamil",
+      "genre": null
+    },
+    "radio": [
+      {
+        "id": "saavn:AgeRwxTb",
+        "title": "Arabic Kuthu - Halamithi Habibo",
+        "artist": "Anirudh Ravichander, Jonita Gandhi",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Jonita Gandhi"
+          }
+        ],
+        "album": "Beast",
+        "albumId": "saavn:album:34735026",
+        "duration": 279,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:lkaNaSDX",
+        "title": "Badass",
+        "artist": "Anirudh Ravichander, Vishnu Edavan",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Vishnu Edavan"
+          }
+        ],
+        "album": "Leo",
+        "albumId": "saavn:album:49113982",
+        "duration": 229,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:L6UDHuug",
+        "title": "Kutti Story",
+        "artist": "Vijay, Anirudh Ravichander, Arunraja Kamaraj",
+        "artists": [
+          {
+            "name": "Vijay"
+          },
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Arunraja Kamaraj"
+          }
+        ],
+        "album": "Master",
+        "albumId": "saavn:album:19479273",
+        "duration": 302,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:ahQg3u9E",
+        "title": "Naa Ready",
+        "artist": "Vijay, Anirudh Ravichander, Asal Kolaar, Vishnu Edavan",
+        "artists": [
+          {
+            "name": "Vijay"
+          },
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Asal Kolaar"
+          },
+          {
+            "name": "Vishnu Edavan"
+          }
+        ],
+        "album": "Leo",
+        "albumId": "saavn:album:49113982",
+        "duration": 248,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:KsDPoiuL",
+        "title": "Ordinary Person (From \"Leo\")",
+        "artist": "Anirudh Ravichander, Nikhita Gandhi",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Nikhita Gandhi"
+          }
+        ],
+        "album": "Ordinary Person (From \"Leo\")",
+        "albumId": "saavn:album:49222302",
+        "duration": 139,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:6UacoKQ4",
+        "title": "Vikram (Title Track)",
+        "artist": "Anirudh Ravichander, Vishnu Edavan",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Vishnu Edavan"
+          }
+        ],
+        "album": "Vikram",
+        "albumId": "saavn:album:35003732",
+        "duration": 227,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:eUgNtCfF",
+        "title": "Don'u Don'u Don'u (The Don's Romance)",
+        "artist": "Dhanush, Anirudh Ravichander, Alisha Thomas",
+        "artists": [
+          {
+            "name": "Dhanush"
+          },
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Alisha Thomas"
+          }
+        ],
+        "album": "Maari",
+        "albumId": "saavn:album:1251943",
+        "duration": 198,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:PbnQjMPD",
+        "title": "Maari Thara Local (Here Comes Maari)",
+        "artist": "Dhanush, Anirudh Ravichander",
+        "artists": [
+          {
+            "name": "Dhanush"
+          },
+          {
+            "name": "Anirudh Ravichander"
+          }
+        ],
+        "album": "Maari",
+        "albumId": "saavn:album:1251943",
+        "duration": 232,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:MYrooqI2",
+        "title": "Monica",
+        "artist": "Anirudh Ravichander, Sublahshini, Asal Kolaar, Vishnu Edavan",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Sublahshini"
+          },
+          {
+            "name": "Asal Kolaar"
+          },
+          {
+            "name": "Vishnu Edavan"
+          }
+        ],
+        "album": "Coolie (Original Motion Picture Soundtrack)",
+        "albumId": "saavn:album:66860831",
+        "duration": 217,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:nHs_0eEA",
+        "title": "Kaavaalaa",
+        "artist": "Shilpa Rao, Anirudh Ravichander, Arunraja Kamaraj",
+        "artists": [
+          {
+            "name": "Shilpa Rao"
+          },
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Arunraja Kamaraj"
+          }
+        ],
+        "album": "Jailer",
+        "albumId": "saavn:album:47094777",
+        "duration": 190,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:S7tLvvrU",
+        "title": "Jimikki Ponnu",
+        "artist": "Anirudh Ravichander, Jonita Gandhi",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Jonita Gandhi"
+          }
+        ],
+        "album": "Varisu",
+        "albumId": "saavn:album:41106332",
+        "duration": 224,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:oALPDLfF",
+        "title": "Powerhouse",
+        "artist": "Anirudh Ravichander, Arivu",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Arivu"
+          }
+        ],
+        "album": "Coolie (Original Motion Picture Soundtrack)",
+        "albumId": "saavn:album:66860831",
+        "duration": 206,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:PRVqLP3U",
+        "title": "Thee Thalapathy",
+        "artist": "Silambarasan Tr",
+        "artists": [
+          {
+            "name": "Silambarasan Tr"
+          }
+        ],
+        "album": "Varisu",
+        "albumId": "saavn:album:41106332",
+        "duration": 258,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:F_fgk0mb",
+        "title": "Katchi Sera (From \"Think Indie\")",
+        "artist": "Sai Abhyankkar",
+        "artists": [
+          {
+            "name": "Sai Abhyankkar"
+          }
+        ],
+        "album": "Katchi Sera (From \"Think Indie\")",
+        "albumId": "saavn:album:51297594",
+        "duration": 181,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:qh5Ntdtc",
+        "title": "Beast Mode",
+        "artist": "Anirudh Ravichander",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          }
+        ],
+        "album": "Beast",
+        "albumId": "saavn:album:34735026",
+        "duration": 220,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:dI35QrYI",
+        "title": "Ranjithame",
+        "artist": "Vijay, M.M. Manasi",
+        "artists": [
+          {
+            "name": "Vijay"
+          },
+          {
+            "name": "M.M. Manasi"
+          }
+        ],
+        "album": "Varisu",
+        "albumId": "saavn:album:41106332",
+        "duration": 287,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:GCmX6dI0",
+        "title": "JD Intro (Background Score)",
+        "artist": "Anirudh Ravichander",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          }
+        ],
+        "album": "Master (Original Background Score)",
+        "albumId": "saavn:album:25206562",
+        "duration": 80,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:_GIuQbB_",
+        "title": "Rowdy Baby",
+        "artist": "Dhanush, Yuvan Shankar Raja, Dhee",
+        "artists": [
+          {
+            "name": "Dhanush"
+          },
+          {
+            "name": "Yuvan Shankar Raja"
+          },
+          {
+            "name": "Dhee"
+          }
+        ],
+        "album": "Maari 2",
+        "albumId": "saavn:album:14479394",
+        "duration": 281,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:Hs7TkoMN",
+        "title": "Rolex Theme (Background Score)",
+        "artist": "Anirudh Ravichander",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          }
+        ],
+        "album": "Vikram (Original Background Score)",
+        "albumId": "saavn:album:36278689",
+        "duration": 53,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:9e4p_Byj",
+        "title": "Hunter Vantaar",
+        "artist": "Arivu, Anirudh Ravichander, Siddharth Basrur",
+        "artists": [
+          {
+            "name": "Arivu"
+          },
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Siddharth Basrur"
+          }
+        ],
+        "album": "Vettaiyan",
+        "albumId": "saavn:album:58811310",
+        "duration": 192,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:lYf3uzEZ",
+        "title": "Pathikichu",
+        "artist": "Anirudh Ravichander, Yogi Sekar, Amogh Balaji",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Yogi Sekar"
+          },
+          {
+            "name": "Amogh Balaji"
+          }
+        ],
+        "album": "Vidaamuyarchi",
+        "albumId": "saavn:album:62094435",
+        "duration": 208,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:m6pA6cJ6",
+        "title": "Coolie Disco",
+        "artist": "Anirudh Ravichander",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          }
+        ],
+        "album": "Coolie (Original Motion Picture Soundtrack)",
+        "albumId": "saavn:album:66860831",
+        "duration": 129,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:hUlH4Al9",
+        "title": "Bloody Sweet",
+        "artist": "Anirudh Ravichander, Siddharth Basrur, Heisenberg",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Siddharth Basrur"
+          },
+          {
+            "name": "Heisenberg"
+          }
+        ],
+        "album": "Leo",
+        "albumId": "saavn:album:49113982",
+        "duration": 168,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:HjIFboBj",
+        "title": "Once Upon a Time",
+        "artist": "Anirudh Ravichander, Heisenberg",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Heisenberg"
+          }
+        ],
+        "album": "Vikram",
+        "albumId": "saavn:album:35003732",
+        "duration": 143,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:s65Ha75w",
+        "title": "Leo Das Entry (From \"Leo\")",
+        "artist": "Anirudh Ravichander",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          }
+        ],
+        "album": "Leo Das Entry (From \"Leo\")",
+        "albumId": "saavn:album:50961278",
+        "duration": 97,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:GdtoH2Yh",
+        "title": "Aaja Raja (From \"KH x RK Reunion\")",
+        "artist": "Anirudh Ravichander, Chintu",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Chintu"
+          }
+        ],
+        "album": "Aaja Raja (From \"KH x RK Reunion\")",
+        "albumId": "saavn:album:72680922",
+        "duration": 128,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:asyeukc4",
+        "title": "Hayyoda",
+        "artist": "Anirudh Ravichander, Priya Mali",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Priya Mali"
+          }
+        ],
+        "album": "Jawan (TAMIL)",
+        "albumId": "saavn:album:48037317",
+        "duration": 200,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:nqq3cNMG",
+        "title": "Ratata (From \"Leo\")",
+        "artist": "Anirudh Ravichander",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          }
+        ],
+        "album": "Ratata (From \"Leo\")",
+        "albumId": "saavn:album:49641140",
+        "duration": 134,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:8WoiP_FZ",
+        "title": "Fear Song - Tamil",
+        "artist": "Anirudh Ravichander, Vishnu Edavan",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          },
+          {
+            "name": "Vishnu Edavan"
+          }
+        ],
+        "album": "Devara Part 1 - Tamil",
+        "albumId": "saavn:album:58371017",
+        "duration": 195,
+        "language": "tamil",
+        "genre": null
+      },
+      {
+        "id": "saavn:Cadaj1l5",
+        "title": "Lokiverse (Background Score)",
+        "artist": "Anirudh Ravichander",
+        "artists": [
+          {
+            "name": "Anirudh Ravichander"
+          }
+        ],
+        "album": "Vikram (Original Background Score)",
+        "albumId": "saavn:album:36278689",
+        "duration": 156,
+        "language": "tamil",
+        "genre": null
+      }
+    ]
+  },
+  {
+    "seed": {
+      "id": "saavn:_w-V_N2t",
+      "title": "Levitating",
+      "artist": "Dua Lipa",
+      "artists": [
+        {
+          "name": "Dua Lipa"
+        }
+      ],
+      "album": "Dua Lipa - Live From Mexico",
+      "albumId": "saavn:album:76102857",
+      "duration": 203,
+      "language": "english",
+      "genre": null
+    },
+    "radio": [
+      {
+        "id": "saavn:WG8e4VlC",
+        "title": "Favorite",
+        "artist": "Isabel LaRosa",
+        "artists": [
+          {
+            "name": "Isabel LaRosa"
+          }
+        ],
+        "album": "Favorite",
+        "albumId": "saavn:album:52667006",
+        "duration": 133,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:wJB6BG9f",
+        "title": "No Lie",
+        "artist": "Sean Paul, Dua Lipa",
+        "artists": [
+          {
+            "name": "Sean Paul"
+          },
+          {
+            "name": "Dua Lipa"
+          }
+        ],
+        "album": "No Lie",
+        "albumId": "saavn:album:3028238",
+        "duration": 221,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:BhKP6P-H",
+        "title": "Espresso",
+        "artist": "Sabrina Carpenter",
+        "artists": [
+          {
+            "name": "Sabrina Carpenter"
+          }
+        ],
+        "album": "Espresso",
+        "albumId": "saavn:album:53344805",
+        "duration": 175,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:FH9dQInl",
+        "title": "One Kiss",
+        "artist": "Calvin Harris, Dua Lipa",
+        "artists": [
+          {
+            "name": "Calvin Harris"
+          },
+          {
+            "name": "Dua Lipa"
+          }
+        ],
+        "album": "One Kiss",
+        "albumId": "saavn:album:12586003",
+        "duration": 214,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:2iolr1d2",
+        "title": "Bilionera (Radio Edit)",
+        "artist": "Otilia",
+        "artists": [
+          {
+            "name": "Otilia"
+          }
+        ],
+        "album": "Bilionera",
+        "albumId": "saavn:album:1913306",
+        "duration": 185,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:fy8dN2I_",
+        "title": "Heat Waves",
+        "artist": "Glass Animals",
+        "artists": [
+          {
+            "name": "Glass Animals"
+          }
+        ],
+        "album": "Dreamland",
+        "albumId": "saavn:album:21888520",
+        "duration": 239,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:xKlnh38y",
+        "title": "One Dance",
+        "artist": "Drake, Wizkid, Kyla",
+        "artists": [
+          {
+            "name": "Drake"
+          },
+          {
+            "name": "Wizkid"
+          },
+          {
+            "name": "Kyla"
+          }
+        ],
+        "album": "Views",
+        "albumId": "saavn:album:2306373",
+        "duration": 174,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:ln4f3sJf",
+        "title": "Let Me Love You",
+        "artist": "DJ Snake, Justin Bieber",
+        "artists": [
+          {
+            "name": "DJ Snake"
+          },
+          {
+            "name": "Justin Bieber"
+          }
+        ],
+        "album": "Encore",
+        "albumId": "saavn:album:3338879",
+        "duration": 205,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:WrlI86vm",
+        "title": "Lean On",
+        "artist": "Major Lazer, DJ Snake, MØ, Diplo",
+        "artists": [
+          {
+            "name": "Major Lazer"
+          },
+          {
+            "name": "DJ Snake"
+          },
+          {
+            "name": "MØ"
+          },
+          {
+            "name": "Diplo"
+          }
+        ],
+        "album": "Peace Is The Mission",
+        "albumId": "saavn:album:46306164",
+        "duration": 176,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:WGc8ueF_",
+        "title": "We Don't Talk Anymore (feat. Selena Gomez)",
+        "artist": "Charlie Puth, Selena Gomez",
+        "artists": [
+          {
+            "name": "Charlie Puth"
+          },
+          {
+            "name": "Selena Gomez"
+          }
+        ],
+        "album": "Nine Track Mind",
+        "albumId": "saavn:album:16236794",
+        "duration": 217,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:dvDOyl1h",
+        "title": "MIDDLE OF THE NIGHT",
+        "artist": "Elley Duhe",
+        "artists": [
+          {
+            "name": "Elley Duhe"
+          }
+        ],
+        "album": "MIDDLE OF THE NIGHT",
+        "albumId": "saavn:album:18537519",
+        "duration": 181,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:HtWvQ-bx",
+        "title": "Dandelions",
+        "artist": "Ruth B.",
+        "artists": [
+          {
+            "name": "Ruth B."
+          }
+        ],
+        "album": "Dandelions",
+        "albumId": "saavn:album:10663733",
+        "duration": 233,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:wManRgbw",
+        "title": "Criminal",
+        "artist": "Britney Spears",
+        "artists": [
+          {
+            "name": "Britney Spears"
+          }
+        ],
+        "album": "The Essential Britney Spears",
+        "albumId": "saavn:album:1185009",
+        "duration": 225,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:zIuXF49R",
+        "title": "Infinity",
+        "artist": "Jaymes Young",
+        "artists": [
+          {
+            "name": "Jaymes Young"
+          }
+        ],
+        "album": "Feel Something",
+        "albumId": "saavn:album:16231974",
+        "duration": 237,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:JQRv4yRH",
+        "title": "All The Stars",
+        "artist": "Kendrick Lamar, SZA",
+        "artists": [
+          {
+            "name": "Kendrick Lamar"
+          },
+          {
+            "name": "SZA"
+          }
+        ],
+        "album": "All The Stars",
+        "albumId": "saavn:album:12031408",
+        "duration": 235,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:OPIPEsPe",
+        "title": "Bad Boy (feat. Luana Kiara)",
+        "artist": "Raaban, Tungevaag, Luana Kiara",
+        "artists": [
+          {
+            "name": "Raaban"
+          },
+          {
+            "name": "Tungevaag"
+          },
+          {
+            "name": "Luana Kiara"
+          }
+        ],
+        "album": "Bad Boy (feat. Luana Kiara)",
+        "albumId": "saavn:album:16265440",
+        "duration": 190,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:T6kPbW9g",
+        "title": "Stereo Hearts (feat. Adam Levine)",
+        "artist": "Gym Class Heroes, Adam Levine",
+        "artists": [
+          {
+            "name": "Gym Class Heroes"
+          },
+          {
+            "name": "Adam Levine"
+          }
+        ],
+        "album": "The Papercut Chronicles II",
+        "albumId": "saavn:album:22241747",
+        "duration": 210,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:R35H6BI-",
+        "title": "Attention",
+        "artist": "Charlie Puth",
+        "artists": [
+          {
+            "name": "Charlie Puth"
+          }
+        ],
+        "album": "Attention",
+        "albumId": "saavn:album:16230273",
+        "duration": 211,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:S_7hWSeE",
+        "title": "Jalebi Baby",
+        "artist": "Tesher",
+        "artists": [
+          {
+            "name": "Tesher"
+          }
+        ],
+        "album": "Jalebi Baby",
+        "albumId": "saavn:album:26431458",
+        "duration": 191,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:idoLJICu",
+        "title": "Girls Like You",
+        "artist": "Maroon 5, Cardi B",
+        "artists": [
+          {
+            "name": "Maroon 5"
+          },
+          {
+            "name": "Cardi B"
+          }
+        ],
+        "album": "Girls Like You",
+        "albumId": "saavn:album:12975468",
+        "duration": 236,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:rhdnRJOM",
+        "title": "Don't Let Me Down",
+        "artist": "The Chainsmokers, Daya",
+        "artists": [
+          {
+            "name": "The Chainsmokers"
+          },
+          {
+            "name": "Daya"
+          }
+        ],
+        "album": "Don't Let Me Down",
+        "albumId": "saavn:album:2022534",
+        "duration": 208,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:Grohf5-o",
+        "title": "Something Just Like This",
+        "artist": "The Chainsmokers, Coldplay",
+        "artists": [
+          {
+            "name": "The Chainsmokers"
+          },
+          {
+            "name": "Coldplay"
+          }
+        ],
+        "album": "Something Just Like This",
+        "albumId": "saavn:album:10290258",
+        "duration": 247,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:QUNHFVVV",
+        "title": "Closer",
+        "artist": "The Chainsmokers, Halsey",
+        "artists": [
+          {
+            "name": "The Chainsmokers"
+          },
+          {
+            "name": "Halsey"
+          }
+        ],
+        "album": "Closer",
+        "albumId": "saavn:album:2471212",
+        "duration": 249,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:s9ZYGKqH",
+        "title": "Sorry",
+        "artist": "Justin Bieber",
+        "artists": [
+          {
+            "name": "Justin Bieber"
+          }
+        ],
+        "album": "Purpose (Deluxe)",
+        "albumId": "saavn:album:1594004",
+        "duration": 201,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:nvuKtACx",
+        "title": "Eenie Meenie (Album Version)",
+        "artist": "Justin Bieber, Sean Kingston",
+        "artists": [
+          {
+            "name": "Justin Bieber"
+          },
+          {
+            "name": "Sean Kingston"
+          }
+        ],
+        "album": "Eenie Meenie",
+        "albumId": "saavn:album:1100910",
+        "duration": 203,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:qPBSIDVf",
+        "title": "Let Her Go",
+        "artist": "Passenger",
+        "artists": [
+          {
+            "name": "Passenger"
+          }
+        ],
+        "album": "All the Little Lights (Deluxe)",
+        "albumId": "saavn:album:14617582",
+        "duration": 253,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:bniN_G_9",
+        "title": "Arcade",
+        "artist": "Duncan Laurence",
+        "artists": [
+          {
+            "name": "Duncan Laurence"
+          }
+        ],
+        "album": "Arcade",
+        "albumId": "saavn:album:15295899",
+        "duration": 182,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:zikdtWU6",
+        "title": "Thunder",
+        "artist": "Imagine Dragons",
+        "artists": [
+          {
+            "name": "Imagine Dragons"
+          }
+        ],
+        "album": "Evolve",
+        "albumId": "saavn:album:13435951",
+        "duration": 187,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:fad7sATd",
+        "title": "7 Years",
+        "artist": "Lukas Graham",
+        "artists": [
+          {
+            "name": "Lukas Graham"
+          }
+        ],
+        "album": "Lukas Graham",
+        "albumId": "saavn:album:16254406",
+        "duration": 237,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:vXGLrsk-",
+        "title": "lovely",
+        "artist": "Billie Eilish, Khalid",
+        "artists": [
+          {
+            "name": "Billie Eilish"
+          },
+          {
+            "name": "Khalid"
+          }
+        ],
+        "album": "lovely",
+        "albumId": "saavn:album:12675996",
+        "duration": 199,
+        "language": "english",
+        "genre": null
+      }
+    ]
+  },
+  {
+    "seed": {
+      "id": "saavn:43EwyOye",
+      "title": "Don't Stop Me Now",
+      "artist": "Queen",
+      "artists": [
+        {
+          "name": "Queen"
+        }
+      ],
+      "album": "The Platinum Collection",
+      "albumId": "saavn:album:77003712",
+      "duration": 212,
+      "language": "english",
+      "genre": null
+    },
+    "radio": [
+      {
+        "id": "saavn:sKr8RAAP",
+        "title": "Love Of My Life",
+        "artist": "Queen",
+        "artists": [
+          {
+            "name": "Queen"
+          }
+        ],
+        "album": "A Night At The Opera",
+        "albumId": "saavn:album:73774250",
+        "duration": 218,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:1fWjxbdl",
+        "title": "Hammer to Fall",
+        "artist": "Queen",
+        "artists": [
+          {
+            "name": "Queen"
+          }
+        ],
+        "album": "The Works",
+        "albumId": "saavn:album:77003758",
+        "duration": 267,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:HZGdpKC0",
+        "title": "Crazy Little Thing Called Love",
+        "artist": "Queen",
+        "artists": [
+          {
+            "name": "Queen"
+          }
+        ],
+        "album": "Queen Forever",
+        "albumId": "saavn:album:77003785",
+        "duration": 164,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:-dFCn9jS",
+        "title": "Killer Queen",
+        "artist": "Queen",
+        "artists": [
+          {
+            "name": "Queen"
+          }
+        ],
+        "album": "Sheer Heart Attack",
+        "albumId": "saavn:album:77003690",
+        "duration": 182,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:B310dju0",
+        "title": "I Want It All",
+        "artist": "Queen",
+        "artists": [
+          {
+            "name": "Queen"
+          }
+        ],
+        "album": "The Miracle (Collector's Edition)",
+        "albumId": "saavn:album:77003733",
+        "duration": 281,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:JqHZ4lpj",
+        "title": "Don't Look Back in Anger",
+        "artist": "Oasis",
+        "artists": [
+          {
+            "name": "Oasis"
+          }
+        ],
+        "album": "Stop the Clocks",
+        "albumId": "saavn:album:12768265",
+        "duration": 288,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:tu_Tvpv7",
+        "title": "You're My Best Friend",
+        "artist": "Queen",
+        "artists": [
+          {
+            "name": "Queen"
+          }
+        ],
+        "album": "A Night At The Opera",
+        "albumId": "saavn:album:73774250",
+        "duration": 172,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:V3M8mwye",
+        "title": "Under Pressure (Single Version) [2017 Remaster]",
+        "artist": "Queen, David Bowie",
+        "artists": [
+          {
+            "name": "Queen"
+          },
+          {
+            "name": "David Bowie"
+          }
+        ],
+        "album": "A New Career in a New Town (1977 - 1982)",
+        "albumId": "saavn:album:16503124",
+        "duration": 248,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:MNooiL2y",
+        "title": "The Show Must Go On",
+        "artist": "Queen",
+        "artists": [
+          {
+            "name": "Queen"
+          }
+        ],
+        "album": "Bohemian Rhapsody (The Original Soundtrack)",
+        "albumId": "saavn:album:77003227",
+        "duration": 276,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:W4WCgt09",
+        "title": "We Will Rock You",
+        "artist": "Queen",
+        "artists": [
+          {
+            "name": "Queen"
+          }
+        ],
+        "album": "Rock Da Pop",
+        "albumId": "saavn:album:22034783",
+        "duration": 121,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:jnS2P492",
+        "title": "More Than a Feeling",
+        "artist": "Boston",
+        "artists": [
+          {
+            "name": "Boston"
+          }
+        ],
+        "album": "Guitar Heroes",
+        "albumId": "saavn:album:12034580",
+        "duration": 283,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:F6S2beg2",
+        "title": "Dirty Deeds Done Dirt Cheap",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "Dirty Deeds Done Dirt Cheap",
+        "albumId": "saavn:album:1285403",
+        "duration": 226,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:eL_aGTSJ",
+        "title": "Somebody To Love",
+        "artist": "Queen",
+        "artists": [
+          {
+            "name": "Queen"
+          }
+        ],
+        "album": "Queen Forever",
+        "albumId": "saavn:album:77003785",
+        "duration": 293,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:1h3gj5Rt",
+        "title": "Heroes (Soundtrack Version)",
+        "artist": "David Bowie",
+        "artists": [
+          {
+            "name": "David Bowie"
+          }
+        ],
+        "album": "The Perks Of Being A Wallflower",
+        "albumId": "saavn:album:11958554",
+        "duration": 368,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:IDyK3_ku",
+        "title": "The Boxer",
+        "artist": "Simon & Garfunkel",
+        "artists": [
+          {
+            "name": "Simon & Garfunkel"
+          }
+        ],
+        "album": "Bridge Over Troubled Water",
+        "albumId": "saavn:album:1205688",
+        "duration": 307,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:ZrQrdlFh",
+        "title": "(I Can't Get No) Satisfaction (Mono)",
+        "artist": "The Rolling Stones",
+        "artists": [
+          {
+            "name": "The Rolling Stones"
+          }
+        ],
+        "album": "Singles 1965-1967",
+        "albumId": "saavn:album:1112938",
+        "duration": 224,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:EKIhp2d0",
+        "title": "I Still Haven't Found What I'm Looking For (Remastered 2007)",
+        "artist": "U2",
+        "artists": [
+          {
+            "name": "U2"
+          }
+        ],
+        "album": "The Joshua Tree (Super Deluxe)",
+        "albumId": "saavn:album:10919623",
+        "duration": 277,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:Lw90QwZr",
+        "title": "The Saints Are Coming",
+        "artist": "U2, Green Day",
+        "artists": [
+          {
+            "name": "U2"
+          },
+          {
+            "name": "Green Day"
+          }
+        ],
+        "album": "U218 Singles",
+        "albumId": "saavn:album:10888535",
+        "duration": 204,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:_VcV2IiC",
+        "title": "Starman (2012 Remaster)",
+        "artist": "David Bowie",
+        "artists": [
+          {
+            "name": "David Bowie"
+          }
+        ],
+        "album": "ChangesTwoBowie",
+        "albumId": "saavn:album:16502305",
+        "duration": 254,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:QRM1zD6D",
+        "title": "T.N.T.",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "High Voltage",
+        "albumId": "saavn:album:1285404",
+        "duration": 214,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:3aP8g0uy",
+        "title": "You Shook Me All Night Long",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "Back In Black",
+        "albumId": "saavn:album:1285399",
+        "duration": 208,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:vk9X3RAs",
+        "title": "Shoot to Thrill",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "Back In Black",
+        "albumId": "saavn:album:1285399",
+        "duration": 314,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:M3Idguf4",
+        "title": "Hells Bells",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "Back In Black",
+        "albumId": "saavn:album:1285399",
+        "duration": 309,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:YSmZv5gw",
+        "title": "If You Want Blood (You've Got It)",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "Highway to Hell",
+        "albumId": "saavn:album:1285400",
+        "duration": 272,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:BxOwM4MW",
+        "title": "It's a Long Way to the Top (If You Wanna Rock 'N' Roll)",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "High Voltage",
+        "albumId": "saavn:album:1285404",
+        "duration": 309,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:GJZ-JIra",
+        "title": "Girls Got Rhythm",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "Highway to Hell",
+        "albumId": "saavn:album:1285400",
+        "duration": 203,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:s7CLss1h",
+        "title": "Big Gun",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "Backtracks",
+        "albumId": "saavn:album:1285417",
+        "duration": 259,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:srQRBQTa",
+        "title": "The Razors Edge",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "The Razors Edge",
+        "albumId": "saavn:album:1285409",
+        "duration": 262,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:QdrPNraz",
+        "title": "War Pigs",
+        "artist": "Black Sabbath",
+        "artists": [
+          {
+            "name": "Black Sabbath"
+          }
+        ],
+        "album": "Paranoid",
+        "albumId": "saavn:album:62611024",
+        "duration": 477,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:FjmNJq_I",
+        "title": "Rock N Roll Train",
+        "artist": "AC/DC",
+        "artists": [
+          {
+            "name": "AC/DC"
+          }
+        ],
+        "album": "Black Ice",
+        "albumId": "saavn:album:1285412",
+        "duration": 261,
+        "language": "english",
+        "genre": null
+      }
+    ]
+  },
+  {
+    "seed": {
+      "id": "saavn:ccsVSBDR",
+      "title": "Lose Yourself",
+      "artist": "Eminem",
+      "artists": [
+        {
+          "name": "Eminem"
+        }
+      ],
+      "album": "Curtain Call: The Hits",
+      "albumId": "saavn:album:1124017",
+      "duration": 326,
+      "language": "english",
+      "genre": null
+    },
+    "radio": [
+      {
+        "id": "saavn:nUi3MzPB",
+        "title": "Till I Collapse",
+        "artist": "Eminem, Nate Dogg",
+        "artists": [
+          {
+            "name": "Eminem"
+          },
+          {
+            "name": "Nate Dogg"
+          }
+        ],
+        "album": "The Eminem Show",
+        "albumId": "saavn:album:3075367",
+        "duration": 297,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:iZK4KFpZ",
+        "title": "Not Afraid",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "Recovery",
+        "albumId": "saavn:album:1117585",
+        "duration": 251,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:x-OpuxS_",
+        "title": "Sing For The Moment",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "The Eminem Show",
+        "albumId": "saavn:album:3075367",
+        "duration": 339,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:q4DWkaQC",
+        "title": "Rap God",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "Rap God",
+        "albumId": "saavn:album:1145950",
+        "duration": 364,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:P4fh0Cvo",
+        "title": "Love The Way You Lie",
+        "artist": "Eminem, Rihanna",
+        "artists": [
+          {
+            "name": "Eminem"
+          },
+          {
+            "name": "Rihanna"
+          }
+        ],
+        "album": "Recovery",
+        "albumId": "saavn:album:1117585",
+        "duration": 263,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:fRPFBdwD",
+        "title": "Venom (Music From The Motion Picture)",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "Venom (Music From The Motion Picture)",
+        "albumId": "saavn:album:13912367",
+        "duration": 269,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:bkBOLP0s",
+        "title": "Space Bound",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "Recovery",
+        "albumId": "saavn:album:1117585",
+        "duration": 279,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:r5I-_tPB",
+        "title": "The Monster",
+        "artist": "Eminem, Rihanna",
+        "artists": [
+          {
+            "name": "Eminem"
+          },
+          {
+            "name": "Rihanna"
+          }
+        ],
+        "album": "The Marshall Mathers LP2",
+        "albumId": "saavn:album:1146690",
+        "duration": 250,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:OWF4Yexi",
+        "title": "Beautiful",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "Relapse",
+        "albumId": "saavn:album:1116673",
+        "duration": 392,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:j7PXp9RS",
+        "title": "Remember the Name (feat. Styles of Beyond)",
+        "artist": "Fort Minor, Styles Of Beyond",
+        "artists": [
+          {
+            "name": "Fort Minor"
+          },
+          {
+            "name": "Styles Of Beyond"
+          }
+        ],
+        "album": "Petrified / Remember the Name",
+        "albumId": "saavn:album:16269830",
+        "duration": 230,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:WpK1Tv1h",
+        "title": "Godzilla",
+        "artist": "Eminem, Juice WRLD",
+        "artists": [
+          {
+            "name": "Eminem"
+          },
+          {
+            "name": "Juice WRLD"
+          }
+        ],
+        "album": "Music To Be Murdered By",
+        "albumId": "saavn:album:18662606",
+        "duration": 210,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:bSYZXfmw",
+        "title": "When I'm Gone",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "When I'm Gone",
+        "albumId": "saavn:album:1126361",
+        "duration": 280,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:q9YWw3WN",
+        "title": "Killshot",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "Killshot",
+        "albumId": "saavn:album:13895752",
+        "duration": 254,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:pcJZKAvt",
+        "title": "Superman",
+        "artist": "Eminem, Dina Rae",
+        "artists": [
+          {
+            "name": "Eminem"
+          },
+          {
+            "name": "Dina Rae"
+          }
+        ],
+        "album": "The Eminem Show",
+        "albumId": "saavn:album:1122017",
+        "duration": 350,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:-s8brvc-",
+        "title": "No Love",
+        "artist": "Eminem, Lil Wayne",
+        "artists": [
+          {
+            "name": "Eminem"
+          },
+          {
+            "name": "Lil Wayne"
+          }
+        ],
+        "album": "Recovery",
+        "albumId": "saavn:album:1117585",
+        "duration": 300,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:-F0FuF00",
+        "title": "Kings Never Die",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "Kings Never Die",
+        "albumId": "saavn:album:1287535",
+        "duration": 297,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:m3pySywl",
+        "title": "Numb",
+        "artist": "Linkin Park",
+        "artists": [
+          {
+            "name": "Linkin Park"
+          }
+        ],
+        "album": "Meteora",
+        "albumId": "saavn:album:16282553",
+        "duration": 187,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:VGjlSPMD",
+        "title": "Mockingbird",
+        "artist": "Eminem",
+        "artists": [
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "Encore",
+        "albumId": "saavn:album:1793679",
+        "duration": 251,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:BV5UU7Hl",
+        "title": "Still D.R.E.",
+        "artist": "Dr. Dre, Snoop Dogg",
+        "artists": [
+          {
+            "name": "Dr. Dre"
+          },
+          {
+            "name": "Snoop Dogg"
+          }
+        ],
+        "album": "2001",
+        "albumId": "saavn:album:13918602",
+        "duration": 271,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:tJ3_J4wW",
+        "title": "In Da Club",
+        "artist": "50 Cent",
+        "artists": [
+          {
+            "name": "50 Cent"
+          }
+        ],
+        "album": "Get Rich Or Die Tryin'",
+        "albumId": "saavn:album:1125343",
+        "duration": 193,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:_yV9xPTU",
+        "title": "Smack That (Clean)",
+        "artist": "Akon, Eminem",
+        "artists": [
+          {
+            "name": "Akon"
+          },
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "Konvicted",
+        "albumId": "saavn:album:14954713",
+        "duration": 216,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:Uv_vKsuB",
+        "title": "Get Low",
+        "artist": "Lil Jon & The East Side Boyz, Ying Yang Twins",
+        "artists": [
+          {
+            "name": "Lil Jon & The East Side Boyz"
+          },
+          {
+            "name": "Ying Yang Twins"
+          }
+        ],
+        "album": "Kings Of Crunk",
+        "albumId": "saavn:album:2956263",
+        "duration": 334,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:Y5GjEEWl",
+        "title": "Thrift Shop (feat. Wanz)",
+        "artist": "Macklemore & Ryan Lewis, Macklemore, Ryan Lewis, Wanz",
+        "artists": [
+          {
+            "name": "Macklemore & Ryan Lewis"
+          },
+          {
+            "name": "Macklemore"
+          },
+          {
+            "name": "Ryan Lewis"
+          },
+          {
+            "name": "Wanz"
+          }
+        ],
+        "album": "Thrift Shop (feat. Wanz)",
+        "albumId": "saavn:album:16401539",
+        "duration": 235,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:RQaeNSlZ",
+        "title": "Forgot About Dre (Instrumental)",
+        "artist": "Dr. Dre, Eminem",
+        "artists": [
+          {
+            "name": "Dr. Dre"
+          },
+          {
+            "name": "Eminem"
+          }
+        ],
+        "album": "2001 Instrumental",
+        "albumId": "saavn:album:1111436",
+        "duration": 229,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:UKy5QwB5",
+        "title": "Just A Lil Bit",
+        "artist": "50 Cent, Olivia",
+        "artists": [
+          {
+            "name": "50 Cent"
+          },
+          {
+            "name": "Olivia"
+          }
+        ],
+        "album": "The Massacre",
+        "albumId": "saavn:album:10654501",
+        "duration": 237,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:cRCFvGQT",
+        "title": "Right Round (feat. Ke$ha)",
+        "artist": "Flo Rida, Ke$ha",
+        "artists": [
+          {
+            "name": "Flo Rida"
+          },
+          {
+            "name": "Ke$ha"
+          }
+        ],
+        "album": "Right Round",
+        "albumId": "saavn:album:16268969",
+        "duration": 207,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:gicToI-3",
+        "title": "Scream & Shout",
+        "artist": "Will.I.Am, Britney Spears",
+        "artists": [
+          {
+            "name": "Will.I.Am"
+          },
+          {
+            "name": "Britney Spears"
+          }
+        ],
+        "album": "Scream & Shout",
+        "albumId": "saavn:album:1130617",
+        "duration": 284,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:mjGYAM9V",
+        "title": "Tonight Belongs To U!",
+        "artist": "Jeremih, Flo Rida",
+        "artists": [
+          {
+            "name": "Jeremih"
+          },
+          {
+            "name": "Flo Rida"
+          }
+        ],
+        "album": "Tonight Belongs To U!",
+        "albumId": "saavn:album:1241027",
+        "duration": 196,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:8tX5TKYZ",
+        "title": "Right Now (Na Na Na)",
+        "artist": "Akon",
+        "artists": [
+          {
+            "name": "Akon"
+          }
+        ],
+        "album": "Best of 00s & 10s NOSTALGIA HITS!",
+        "albumId": "saavn:album:49439579",
+        "duration": 244,
+        "language": "english",
+        "genre": null
+      },
+      {
+        "id": "saavn:2T3MqA5B",
+        "title": "Don’t Stop The Party",
+        "artist": "The Black Eyed Peas",
+        "artists": [
+          {
+            "name": "The Black Eyed Peas"
+          }
+        ],
+        "album": "The Beginning",
+        "albumId": "saavn:album:1118116",
+        "duration": 367,
+        "language": "english",
+        "genre": null
+      }
+    ]
+  }
+]

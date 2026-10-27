@@ -15,6 +15,9 @@ use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
 
 mod android;
+mod audio_container;
+#[cfg(any(windows, test))]
+mod offline_repair;
 mod artwork_cache;
 mod audio_analysis;
 mod components;
@@ -25,6 +28,7 @@ mod music_metadata;
 mod apple_charts;
 mod collection_io;
 mod nearby;
+mod device_sync;
 mod playlist_link;
 #[cfg(windows)]
 mod lyric_overlay;
@@ -194,6 +198,7 @@ fn initialize(db: &mut Connection) -> Result<()> {
       CREATE TABLE IF NOT EXISTS entity_artwork (identity TEXT PRIMARY KEY, metadata TEXT NOT NULL);
       ").map_err(err)?;
     listening::initialize(&tx)?;
+    device_sync::initialize(&tx)?;
     tx.execute_batch("PRAGMA user_version=2;").map_err(err)?;
     tx.commit().map_err(err)
 }
@@ -830,7 +835,10 @@ async fn save_session(app: AppHandle, session: serde_json::Value) -> Result<()> 
         validate_session(&session)?;
         let json=serde_json::to_string(&session).map_err(err)?;
         if json.len()>20*1024*1024 {return Err("Library text is too large to save (20 MB limit).".into());}
-        db.execute("INSERT INTO app_state(id,data) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET data=excluded.data",[json]).map_err(err)?;
+        let tx = db.transaction().map_err(err)?;
+        device_sync::persist_session_cells(&tx, &session)?;
+        tx.execute("INSERT INTO app_state(id,data) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET data=excluded.data",[json]).map_err(err)?;
+        tx.commit().map_err(err)?;
         Ok(())
     }).await
 }
@@ -909,6 +917,7 @@ fn remove_track_data(
     {
         return Err("This track is no longer in the library.".into());
     }
+    device_sync::persist_session_cells(&tx, &session)?;
     tx.execute("INSERT INTO app_state(id,data) VALUES(1,?1) ON CONFLICT(id) DO UPDATE SET data=excluded.data", [json]).map_err(err)?;
     tx.commit().map_err(err)?;
     // This operation deliberately does not delete or move any audio file.
@@ -1417,6 +1426,13 @@ pub fn run() {
             app.manage(Store(Mutex::new(db)));
             app.manage(nearby::Nearby::default());
             #[cfg(windows)]
+            {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Err(error) = offline_repair::repair_existing(handle).await { log::warn!("Offline audio repair: {error}"); }
+                });
+            }
+            #[cfg(windows)]
             app.manage(lyric_overlay::Overlay::default());
             Ok(())
         })
@@ -1440,6 +1456,10 @@ pub fn run() {
             nearby::nearby_stop,
             nearby::nearby_publish,
             nearby::nearby_fetch,
+            nearby::nearby_exchange,
+            device_sync::get_sync_state,
+            device_sync::set_history_sync,
+            device_sync::set_favorites_sync,
             load_library,
             save_online_track,
             import_audio,

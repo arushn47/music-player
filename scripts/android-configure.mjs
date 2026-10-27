@@ -60,6 +60,38 @@ if (!manifest.includes("app.lumaire.player.ResolverService")) {
   manifest = manifest.replace("</application>", '    <service android:name="app.lumaire.player.ResolverService" android:exported="false" android:process=":resolver" android:enabled="${lumaireStreamingEnabled}" />\n    </application>');
   writeFileSync(manifestPath, manifest);
 }
+if (!manifest.includes("app.lumaire.player.NowPlayingWidgetProvider")) {
+  manifest = manifest.replace(
+    "</application>",
+    `        <receiver
+            android:name="app.lumaire.player.NowPlayingWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="app.lumaire.player.ACTION_WIDGET_PLAY_PAUSE" />
+                <action android:name="app.lumaire.player.ACTION_WIDGET_PREV" />
+                <action android:name="app.lumaire.player.ACTION_WIDGET_NEXT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_now_playing_info" />
+        </receiver>
+        <receiver
+            android:name="app.lumaire.player.LyricsWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_lyrics_info" />
+        </receiver>
+    </application>`,
+  );
+  writeFileSync(manifestPath, manifest);
+}
+cpSync("src-tauri/android/src/main/res", `${app}/src/main/res`, { recursive: true });
+
 const wrapperPath =
   "src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties";
 const wrapper = readFileSync(wrapperPath, "utf8");

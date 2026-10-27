@@ -1,0 +1,31 @@
+{
+  "package": "app.lumaire.player.latency",
+  "version": "1.0.6",
+  "deviceValidation": "completed",
+  "builds": [
+    {
+      "label": "baseline",
+      "file": "baseline-android.apk",
+      "sha256": "c4af92b2dba4c710d7a6dc65de47d701285395f5235088d643826ecbced27f1a",
+      "bytes": 57594806
+    },
+    {
+      "label": "resolver-fix",
+      "file": "resolver-fix-android.apk",
+      "sha256": "fd481c706fdb7d98d2869a2725069a4643e1bc94c5c5a14b0e2755e82a0efd98",
+      "bytes": 57676729
+    },
+    {
+      "label": "combined-fix",
+      "file": "combined-fix-android.apk",
+      "sha256": "f09679aa8d9410068d65fe44da72de64109489ab9e8f01d35447536908a58b92",
+      "bytes": 57594874
+    }
+  ],
+  "device": {
+    "model": "motorola edge 50 pro",
+    "api": 36
+  },
+  "integrationChecksPassed": 9,
+  "rapidCatalogueSelectionPassed": true
+}

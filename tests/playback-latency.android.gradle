@@ -1,0 +1,8 @@
+// Install benchmark builds alongside the user's app, with separate data and services.
+allprojects {
+    afterEvaluate { project ->
+        if (project.path == ':app') {
+            project.android.defaultConfig.applicationId = 'app.lumaire.player.latency'
+        }
+    }
+}

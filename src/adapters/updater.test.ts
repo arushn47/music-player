@@ -9,7 +9,7 @@ vi.mock("@tauri-apps/api/app", () => ({ getVersion: mocks.getVersion }));
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: mocks.check }));
 vi.mock("../../src-tauri/tauri.conf.json", () => ({ default: mocks.config }));
 
-describe("manual Windows updater", () => {
+describe("Windows updater", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -22,7 +22,7 @@ describe("manual Windows updater", () => {
     mocks.config.plugins.updater.endpoints = ["https://example.com/latest.json"];
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
-  it("never checks automatically and guards missing configuration and development", async () => {
+  it("does not check on import and guards missing configuration and development", async () => {
     const api = await import("./updater");
     expect(mocks.check).not.toHaveBeenCalled();
     mocks.config.plugins.updater.pubkey = "";
@@ -33,6 +33,34 @@ describe("manual Windows updater", () => {
     vi.stubEnv("DEV", true);
     await api.checkForUpdates();
     expect(api.getUpdateState().stage).toBe("development");
+  });
+  it("checks once on startup and exposes an update without downloading or installing", async () => {
+    const download = vi.fn(), install = vi.fn();
+    mocks.check.mockResolvedValue({ version: "1.0.7", body: "Fixes", download, install });
+    const api = await import("./updater");
+    await Promise.all([api.initializeUpdates(), api.initializeUpdates()]);
+    expect(mocks.check).toHaveBeenCalledTimes(1);
+    expect(api.getUpdateState()).toMatchObject({ stage: "available", version: "1.0.7" });
+    expect(download).not.toHaveBeenCalled();
+    expect(install).not.toHaveBeenCalled();
+  });
+  it("skips startup checks in development and on Android", async () => {
+    vi.stubEnv("DEV", true);
+    let api = await import("./updater");
+    await api.initializeUpdates();
+    expect(mocks.check).not.toHaveBeenCalled();
+    vi.resetModules(); vi.stubEnv("DEV", false); vi.stubGlobal("navigator", { userAgent: "Android" });
+    api = await import("./updater");
+    await api.initializeUpdates();
+    expect(mocks.check).not.toHaveBeenCalled();
+  });
+  it("keeps an offline startup failure recoverable through the manual check", async () => {
+    mocks.check.mockRejectedValueOnce("offline").mockResolvedValueOnce(null);
+    const api = await import("./updater");
+    await api.initializeUpdates();
+    expect(api.getUpdateState().stage).toBe("error");
+    await api.checkForUpdates();
+    expect(api.getUpdateState().stage).toBe("current");
   });
   it("only reports current after a successful configured check", async () => {
     mocks.check.mockResolvedValue(null);
@@ -64,6 +92,13 @@ describe("manual Windows updater", () => {
     expect(api.getUpdateState().stage).toBe("error");
     await api.checkForUpdates();
     expect(api.getUpdateState().stage).toBe("current");
+  });
+  it("explains GitHub request failures without claiming the release is missing", async () => {
+    mocks.check.mockRejectedValue('error sending request for url (https://github.com/arushn47/music-player/releases/latest/download/latest.json)');
+    const api = await import("./updater");
+    await api.checkForUpdates();
+    expect(api.getUpdateState()).toMatchObject({ stage: "error", error: expect.stringContaining("Could not reach the update server on GitHub") });
+    expect(api.getUpdateState().error).not.toContain("error sending request");
   });
   it("separates chunk progress, verified download and installation; deduplicates clicks", async () => {
     const install = vi.fn().mockRejectedValueOnce("installer unavailable").mockResolvedValueOnce(undefined);
@@ -107,7 +142,7 @@ it("retains notes for the target version and shows them only after that version 
   const values = new Map<string, string>([["lumaire:last-installed-version", "1.0.4"]]);
   vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
   mocks.getVersion.mockResolvedValue("1.0.4");
-  mocks.check.mockResolvedValue({ version: "1.0.5", body: "New lyrics and autoplay", download: vi.fn().mockResolvedValue(undefined), install: vi.fn().mockResolvedValue(undefined) });
+  mocks.check.mockResolvedValue({ version: "1.0.5", body: "New lyrics and autoplay", close: vi.fn().mockResolvedValue(undefined), download: vi.fn().mockResolvedValue(undefined), install: vi.fn().mockResolvedValue(undefined) });
   let api = await import("./updater");await api.initializeUpdates();
   expect(api.getUpdateState().unreadNotes).toBe(false);
   await api.checkForUpdates();await api.downloadUpdate();await api.restartAndUpdate();

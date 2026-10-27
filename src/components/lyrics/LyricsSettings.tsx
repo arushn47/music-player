@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
 import { X } from "lucide-react";
+import { GeminiKeySettings } from "./GeminiKeySettings";
 import type { LyricDocument, Preferences, Track } from "../../domain/types";
 import { mobile } from "../../adapters/native";
 import {
-  GEMINI_KEY_CHANGED,
   GEMINI_PROCESS_RETRY,
   type LyricProcessingState,
 } from "../../adapters/lyric-processing";
@@ -35,40 +34,19 @@ export function LyricsSettings({
   cachedCount: number;
 }) {
   const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [key, setKey] = useState("");
-  const [saving, setSaving] = useState(false);
   const pending = processingState.status === "processing";
-  const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
-  const [showKeyInput, setShowKeyInput] = useState(false);
-
-  useEffect(() => {
-    if (mobile) {
-      setLoading(false);
-      return;
-    }
-    let active = true;
-    void invoke<boolean>("gemini_key_status")
-      .then((value) => {
-        if (active) setSaved(value);
-      })
-      .catch(() => {
-        if (active)
-          setError("Could not read private key settings. You can save a replacement.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const toggle = (
     name: string,
     detail: string,
-    id: "romanisation" | "translation" | "originalScript" | "originalFirst" | "autoOpenLyrics" | "estimatedScroll" | "autoGemini",
+    id:
+      | "romanisation"
+      | "translation"
+      | "originalScript"
+      | "originalFirst"
+      | "autoOpenLyrics"
+      | "estimatedScroll"
+      | "autoGemini",
     disabled = false,
   ) => (
     <label className={`lyric-setting-toggle ${disabled ? "is-disabled" : ""}`}>
@@ -86,23 +64,6 @@ export function LyricsSettings({
       <span className="toggle-track" aria-hidden="true" />
     </label>
   );
-
-  async function saveKey() {
-    if (!key.trim() || saving) return;
-    setSaving(true);
-    setError("");
-    try {
-      await invoke("save_gemini_key", { key: key.trim() });
-      setKey("");
-      setSaved(true);
-      window.dispatchEvent(new Event(GEMINI_KEY_CHANGED));
-      setStatus("Key saved privately on this device.");
-    } catch {
-      setError("Could not save the key privately. The previous key is unchanged.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   return (
     <>
@@ -174,9 +135,16 @@ export function LyricsSettings({
             aria-label="Decrease lyric text size"
             disabled={settings.lyricSize <= 18}
             onClick={() => {
-              const FONT_STEPS = [18, 20, 22, 24, 26, 28, 30, 32, 34, 38, 42, 46];
-              const prev = [...FONT_STEPS].reverse().find((s) => s < settings.lyricSize);
-              setting("lyricSize", prev ?? Math.max(18, settings.lyricSize - 2));
+              const FONT_STEPS = [
+                18, 20, 22, 24, 26, 28, 30, 32, 34, 38, 42, 46,
+              ];
+              const prev = [...FONT_STEPS]
+                .reverse()
+                .find((s) => s < settings.lyricSize);
+              setting(
+                "lyricSize",
+                prev ?? Math.max(18, settings.lyricSize - 2),
+              );
             }}
           >
             A−
@@ -193,9 +161,14 @@ export function LyricsSettings({
             aria-label="Increase lyric text size"
             disabled={settings.lyricSize >= 46}
             onClick={() => {
-              const FONT_STEPS = [18, 20, 22, 24, 26, 28, 30, 32, 34, 38, 42, 46];
+              const FONT_STEPS = [
+                18, 20, 22, 24, 26, 28, 30, 32, 34, 38, 42, 46,
+              ];
               const next = FONT_STEPS.find((s) => s > settings.lyricSize);
-              setting("lyricSize", next ?? Math.min(46, settings.lyricSize + 2));
+              setting(
+                "lyricSize",
+                next ?? Math.min(46, settings.lyricSize + 2),
+              );
             }}
           >
             A+
@@ -206,10 +179,23 @@ export function LyricsSettings({
       {/* Display Settings */}
       <p className="settings-section-label">DISPLAY</p>
       <div className="lyric-toggle-grid">
-        {toggle("Romanization", "Pronounce in English alphabet", "romanisation")}
+        {toggle(
+          "Romanization",
+          "Pronounce in English alphabet",
+          "romanisation",
+        )}
         {toggle("Translation", "English meaning beneath lyrics", "translation")}
-        {toggle("Original script", "Native lyrics characters", "originalScript")}
-        {toggle("Original first", "Above romanization", "originalFirst", !settings.originalScript || !settings.romanisation)}
+        {toggle(
+          "Original script",
+          "Native lyrics characters",
+          "originalScript",
+        )}
+        {toggle(
+          "Original first",
+          "Above romanization",
+          "originalFirst",
+          !settings.originalScript || !settings.romanisation,
+        )}
         {toggle("Auto-open lyrics", "On song start", "autoOpenLyrics")}
         {toggle("Estimated scroll", "Follow untimed lyrics", "estimatedScroll")}
       </div>
@@ -220,85 +206,13 @@ export function LyricsSettings({
         <div className="lyric-advanced-body">
           {!mobile && (
             <>
-              <div className="card-top-row" style={{ marginTop: 8 }}>
-                <span className="card-section-title">AI TRANSLATION KEY</span>
-                <span role="status" className={`key-pill ${saved ? "key-saved" : ""}`}>
-                  {loading ? "Checking…" : saved ? "Key active" : "Optional"}
-                </span>
-              </div>
-
-              {saved && !showKeyInput ? (
-                <div className="key-saved-row">
-                  <span className="key-saved-label">Google AI Key active</span>
-                  <div className="key-saved-actions">
-                    <button
-                      type="button"
-                      className="key-action-pill"
-                      onClick={() => setShowKeyInput(true)}
-                    >
-                      Replace
-                    </button>
-                    <button
-                      type="button"
-                      className="key-action-pill key-remove-pill"
-                      disabled={saving || pending}
-                      onClick={() => {
-                        setSaving(true);
-                        setError("");
-                        void invoke("delete_gemini_key")
-                          .then(() => {
-                            setSaved(false);
-                            window.dispatchEvent(new Event(GEMINI_KEY_CHANGED));
-                            setKey("");
-                            setStatus("Key removed.");
-                          })
-                          .catch(() => setError("Could not remove the saved key."))
-                          .finally(() => setSaving(false));
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form
-                  className="key-input-row"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void saveKey();
-                  }}
-                >
-                  <input
-                    id="gemini-private-key"
-                    aria-label="Gemini API key"
-                    type="password"
-                    disabled={saving}
-                    autoComplete="off"
-                    spellCheck={false}
-                    value={key}
-                    onChange={(event) => setKey(event.target.value)}
-                    placeholder={saved ? "Paste replacement key…" : "Paste Google AI key (AIza…)"}
-                  />
-                  <button
-                    type="submit"
-                    className="subtle key-save-btn"
-                    disabled={!key.trim() || saving}
-                  >
-                    {saving ? "Saving…" : "Save"}
-                  </button>
-                  {saved && (
-                    <button
-                      type="button"
-                      className="key-action-pill"
-                      onClick={() => setShowKeyInput(false)}
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </form>
+              <GeminiKeySettings disabled={pending} onStatusChange={setSaved} />
+              {toggle(
+                "Auto-translate",
+                "Automatically translate foreign lyrics",
+                "autoGemini",
+                !saved,
               )}
-
-              {toggle("Auto-translate", "Automatically translate foreign lyrics", "autoGemini", !saved)}
             </>
           )}
 
@@ -330,17 +244,6 @@ export function LyricsSettings({
           </div>
         </div>
       </details>
-
-      {status && (
-        <p className="lyric-settings-status" role="status">
-          {status}
-        </p>
-      )}
-      {error && (
-        <p className="lyric-settings-error" role="alert">
-          {error}
-        </p>
-      )}
     </>
   );
 }

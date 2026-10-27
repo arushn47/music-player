@@ -1,14 +1,50 @@
-import { useState } from "react";
-import type { useNearby } from "../../hooks/useNearby";
-import type { SharedState } from "../../domain/nearby";
-export function NearbyDevices({ nearby, onSync }: { nearby: ReturnType<typeof useNearby>; onSync: (state: SharedState) => Promise<void> }) {
-  const [link, setLink] = useState(""); const [message, setMessage] = useState(""); const [syncing, setSyncing] = useState(false);
-  return <section><h2>Your devices, together</h2><p>Same Wi-Fi, no account or cloud. Pair only on a trusted private network: nearby traffic is not encrypted. Anyone holding the link can read the playlists and playback metadata you share. Audio files, keys and listening history stay on each device.</p><p>First version: share up to 50 playlists and 500 tracks. Sync is a manual pull from the host. Local-only tracks are excluded. If a VPN selects the wrong address, replace the address in the link with the host’s Wi-Fi IPv4 address.</p>
-    {!nearby.hostLink && !nearby.guestLink && <button className="primary" disabled={nearby.busy} onClick={() => void nearby.start()}>Share from this device</button>}
-    {nearby.hostLink && <><label>Pairing link (expires after 2 hours)<input readOnly value={nearby.hostLink} onFocus={event => event.target.select()} /></label><p>Paste this in Lumaire on your other device. Keep this app open. Allow access on private networks if Windows asks; guest Wi-Fi isolation may prevent pairing.</p><button className="subtle" onClick={() => void navigator.clipboard.writeText(nearby.hostLink).then(() => setMessage("Pairing link copied.")).catch(() => setMessage("Select the link above and copy it."))}>Copy pairing link</button></>}
-    {!nearby.hostLink && <><label>Connect to another device<input type="text" placeholder="Paste a Lumaire pairing link" value={link} onChange={event => setLink(event.target.value)} /></label><button className="subtle" disabled={nearby.busy || !link.trim()} onClick={() => void nearby.connect(link.trim())}>{nearby.busy ? "Connecting…" : "Connect"}</button></>}
-    {nearby.guestLink && nearby.snapshot && <><p>{nearby.snapshot.playlists.length} playlists shared · {nearby.snapshot.now ? `Playing: ${nearby.snapshot.now.track.title}` : "Host is not playing a shareable song"}</p><div className="collection-tools"><button className="primary" disabled={syncing || nearby.busy} onClick={() => { setSyncing(true); setMessage(""); void onSync(nearby.snapshot!).then(() => setMessage("Playlists synced. Local edits are preserved; conflicting updates become device copies.")).catch(e => setMessage(String(e))).finally(() => setSyncing(false)); }}>{syncing ? "Syncing…" : "Sync playlists now"}</button><button className="subtle" disabled={nearby.busy || nearby.following} onClick={() => void nearby.refresh()}>Refresh shared playlists</button><button className="subtle" aria-pressed={nearby.following} onClick={() => nearby.setFollowing(!nearby.following)}>{nearby.following ? "Stop listening together" : "Listen together"}</button></div><p>The host controls the song, position and pause. Each device needs its own working source and volume; timing is approximate. Local-only files cannot be streamed to another device.</p></>}
-    {(nearby.hostLink || nearby.guestLink) && <button className="subtle" onClick={() => void nearby.stop()}>Disconnect & stop sharing</button>}
-    {nearby.error && <p role="alert">{nearby.error}</p>}{message && <p role="status">{message}</p>}
+import { useMemo, useState } from 'react';
+import { ArrowLeftRight, Check, Copy, Heart, History, Link2, RefreshCw, ShieldCheck, Wifi } from 'lucide-react';
+import qrcode from 'qrcode-generator';
+import type { useNearby } from '../../hooks/useNearby';
+
+export function NearbyDevices({ nearby }: { nearby: ReturnType<typeof useNearby> }) {
+  const [link, setLink] = useState(''), [message, setMessage] = useState('');
+  const paired = !!nearby.guestLink, sharing = !!nearby.hostLink;
+  const state = nearby.error ? 'retrying' : nearby.syncing || nearby.busy ? 'working' : nearby.lastSyncedAt ? 'synced' : sharing ? 'sharing' : paired ? 'waiting' : 'ready';
+  const status = { retrying: 'Waiting for your device', working: 'Syncing your music', synced: 'Everything is up to date', sharing: 'Ready to pair', waiting: 'Connecting to your device', ready: 'Keep your music together' }[state];
+  const pairingQr = useMemo(() => {
+    if (!nearby.hostLink) return '';
+    const code = qrcode(0, 'M'); code.addData(nearby.hostLink); code.make();
+    return code.createDataURL(6, 24);
+  }, [nearby.hostLink]);
+  const report = (e: unknown) => setMessage(String(e));
+  return <section className="device-sync" aria-label="Device sync">
+    <header className="device-sync-heading"><span className="device-sync-mark"><ArrowLeftRight size={22} /></span><div><h2>Your devices, together</h2><p>Your playlists, favorites and listening, across devices. No account needed.</p></div></header>
+    <div className="device-sync-status" data-state={state} role="status" aria-live="polite">
+      {state === 'synced' ? <Check size={19} /> : <Wifi size={19} />}
+      <div><strong>{status}</strong><p>{nearby.error ? 'Changes are safe on this device. We’ll reconnect automatically.' : nearby.lastSyncedAt ? `Last synced at ${new Date(nearby.lastSyncedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'Keep both apps open on the same Wi-Fi.'}</p>
+        {nearby.error && <details className="device-sync-error"><summary>Connection details</summary><p>{nearby.error}</p></details>}
+      </div>
+      {paired && <button type="button" className="device-sync-retry" aria-label="Retry device sync" disabled={nearby.syncing || nearby.busy} onClick={() => void nearby.sync().catch(() => {})}><RefreshCw size={18} className={nearby.syncing ? 'device-sync-spinning' : ''} /></button>}
+    </div>
+    {sharing ? <section className="device-sync-card" aria-label="Share this device">
+      <div className="pairing-qr-panel"><img className="pairing-qr" src={pairingQr} alt="QR code for this device's Lumaire pairing link" />
+        <div><h3>Scan to pair</h3><ol><li>Scan this code with your other device.</li><li>Copy the link from the local pairing page.</li><li>Open Lumaire → Sync → Devices and connect.</li></ol><button type="button" className="primary" onClick={() => void navigator.clipboard.writeText(nearby.hostLink).then(() => setMessage('Pairing link copied.')).catch(() => setMessage('Open Show pairing link, then select and copy the link.'))}><Copy size={16} />Copy pairing link</button></div>
+      </div><details className="pairing-link-fallback"><summary>Show pairing link</summary><label htmlFor="sync-share-link">Pairing link</label><input id="sync-share-link" readOnly value={nearby.hostLink} onFocus={event => event.target.select()} /></details>
+    </section> : !paired && <section className="device-sync-card" aria-label="Pair a device">
+      <h3>Connect your other device</h3><p>Paste the pairing link shown in Lumaire on your other device.</p>
+      <form className="device-sync-form" onSubmit={event => { event.preventDefault(); setMessage(''); void nearby.connect(link.trim()); }}>
+        <label htmlFor="sync-pair-link" className="device-sync-label">Pairing link</label>
+        <div className="device-sync-input-row">
+          <div className="device-sync-input"><Link2 size={16} /><input id="sync-pair-link" type="text" inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="http://192.168…" value={link} onChange={event => setLink(event.target.value)} /></div>
+          <button type="submit" className="primary device-sync-connect-btn" disabled={nearby.busy || !link.trim()}>{nearby.busy ? 'Connecting…' : 'Connect'}</button>
+        </div>
+      </form><div className="device-sync-divider"><span>or start here</span></div>
+      <button type="button" className="subtle device-sync-share" disabled={nearby.busy} onClick={() => void nearby.start()}><ArrowLeftRight size={17} />Share from this device</button>
+    </section>}
+    {(paired || sharing) && <section className="device-sync-card device-sync-paired" aria-label="Paired connection"><div><h3>{sharing ? 'Sharing from this device' : 'Your paired device'}</h3><p>Playlist additions, edits and removals merge automatically.</p></div><div className="device-sync-actions">{paired && <button type="button" className="primary" disabled={nearby.syncing || nearby.busy} onClick={() => void nearby.sync().catch(() => {})}><RefreshCw size={16} />{nearby.syncing ? 'Syncing…' : 'Sync now'}</button>}<button type="button" className="subtle" onClick={() => void nearby.stop()}>{sharing ? 'Stop sharing' : 'Disconnect'}</button></div></section>}
+    <section className="device-sync-card" aria-label="What to sync"><h3>What to sync</h3>
+      <div className="device-sync-setting"><span className="device-sync-setting-icon"><Heart size={20} /></span><div><strong id="sync-favorites-label">Favorites</strong><p>Sync liked tracks, artists and albums. Enabled by default on updated devices.</p></div><label className="apple-switch"><input type="checkbox" role="switch" aria-labelledby="sync-favorites-label" checked={nearby.favoritesEnabled !== false} disabled={nearby.syncing} onChange={event => void nearby.setFavoritesSync(event.target.checked).catch(report)} /><span className="apple-switch-track" /></label></div>
+      <div className="device-sync-setting"><span className="device-sync-setting-icon"><History size={20} /></span><div><strong id="sync-history-label">Listening history</strong><p>Update Tracker and recommendations on both devices.</p></div><label className="apple-switch"><input type="checkbox" role="switch" aria-labelledby="sync-history-label" checked={nearby.historyEnabled || false} disabled={nearby.syncing} onChange={event => void nearby.setHistorySync(event.target.checked).catch(report)} /><span className="apple-switch-track" /></label></div>
+      <p className="device-sync-note">Listening history is off by default. Enable it on both devices. History clears sync too; offline plays recorded before a device learns about a clear are discarded.</p>
+    </section>
+    <footer className="device-sync-privacy"><ShieldCheck size={16} /><p>Use a trusted private network. Traffic is not encrypted; keep your pairing link private. Audio files, keys and device settings stay on each device.</p></footer>
+    {message && <p className="device-sync-message" role="status">{message}</p>}
   </section>;
 }

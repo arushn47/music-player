@@ -1,6 +1,7 @@
 import type { DownloadProgress } from "../domain/downloads";
 import { Channel, convertFileSrc, invoke, isTauri } from "@tauri-apps/api/core";
 import type { EngineInstallProgress, Session, Snapshot, Track } from "../domain/types";
+import { repairYoutubeTrack } from "../domain/online-track";
 
 export interface RemoteTrack {
   id: string;
@@ -249,7 +250,7 @@ export const library: LibraryPort = desktop
       export: (session) => invoke("export_library", { session }),
       import: () => invoke("import_library"),
       saveOnline: (track, updateOnly = false) =>
-        invoke("save_online_track", { track, updateOnly }),
+        invoke("save_online_track", { track: repairYoutubeTrack(track), updateOnly }),
       searchCommons: (query) => invoke("search_commons_audio", { query }),
       resolveCommons: (sourceId) =>
         invoke("resolve_commons_audio", { sourceId }),

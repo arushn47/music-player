@@ -59,6 +59,14 @@ describe('Home listening state', () => {
     expect(homeHistory([remote], [], [], false, now).recent).toEqual([]);
     expect(homeHistory([remote], [], [], true, now).recent).toHaveLength(1);
   });
+  it('extracts up to 20 chronological tracks for Recently Played', () => {
+    const tracks = Array.from({ length: 25 }, (_, i) => track(`song-${i}`));
+    const rows = tracks.map((t, i) => record(t, i + 1));
+    const result = homeHistory(rows, tracks, [], false, now);
+    expect(result.recent).toHaveLength(20);
+    expect(result.recent[0].id).toBe('song-0');
+    expect(result.recent[19].id).toBe('song-19');
+  });
   it('finds genuinely neglected favorites in a young library without inventing listens', () => {
     const old = track('old'), repeat = track('repeat'), fresh = track('fresh');
     const rows = [record(old, 5), ...[5, 4, 3.5].map((age, i) => record(repeat, age, `repeat${i}`)), ...[2, 1, .5].map((age, i) => record(fresh, age, `fresh${i}`))];

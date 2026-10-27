@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { PlaylistImport } from "./PlaylistImport";
 import { NearbyDevices } from "./NearbyDevices";
+import { JamParty } from "./JamParty";
 import type { PlaylistImportOptions } from "../../domain/playlist-import";
 import type { Playlist, Track } from "../../domain/types";
-import type { SharedState } from "../../domain/nearby";
+
 import type { useNearby } from "../../hooks/useNearby";
+import type { useJam } from "../../hooks/useJam";
 import "./collections.css";
 
 export function CollectionHub({
@@ -14,17 +16,17 @@ export function CollectionHub({
   onImport,
   playlists,
   nearby,
-  onSync,
+  jam,
 }: {
-  initialTab?: "import" | "devices";
+  initialTab?: "import" | "devices" | "jam";
   onClose: () => void;
   playlists: Playlist[];
   onImport: (name: string, tracks: Track[], options: PlaylistImportOptions) => Promise<void>;
   nearby: ReturnType<typeof useNearby>;
-  onSync: (data: SharedState) => Promise<void>;
+  jam: ReturnType<typeof useJam>;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const [tab, setTab] = useState<"import" | "devices">(initialTab);
+  const [tab, setTab] = useState<"import" | "devices" | "jam">(initialTab);
 
   useEffect(() => {
     setTab(initialTab);
@@ -68,7 +70,17 @@ export function CollectionHub({
             aria-pressed={tab === "devices"}
             onClick={() => setTab("devices")}
           >
-            Devices & listening together
+            Devices
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={`hub-tab ${tab === "jam" ? "active" : ""}`}
+            aria-selected={tab === "jam"}
+            aria-pressed={tab === "jam"}
+            onClick={() => setTab("jam")}
+          >
+            Jam 🎶
           </button>
         </div>
         <button
@@ -83,8 +95,10 @@ export function CollectionHub({
       </div>
       {tab === "import" ? (
         <PlaylistImport playlists={playlists} onImport={onImport} />
+      ) : tab === "devices" ? (
+        <NearbyDevices nearby={nearby} />
       ) : (
-        <NearbyDevices nearby={nearby} onSync={onSync} />
+        <JamParty jam={jam} />
       )}
     </dialog>
   );

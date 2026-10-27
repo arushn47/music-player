@@ -166,6 +166,7 @@ pub async fn android_playback(
                         serde_json::json!({"operation":"resolve", "videoId":video}),
                     )
                     .await?;
+                    crate::ytdlp::validate_audio_codecs(online["codec"].as_str(), online["videoCodec"].as_str())?;
                     args["headers"] = online["headers"].clone();
                     online["url"]
                         .as_str()
@@ -352,7 +353,11 @@ pub async fn android_source(
             }
             _ => return Err("Unsupported Android source operation.".into()),
         }
-        call(&_app, "resolveSource", request).await
+        let response = call(&_app, "resolveSource", request).await?;
+        if operation == "resolve" {
+            crate::ytdlp::validate_audio_codecs(response["codec"].as_str(), response["videoCodec"].as_str())?;
+        }
+        Ok(response)
     }
     #[cfg(not(target_os = "android"))]
     {

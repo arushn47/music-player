@@ -11,17 +11,17 @@
         android:translateY="18">
         <path
             android:pathData="M31,74 V61 a33,33 0 0,1 66,0 v13"
-            android:strokeColor="#C4DCA3"
+            android:strokeColor="#A78BFA"
             android:strokeWidth="8"
             android:strokeLineCap="round"/>
         <path
             android:pathData="M35,64 h2 a8,8 0 0,1 8,8 v15 a8,8 0 0,1 -8,8 h-2 a8,8 0 0,1 -8,-8 v-15 a8,8 0 0,1 8,-8 z"
-            android:fillColor="#C4DCA3"/>
+            android:fillColor="#A78BFA"/>
         <path
             android:pathData="M91,64 h2 a8,8 0 0,1 8,8 v15 a8,8 0 0,1 -8,8 h-2 a8,8 0 0,1 -8,-8 v-15 a8,8 0 0,1 8,-8 z"
-            android:fillColor="#C4DCA3"/>
+            android:fillColor="#A78BFA"/>
         <path
             android:pathData="M64,86 a5,5 0 1,0 0.001,0 z"
-            android:fillColor="#C4DCA3"/>
+            android:fillColor="#A78BFA"/>
     </group>
 </vector>

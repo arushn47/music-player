@@ -28,10 +28,11 @@ fn progress(channel: Option<&tauri::ipc::Channel<DownloadProgress>>, stage: &'st
 
 #[cfg(any(target_os = "android", test))]
 fn android_download_source(value: &serde_json::Value) -> Result<(String, &'static str, reqwest::header::HeaderMap)> {
+    crate::ytdlp::validate_audio_codecs(value["codec"].as_str(), value["videoCodec"].as_str())?;
     let url = value["url"].as_str().ok_or("Android returned no audio download URL.")?;
     if !download_location_allowed(&reqwest::Url::parse(url).map_err(err)?, true) { return Err("Unsupported download location.".into()); }
     let extension = match value["container"].as_str() {
-        Some("m4a") => "m4a", Some("mp4") => "mp4",
+        Some("m4a") => "m4a",
         _ => return Err("This recording has no supported offline audio stream.".into()),
     };
     let mut headers = reqwest::header::HeaderMap::new();
@@ -68,7 +69,7 @@ impl Drop for Partial {
     }
 }
 
-fn root(app: &tauri::AppHandle) -> Result<PathBuf> {
+pub(crate) fn root(app: &tauri::AppHandle) -> Result<PathBuf> {
     #[cfg(debug_assertions)]
     let data = std::env::var_os("LUMAIRE_DATA_DIR")
         .map(PathBuf::from)
@@ -125,12 +126,12 @@ mod tests {
     use super::*;
     #[test]
     fn android_downloads_use_only_validated_audio_urls_and_scoped_resolver_headers() {
-        let valid = serde_json::json!({"url":"https://rr1.googlevideo.com/audio", "container":"m4a", "headers":{"User-Agent":"fixture","Origin":"https://www.youtube.com"}});
+        let valid = serde_json::json!({"url":"https://rr1.googlevideo.com/audio", "container":"m4a", "codec":"mp4a.40.2", "videoCodec":"none", "headers":{"User-Agent":"fixture","Origin":"https://www.youtube.com"}});
         let (url, extension, headers) = android_download_source(&valid).unwrap();
         assert_eq!(url, "https://rr1.googlevideo.com/audio");
         assert_eq!(extension, "m4a");
         assert_eq!(headers["user-agent"], "fixture");
-        for (field, value) in [("url", serde_json::json!("https://example.org/audio")), ("container", serde_json::json!("webm")), ("headers", serde_json::json!({"Cookie":"private"})), ("headers", serde_json::json!({"User-Agent":"a\r\nb"}))] {
+        for (field, value) in [("videoCodec",serde_json::json!("h264")),("codec",serde_json::json!("none")),("container",serde_json::json!("mp4")),("url", serde_json::json!("https://example.org/audio")), ("container", serde_json::json!("webm")), ("headers", serde_json::json!({"Cookie":"private"})), ("headers", serde_json::json!({"User-Agent":"a\r\nb"}))] {
             let mut invalid = valid.clone(); invalid[field] = value;
             assert!(android_download_source(&invalid).is_err());
         }
@@ -369,6 +370,7 @@ pub async fn download_track(app: tauri::AppHandle, webview: tauri::Webview, id: 
             .as_ref()
             .is_some_and(|path| std::path::Path::new(path).is_file())
     {
+        crate::audio_container::require_audio_only(std::path::Path::new(existing.1.as_ref().unwrap()))?;
         return Ok(track);
     }
     let source = track
@@ -381,7 +383,7 @@ pub async fn download_track(app: tauri::AppHandle, webview: tauri::Webview, id: 
     let (url, extension, headers) = if youtube {
         #[cfg(target_os = "android")]
         {
-            let audio = crate::android::android_source(app.clone(), "resolve".into(), Some(source.source_id.clone()), None, None, None).await?;
+            let audio = crate::android::call(&app, "resolveSource", serde_json::json!({"operation":"resolve", "videoId":source.source_id, "download":true})).await?;
             android_download_source(&audio)?
         }
         #[cfg(not(target_os = "android"))]
@@ -389,10 +391,6 @@ pub async fn download_track(app: tauri::AppHandle, webview: tauri::Webview, id: 
         let audio = crate::ytdlp::download_audio(source.source_id.clone()).await?;
         let extension = match audio.container.as_deref() {
             Some("m4a") => "m4a",
-            // YouTube's public Android client may only expose a progressive
-            // MP4 when the normal web client is bot-challenged. It remains
-            // directly playable offline and is safe to store as MP4.
-            Some("mp4") => "mp4",
             _ => return Err("This video has no supported offline audio stream.".into()),
         };
         (audio.stream_url, extension, reqwest::header::HeaderMap::new())
@@ -655,6 +653,7 @@ async fn transfer_audio(
         .and_then(|probe| Ok(probe.guess_file_type()?))
         .and_then(|probe| probe.read())
         .map_err(|_| "The downloaded file is not readable audio.".to_string())?;
+    crate::audio_container::require_audio_only(path)?;
     if cancel.load(Ordering::Relaxed) {
         return Err("Download cancelled.".into());
     }

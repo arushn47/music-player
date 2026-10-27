@@ -3,7 +3,7 @@ import type { CatalogArtistCredit } from "../adapters/native";
 const usable = (value: string): boolean => Boolean(value.trim()) && !/^unknown(?: artist| album)?$|^local collection$|^youtube$/i.test(value.trim());
 
 export function canonicalArtistCredit(value: string): string {
-  return value.split(",").map(name => /^emiway(?: bantai)?$/i.test(name.trim()) ? "Emiway Bantai" : name.trim()).join(", ");
+  return value.split(",").map(name => /^emiway(?: bantai)?$/i.test(name.trim()) ? "Emiway Bantai" : /^kr\$na$/i.test(name.trim()) ? "KR$NA" : name.trim()).join(", ");
 }
 
 export function artistCredits(value: string): CatalogArtistCredit[] {

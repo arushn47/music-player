@@ -1,3 +1,638 @@
+## Release 1.0.7 preparation — 27 October 2026
+
+- User authorized publication for Windows and Android. Versions aligned to 1.0.7; reviewed plain-language release notes include measured replay improvement and remaining provider/background-Autoplay limits.
+- Existing signed Windows workflow now leaves a draft for final package upgrade smoke checks and Android asset upload before publication. Previous 540 frontend / 11 JVM / 9 physical Android checks are reused; CI runs the existing required suite once. No repeated latency benchmark.
+- Release-package verification and publication results will be recorded after completion.
+
+## Playback latency optimization — 27 October 2026 (device validation complete)
+
+- Report and reproducible raw Windows evidence: `docs/performance/playback-latency-2026-10-27.md`. Real Windows/WebView2: 20 samples per cold/repeat/queue scenario before and after, plus six baseline control cycles (138 successful selections). Cold median/p95: 8.928/9.837 s before, 8.343/10.694 s after. Unchanged baseline control cold median 7.341 s demonstrates environmental/provider drift; no established ordinary-track Windows speedup.
+- Android native resolution now has a bounded, two-minute in-memory playback cache and coalesced/FIFO requests. Explicit cancellation/timeout/disconnect teardown and stale-reply guards remain; native player errors invalidate cached streams. Downloads bypass playback caching; cached stream origin, codecs and headers are validated.
+- Shared matching defers incomplete-metadata extraction behind credible complete matches, retaining complete-candidate ranking and all recording checks. Cancellation exits without launching more fallbacks. No new preloading, keep-alive/runtime/buffer tuning, dependencies or service was added.
+- Verification: frontend and Windows debug builds pass; full Vitest 85 files / 540 tests pass; Android debug build and 11 JVM tests pass, including signed-URL expiry bounds. Benchmark percentile self-checks pass. Fixed a pre-existing TypeScript error in the unused benchmark draft that blocked compilation; original drafts are preserved in `.test-data/latency/`.
+- Real Motorola Edge 50 Pro (API 36): 20 cycles per scenario for baseline, resolver-only and combined builds. Android before → final median/p95 seconds: cold **14.470/109.459 → 14.653/16.183**, repeat **5.517/6.386 → 1.061/1.151**, queue **14.822/21.782 → 14.980/16.686**. Approximately 81% repeat median improvement; no established cold/queue median gain. Native resolve/prepare/buffer fell from about 5.8 s to 1.06 s, while completing both searches through the single worker offsets the saving on first play. Representative tracks had no incomplete-metadata candidates, so no hardware benefit is claimed for that matching branch.
+- Failure accounting: baseline cold 19/20, repeat 19/20, queue 19/19 attempts plus one blocked dependent cycle; baseline timeout and HTTP 403 remain in raw evidence. Resolver-only had one queue HTTP 403; final **60/60 starts succeeded**, but queue maximum was **37.381 s**. Percentiles include successful starts only; provider failures are not claimed eliminated.
+- Final physical-phone correctness **9/9 passed**: local playback, verification/playback sharing a resolution, pause/seek/resume, independent searches, active-worker cancellation, superseded load/stale result protection, unavailable-source retry/recovery, screen-off foreground-service playback, and actual two-minute cache expiry/fresh extraction. Separate rapid catalogue replacement passed without stale fallback work. Raw cohorts, APK hashes and correctness evidence are under `docs/performance/`.
+- All Android runs used isolated `app.lumaire.player.latency`, removed afterward; normal installed app/library/history untouched. Temporary stay-awake restored to normal timeout (0). No preloading or further speculative tuning, version bump, installer or release preparation. Version remains 1.0.6; report is ready for review before preparing 1.0.7. Acoustic speaker latency, additional devices and long-duration battery/data budgets were not measured.
+
+## Cross-device Tracker artist and album count consistency — 27 October 2026
+
+- Root cause: `App.tsx` replaced recorded history title/artist/album with device-local library or queue metadata, matched only by playback track ID. Different cached metadata (including distinct catalog releases resolving to one video) could split/collapse albums and change artist counts despite identical synced records.
+- Removed this recap-only override. `HistoryView` now receives the recorded history unchanged through its existing props; counts, rankings and recent-play labels use the same synced metadata on both platforms. No database migration, history deletion or sync protocol change.
+- Added `src/App.history.test.tsx`: renders the actual App with identical history and conflicting local tracks, reproducing a potential 9-album / 2-artist discrepancy and asserting stable counts and preserved records.
+- Verification: production build passed; 17 targeted App/history tests passed. Full suite: 526 passed / 1 failed in the untouched `device-sync.test.ts` legacy-import favorites reference-equality assertion (line 53).
+- Real isolated Windows WebView2 + SQLite check passed: with and without conflicting cached queue metadata, Tracker retained 10 plays / 10 songs / 1 artist / 10 albums and identical persisted records. Closed the unrelated required engine-setup dialog in the synthetic profile; no engine installation or user-data changes.
+- Limits: did not inspect the user's actual phone/PC databases or rebuild/install Android. Both installed apps need a build containing this shared frontend fix; equal counts still require equal synced history and date ranges.
+
+## Favorites sync completed — 27 October 2026
+
+- Finished track, artist and album favorites on the existing SQLite/Lamport CRDT and authenticated local HTTP listener. Explicit unlike tombstones survive offline reloads; newer intentional likes and deterministic device-ID ties converge. Portable track metadata travels without file paths; local-only likes stay local and downloaded aliases retain local identities.
+- Added the persisted **Favorites** switch under Sync / Devices, enabled by default. Both peers must enable transfer. Disabled devices retain edits; mode-aware cursors and a full local reread replay skipped changes after re-enabling. Shared library updates capture all favorite actions, including combined playlist changes and track removal.
+- First-pairing/upgrade initialization seeds only existing likes once, before incoming favorite materialization. Missing favorites never become unlikes, preserving both devices' pre-existing favorites, while existing tombstones are retained.
+- Updated devices negotiate v3 routes on the same listener; unsupported routes fall back to unchanged v2 wire shapes and filtered playlist/history pages. Older v2 devices keep syncing supported data without receiving favorite fields. No WebRTC, dependency, service, account or infrastructure was added. Existing WIP remains intact.
+- Verification: **536 frontend tests across 85 files passed**, including **28 focused sync/hook/UI tests**; **11 native SQLite sync tests passed**; production frontend build passed. The isolated Windows desktop app started without panics. Two real native/WebView2 profiles passed **12 end-to-end checks**, including default-on UI toggle persistence, initial union, disabled transfer/offline unlikes, re-likes after reload, existing playlist/history regressions and actual native fallback to a strict legacy-v2 HTTP fixture. No page errors. Evidence: `.test-data/two-way-sync-1793054444647/result.json`; desktop screenshot inspected from the preceding successful run `.test-data/two-way-sync-1793054295348/favorites-toggle.png`.
+- Test profiles used an already-downloaded playback engine only to clear the unrelated setup dialog; no sync/SQLite mocks, real-library edits, playback, installation, publishing or version change. Physical Android/Wi-Fi verification and an Android build were not performed for this change. The existing trusted-LAN traffic remains unencrypted; favorites require updated apps on both devices.
+- Details and reproducible test prerequisites: `docs/DEVICE-SYNC.md`, `scripts/two-way-sync-test.mjs`.
+
+## Audio-only stream enforcement and legacy MP4 video remux repair — 27 October 2026
+
+- **Windows & Android Audio-Only Stream Resolution**:
+  - Diagnosed root cause: Windows `resolve_audio` fallback on client challenge used `best[acodec!=none]...` which fetched combined progressive MP4 video/audio streams from YouTube, and Android `lumaire_resolver.py` did not enforce `vcodec=none`.
+  - In [`src-tauri/src/ytdlp.rs`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src-tauri/src/ytdlp.rs), enforced `[vcodec=none]` across all stream format strings (`AUDIO_FORMAT = "bestaudio[ext=m4a][vcodec=none]/bestaudio[ext=webm][vcodec=none]/bestaudio[vcodec=none]"` and `bestaudio[ext=m4a][vcodec=none]`), preserved the strict format across verification fallbacks, and added `validate_audio_codecs` asserting `vcodec == "none"`.
+  - In [`src-tauri/android-streaming/src/main/python/lumaire_resolver.py`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src-tauri/android-streaming/src/main/python/lumaire_resolver.py), enforced `AUDIO_FORMAT` and `DOWNLOAD_FORMAT` with `[vcodec=none]`, added `validate_audio_only` check, and returned `videoCodec`.
+  - In [`src-tauri/src/downloads.rs`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src-tauri/src/downloads.rs), removed `.mp4` from allowed download container extensions (only `.m4a` accepted) and added `validate_audio_codecs` on Android download source payloads.
+- **Strict Audio-Only Container Verification**:
+  - In [`src-tauri/src/audio_container.rs`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src-tauri/src/audio_container.rs), implemented atom/box parsing (`moov` -> `trak` -> `mdia` -> `hdlr`) to verify media handlers (`soun` vs `vide`). Any MP4 containing `vide` tracks or Ogg containing Theora streams is immediately rejected by `require_audio_only`.
+  - Integrated `require_audio_only` into `download_track` and `transfer_audio` boundaries.
+- **Lossless Repair of Existing Progressive MP4 Downloads**:
+  - In [`src-tauri/src/offline_repair.rs`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src-tauri/src/offline_repair.rs) and [`src-tauri/src/lib.rs`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src-tauri/src/lib.rs), implemented startup repair:
+    - Remuxed legacy downloads without re-encoding (`-c:a copy -vn -sn -dn -movflags +faststart -f ipod`) to `.m4a`.
+    - Verified exact bit-for-bit encoded AAC hash (`ffmpeg ... -f hash -hash sha256`), confirmed full packet decoding (`-xerror ... -f null`), verified container structure (`after.video == 0`), updated SQLite database `tracks` table paths, and removed legacy `.mp4` originals.
+    - Verified that all 11 files currently in `downloads/` are 100% audio-only AAC M4A files saving ~6.62 MiB of disk space.
+- **Verification**:
+  - All targeted backend tests in `audio_container`, `ytdlp`, `downloads`, and `offline_repair` passed. Serial provider tests (20 tests) passed.
+  - Python resolver tests (`tests/android-audio-resolver.py`, `tests/android-playlist-resolver.py`) passed cleanly.
+  - 84 Vitest test suites (527 tests) passed; `npm run build` compiled cleanly with 0 errors.
+
+## Device Sync Listening History Divider Gap Fix — 27 October 2026
+
+- **Spacing before Divider Line**:
+  - In [`src/components/views/collections.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/collections.css), added explicit `padding-bottom: 16px` on `.device-sync-card > .device-sync-setting:first-of-type` (the "Listening history" setting row in the "What to sync" section).
+  - Reset `margin-top: 0` on `.collection-hub .device-sync-note` and maintained `padding-top: 14px; border-top: 1px solid var(--line);`. This ensures a non-collapsing, symmetrical 16px gap above the subtle border line and 14px gap below it, eliminating the issue where the divider was stuck directly against the subtitle text.
+- **Verification**:
+  - Full Vitest suite passed (84 test files, 527 tests); production compilation (`npm run build`) succeeded with 0 errors.
+
+## Mobile Tracker Recent Plays UI layout and typography fixes — 27 October 2026
+
+- **Combined Single-Line Metadata & Vertical Density**:
+  - In [`src/components/views/HistoryView.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/HistoryView.tsx), structured track metadata into `.listening-history-meta` and action buttons into `.listening-history-actions`. Duration (`formatListening(record.listenedMs) listened`) and timestamp are now merged into a single horizontal metadata line with dot separator (`·`), eliminating the previous 4-row vertical text bloat where duration and time were stacked as orphaned lines.
+  - Wrapped artwork in `.listening-artwork-wrap` with accessible `onReplay` click/keyboard handler so tapping album artwork directly replays the song.
+- **Mobile Grid & Alignment Refinements**:
+  - In [`src/mobile.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/mobile.css), replaced the brittle 4-column 3-row grid with a clean 3-column 2-row layout (`44px minmax(0, 1fr) auto`).
+  - Centered `.listening-artwork-wrap` vertically across both rows (`align-self: center`) to eliminate the dead space below thumbnails.
+  - Centered `.listening-history-actions` vertically across both rows (`align-self: center`) with compact 40px icon buttons, keeping Queue and Favorite buttons aligned with the card while freeing horizontal space for song titles and artists.
+  - Added clean section header styling (`.listening-days h2`) and mobile spacing for `.listening-summary` and `.listening-pagination`.
+  - In [`src/components/views/HistoryView.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/HistoryView.tsx), assigned `className="track-title-button"` to the song title button to align with codebase conventions and exclude it from the generic mobile Android 40px minimum touch-target rule.
+  - In [`src/mobile.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/mobile.css), added `min-height: unset` on `#root .app .listening-history-identity > button`, eliminating the 21px dead space between song titles and artist links.
+  - In [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css), maintained the clean desktop flex row alignment with discrete columns for metadata and actions.
+- **Verification**:
+  - Added unit test assertion in [`src/components/views/HistoryView.test.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/HistoryView.test.tsx) asserting `track-title-button` presence.
+  - Full Vitest suite passed (84 test files, 527 tests); production compilation (`npm run build`) succeeded with 0 errors in 8.61s.
+
+## Playlist batch download option and inline progress — 27 October 2026
+
+- **Playlist Download in Library View**:
+  - Added "Download playlist" action to the `…` header menu in [`src/components/views/LibraryView.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/LibraryView.tsx) when viewing an active playlist with items.
+  - Dynamically updates the menu label to `"Downloading…"` while in progress, and `"Retry download"` if failures occurred and download completed/cancelled.
+  - Reused [`useAlbumDownloads`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/hooks/useAlbumDownloads.ts) in [`src/App.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/App.tsx) to coordinate batch downloads for playlist items, mapping playlist `Track` objects to `CatalogTrack` representations keyed by `playlist.id`.
+- **Inline Download Progress & Controls**:
+  - Displays progress status, pause/resume, cancel controls, and failed track details below the playlist header actions via the existing `.album-download-progress` component structure and CSS tokens.
+- **Verification**:
+  - Added unit test in [`src/components/views/LibraryView.test.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/LibraryView.test.tsx) asserting menu button states and download progress rendering.
+  - Vitest suite passed (83 files, 526 tests); `npm run build` compiled cleanly in 5.98s with 0 errors.
+
+## PromptModal confirmation validation and playlist deletion feedback — 26 October 2026
+
+- **Inline Validation for Confirmation Prompts**:
+  - In [`src/components/modals/PromptModal.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/modals/PromptModal.tsx), destructive actions requiring confirmation keywords (e.g. `Type DELETE to remove this playlist. Your files stay on disk.`) previously closed silently without feedback if the user made a typo or entered mismatched text.
+  - Added `validatePromptKeyword(label, value, confirmKeyword?)` to enforce confirmation keyword matching (case-insensitive e.g. "delete" or "DELETE" for smooth UX).
+  - Entering invalid text keeps the modal open and displays an inline error alert (`<p className="dialog-error" role="alert"><AlertCircle size={14} /><span>Type "{KEYWORD}" to confirm.</span></p>`) with red input border (`dialog input.has-error`, `aria-invalid="true"` in [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css)). The error automatically clears as soon as the user resumes typing.
+  - Standard prompt dialogs (like creating or renaming playlists) without confirmation keywords continue to accept normal text without keyword restrictions.
+- **Playlist Deletion Toast & Active Playlist Cleanup**:
+  - In [`src/App.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/App.tsx), successful playlist deletion now triggers a toast notification (`Deleted playlist "<name>"`) and clears `lumaire:last-playlist-id` from `localStorage` if it pointed to the deleted playlist.
+- **Verification**:
+  - Added unit tests in [`src/components/modals/PromptModal.test.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/modals/PromptModal.test.tsx) verifying keyword validation, error messaging, case-insensitivity, and standard prompt pass-through.
+  - 83 Vitest test suites (525 tests) passed; `npm run build` compiled with 0 errors.
+
+## Song search preserves original releases and remixes — 26 October 2026
+
+- Fixed shared native catalog merging: an Apple release no longer disappears into a different JioSaavn compilation solely because the recording matches. Same-provider duplicate recordings and same-album cross-provider matches still coalesce.
+- Searches allow remixes without requiring that word in the query; bracketed version titles receive strong base-title relevance so official editions survive the result limit. Autoplay version exclusions are unchanged.
+- Validation: 8 catalog regression tests plus explicit live Despacito search passed. An isolated real Windows WebView2 app started successfully; actual `search_catalog` returned 20 rows, with JioSaavn Despacito, iTunes original on VIDA, and Justin Bieber remix first. No user data/queue changes, playback attempt, installer, or release.
+
+## Save to playlist auto-add with toast "Change" option — 26 October 2026
+
+- **Auto-Save to Last Selected Playlist**:
+  - In [`src/App.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/App.tsx), clicking "Save to playlist" on any track checks for the previously selected playlist ID (stored in `localStorage` under `lumaire:last-playlist-id` or single-playlist fallback).
+  - If a valid previous playlist exists:
+    - If track is not yet in the playlist, it automatically adds the track to that playlist without opening the dialog modal.
+    - Shows an Apple-styled notification toast: `"Added to <Playlist Name>"` with an interactive `"Change"` action button.
+    - If the track is already in the playlist, shows toast: `"Already in <Playlist Name>"` with `"Change"`.
+  - If no previous playlist is recorded or if it was deleted, it opens [`SaveToPlaylistModal`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/modals/SaveToPlaylistModal.tsx) directly as before.
+- **Change Action & Playlist Modal Improvements**:
+  - Clicking `"Change"` on the toast dismisses the toast and opens [`SaveToPlaylistModal`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/modals/SaveToPlaylistModal.tsx) for that track, allowing the user to select another playlist, create a new playlist, or uncheck the previous one.
+  - Selecting another playlist or creating a new playlist updates `lumaire:last-playlist-id` so subsequent saves default to it.
+  - Enhanced [`Banners.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/common/Banners.tsx) and [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css) with `messageAction` and `.toast-action` button styling (interactive accent hover, auto-extended 6-second timeout when an action is present).
+  - Removing a track in [`SaveToPlaylistModal`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/modals/SaveToPlaylistModal.tsx) keeps the modal open for fluent toggling instead of abruptly closing, and supports track matching by `metadataSourceId`.
+- **Sleek Horizontal Pill Toast UI**:
+  - Removed redundant `<strong>Notification</strong>` heading from [`src/components/common/Banners.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/common/Banners.tsx).
+  - Redesigned toast layout into a compact, single-row floating pill (`border-radius: 9999px; width: fit-content; align-items: center; padding: 8px 12px 8px 14px; min-height: 38px;`) in [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css).
+  - Placed the `"Change"` action button inline beside the message text with high-contrast accent background, pill border-radius, and crisp `#ffffff` text, eliminating stacked vertical space.
+  - Replaced the clunky thick left border with translucent frosted glass styling (`backdrop-filter: blur(28px) saturate(190%)`, `border: 1px solid rgba(255, 255, 255, 0.12)`), compact circular close button (`22px`), and subtle shadow.
+- **Verification**:
+  - 82 Vitest test files (520 tests) passed cleanly; `npm run build` completed with zero errors.
+
+## Autoplay language continuity and original-song radio — 26 October 2026
+
+- User superseded the previous multilingual/personal-radio policy: Autoplay must retain the deliberately selected song's language regardless of preferences/history. Live Magale (Baththa) search/radio check returned 30 Tamil songs, all without genre/mood data. Earlier candidate generation mixed taste/current radios and ranking admitted preferred/learned languages, so unrelated-language selections were possible.
+- Autoplay now requests ONLY the original session anchor's radio. Hard language equality runs before duplicate filtering/ranking, excludes unknown/undetermined languages, and cannot be relaxed by likes, history, discovery, artist-cap relaxation, availability failure or fallback. Missing seed language stops safely. Metadata uses stable catalog IDs before title fallback; Apple/local identities lacking language can recover it through an existing catalog search requiring matching title/version, artist and recording duration (within two seconds). Recovery is cached and retains known genre tags. One radio, bounded five-second overall pool budget; existing availability budget/caches and cancellation/manual queue guards remain.
+- Known specific genre conflicts are rejected. Per the user's explicit answer to the metadata limitation, absent genre/mood tags fall back to original-song same-language radio rather than stopping. No inferred mood/energy or guaranteed-vibe claim. Personal listening signals can still rank compatible candidates; they cannot broaden language or radio source. Home recommendations are unchanged.
+- Tests include heavy contrary-language history/likes in Tamil, Malayalam, Hindi and English; unknown languages; genre conflicts; duplicate-title poisoning; cached Apple-language recovery; unavailable same-language tracks without foreign fallback; cold starts, long sessions, original anchor, manual queues and cancellation. Captured Magale snapshot plus a liked Hindi injection is retained at `src/domain/fixtures/autoplay-magale.json`. Focused 47 tests passed; production frontend build passed. Real React autoplay flow now verifies rejection of liked Hindi after a Tamil seed, subsequent unique picks, anchor caching, and manual-queue cancellation (`node scripts/autoplay-flow-test.mjs`). Live provider checks are metadata only, not subjective listening/vibe validation. No new dependency/backend/migration, version bump or installation.
+
+## Android Back navigation and Discover double-tap — 26 October 2026
+
+- Added Android-only interception through Tauri's app Back event. Dropdowns/action menus, cancellable dialogs, active search, expanded queue/player, and Settings categories dismiss before in-app screen history. Required dialogs retain cancellation protection. Home is the Android root even after switching tabs; first root Back shows a native short toast and a second press within two seconds minimizes with `moveTaskToBack`, never exit/finish/player teardown. Desktop navigation is unchanged.
+- Mobile Discover taps respond immediately. Two consecutive Discover taps within 350ms focus the existing Discover input and request Android's IME, including when the first tap switches from another page. Intervening tabs and expired/completed tap pairs reset detection. Existing search query/results remain owned by App and are not cleared.
+- Physical-phone testing caught a real integration issue missed by mocks: direct custom-plugin commands were blocked with `lumaire-android.navigation not allowed. Plugin not found`. Registered the inline plugin's three renderer commands in build.rs and granted only navigation/register-listener/remove-listener in an Android/main-window capability. This also permits the previous native playback event subscription; no broad shell, filesystem or playback-command permission was granted.
+- Verification: final production frontend and ARM64 Android builds pass; 18 focused navigation/interaction/App/menu tests pass. Signed with the existing local certificate and installed in place on the connected Motorola; version remains 1.0.6, data retained, no publication. Actual hardware Back tests pass for keyboard/search (query retained), prior Library screen, Sync sheet, Settings category/screen, expanded queue → player → close, and Home double-Back. Native window/activity evidence confirmed launcher focus after minimization with the same Lumaire PID. Timeout logic has unit coverage; the on-device expiry check correctly stayed open beyond two seconds, while immediate WebView visibility assertions lagged native activity transitions, so use native focus for future minimize checks.
+- Separate background playback verification is NOT complete: real Magale/Vibe Venuma playback was sought near completion and minimized without CDP polling during the wait. A paused run was inconclusive; a confirmed-playing Vibe Venuma run reached native ENDED/STOPPED after 18 seconds without an automatic successor. Native playback event delivery was confirmed separately while foreground. Do not claim background Autoplay fixed; renderer lifecycle/queue ownership still needs investigation. Test audio was paused and Lumaire returned to Home. Local test evidence: `.test-data/phone-navigation.log`, `.test-data/phone-background.log`, `.test-data/android-navigation-tests.log`; APK `.test-data/Lumaire-android-navigation-20261026.apk`.
+
+## Device Sync Modal Sleekness & Alignment Refinements — 26 October 2026
+
+- **Vertical Space & Scroll Elimination**:
+  - Compacted [`dialog.collection-hub`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/collections.css) padding from `28px 32px` to `20px 24px`, width to `min(580px, 94vw)`, and `max-height: 88dvh`.
+  - Scaled down `.device-sync-mark` and icon badges to 36x36px with 18px icons, reduced `.device-sync-heading h2` to 19px, and tightened card padding from 20px to 14px 16px.
+  - The modal now completely fits in desktop viewports without requiring vertical scrolling.
+- **Pairing Link Input & Connect Button Alignment**:
+  - Restructured the form in [`src/components/views/NearbyDevices.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/NearbyDevices.tsx) into a dedicated `.device-sync-input-row` flex container instead of an unconstrained multi-row grid where the `<label>` forced jagged bottom-alignment.
+  - Locked both `.device-sync-input` and `.device-sync button.device-sync-connect-btn` to a uniform `height: 38px`, `border-radius: 10px !important`, and `align-items: center` in [`src/components/views/collections.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/collections.css), ensuring identical heights, centered baselines, and matching corner radii.
+- **Listening History Spacing & Toggle Fix**:
+  - Removed distorted `inset: 9px 2px` track override on `.apple-switch` inside `.device-sync-setting`, restoring the standard centered 42x24px Apple switch toggle.
+  - Added clean separation below the "Update Tracker and recommendations on both devices." row by giving `.collection-hub .device-sync-note` `margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line);`.
+- **Verification**:
+  - All 81 Vitest test suites (517 tests) passed cleanly; `npm run build` compiled without errors.
+
+## Tracker Progress Bar Visibility & Player Bar Volume Auto-Collapse — 26 October 2026
+
+- **Tracker Bar Visibility Fix**:
+  - Found that `.listening-time-bar` progress indicators under "Top artists", "Top albums", and "Top tracks" in [`src/components/views/HistoryView.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/views/HistoryView.tsx) render an inner `<i style={{ width: ... }} />` representing the relative listening time compared to the #1 item in that category.
+  - The inner `<i>` tag had no styling in [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css), rendering default inline styling (0 height, transparent background) so bars appeared empty.
+  - Added `.listening-time-bar i` styling with height, block display, `var(--accent)` background, subtle opacity, and smooth width transition matching the design of `.listening-month-bar i`.
+- **Volume Controller Hover Auto-Collapse**:
+  - In [`src/components/player/PlayerBar.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/PlayerBar.tsx) and [`src/components/player/ExpandedPlayer.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/ExpandedPlayer.tsx), clicking the volume slider or mute button gave focus to the element, triggering `:focus-within` and keeping the slider expanded even after the cursor moved away.
+  - Added pointer tracking (`isVolumeDragging`) and `onMouseLeave` handlers to blur any focused elements inside the volume container when the cursor leaves (and mouse button is not currently held down), allowing the slider to collapse smoothly when the user finishes hovering.
+  - Added window `pointerup` listener to safely clear focus if the drag gesture ended outside the volume container.
+- **Verification**:
+  - All 81 Vitest test suites (505 tests) passed; `npm run build` compiled cleanly.
+
+## Apple-style smooth fluid spring lyric line transition animations — 26 October 2026
+
+- **Removed Overriding Transform Locks:**
+  - Removed `transform: none !important;` from `.is-immersive .expanded-lyrics .lyric-line` in [`src/components/player/immersive.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/immersive.css) and `:root .lyric-room .lyric-lines .lyric-line` in [`src/components/lyrics/word-lyrics.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/lyrics/word-lyrics.css), which previously neutralized all scaling and elevation transitions.
+- **Apple Fluid Spring Scaling & Depth-of-Field Blur:**
+  - In [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css), upgraded lyric line transitions to Apple's fluid decelerating spring curve `cubic-bezier(0.16, 1, 0.3, 1)` with a 620ms transform duration and 550ms opacity/blur duration.
+  - Active line ascends to `scale(1.035)` with zero blur (`blur(0px)`) and full opacity (`1.0`).
+  - Passed/inactive lines smoothly scale down to `scale(0.975)` -> `scale(0.95)` -> `scale(0.91)` with progressive optical depth-of-field blur (`blur(0.5px)` up to `blur(3px)`).
+  - Maintained `transform-origin: left center` and `will-change: transform, opacity, filter` for 60fps GPU-composited motion without triggering text wrapping or relayout.
+- **Verification:** All 81 Vitest test suites (505 tests) passed; `npm run build` compiled cleanly in 7.37s with zero errors.
+
+## Preserve word timing across overlapping lyric lines — 26 October 2026
+
+- Reproduced the reported missing word animation with public lrc.red recording QMZSY1600015, comparing exact timestamps rather than title-specific conditions. At 61.740s the lead has eight word segments ending 66.060s; backing vocals start 65.890s. The parser's cross-line cutoff deleted the lead's entire words array when it saw this legitimate 170ms overlap. The public file has 60 word-timed rows, with this one row rejected by that rule.
+- Removed cross-line word deletion. Within-line order/prefix validation, recording-duration bounds and genuine-timing-only fallback remain. Renderer now keeps all still-running word-timed vocal lines active until their explicit final endpoints, while preserving the existing singular scroll/focus target. No guessed ends for lines lacking them; no change to providers, playback, typography, colors, or queue.
+- Cached documents now recover lost word data from matching saved raw LRC. Recovery preserves document/line IDs, user offsets, variants/provenance and unrelated metadata; edited/nonmatching lines stay untouched. Unchanged documents retain identity to avoid redundant persistence updates. No cache clearing or refetch required when the raw word markers are retained.
+- Two reproducing tests failed before the fix and passed afterward. All 503 frontend tests across 81 files passed, followed by 13 focused parser/cache/renderer checks after two extra edge cases were added. Production build passed. Actual provider-file browser replay verified eight word spans at 62s, eleven across both voices at 65.95s, lead expiry and backward-seek restoration without JavaScript errors. Evidence: `.test-data/lyric-overlap/result.json`, `actual-source-62s.png`, and `browser.mjs`. Generic connected media/browser regression also passed; its stale pure-white light-theme expectation was updated to neutral-channel validation to preserve the independently changed light theme. No Android hardware test or release/installation performed.
+
+## Queue track drag reordering fix & queue expansion width cap — 26 October 2026
+
+- **Fixed Queue Track Drag Reordering:**
+  - Diagnosed failure root cause in [`src/components/queue/QueuePanel.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/queue/QueuePanel.tsx): browser element pointer-capture automatically released on pointer release, causing `lostpointercapture` to clear `dragRef` before `pointerup` could trigger `onReorderUpcoming`, causing drags to snap back without reordering.
+  - Replaced element-level pointer capture with global window-level pointer event listeners (`window.addEventListener('pointermove' / 'pointerup')`), guaranteeing reliable drop tracking and reordering regardless of cursor speed or release timing.
+  - Added `touch-action: none` to upcoming queue rows in [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css) so browser gestures do not intercept drags.
+  - Suppressed track selection click after drag completion (`didDragRef`) with an 80ms window debounce.
+- **Capped Queue Dock Maximum Width & Artwork Scaling:**
+  - In [`src/App.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/App.tsx), reduced queue width expansion ceiling from `500px` down to `380px` (min `260px`, default `315px`, max `380px`).
+  - Added an auto-clamp `useEffect` to smoothly pull any previously expanded width over 380px back within the new boundary and update `localStorage`.
+  - In [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css), restricted `.now-playing-cover-wrap` to `max-width: min(100%, 280px); margin: 0 auto;`, preventing album art from blowing up and pushing the queue items out of view.
+- **Verification:** All 80 Vitest test suites (500 tests) passed; `npm run build` compiled cleanly in 8.02s with zero errors.
+
+## Immersive mode lyric height reduction & control repositioning — 26 October 2026
+
+- **Reduced Lyric Area Height & Smoothed Edges:**
+  - In [`src/components/player/immersive.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/immersive.css), reduced `.is-immersive .expanded-lyrics` `max-height` from `min(100%, 70dvh)` to `min(100%, 54dvh)` to display a focused window of ~3–4 lines instead of sprawling across 70% of the screen.
+  - Deepened vertical gradient mask fade (`transparent 0, #000 48px, #000 calc(100% - 68px), transparent 100%`) so top and bottom lines dissolve smoothly into the background.
+  - Adjusted `.lyric-lines` padding (`padding-top: 24vh; padding-bottom: 26vh;`) and `.expanded-layout.has-lyrics` bottom padding from `180px` to `204px` (and `190px` on `<= 760px` screens) to maintain generous clearance from the raised playback controls.
+- **Shifted Playback Controls Upward with Fixed Corner Buttons:**
+  - In [`src/components/player/immersive.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/immersive.css), shifted `.player-center` up from `bottom: 26px;` to `bottom: 48px;`, lifting the 68px play/pause button and transport row off the Windows taskbar / bottom edge.
+  - Shifted `.expanded-times` from `bottom: 118px;` to `bottom: 140px;` and `.seek-bar-top` from `bottom: 130px;` to `bottom: 152px;`, maintaining exact 24px vertical separation above the play button.
+  - Preserved `.expanded-bottom-left` (lyrics toggle) and `.expanded-bottom-right` (volume capsule & fullscreen toggle) at `bottom: 38px;` untouched.
+- **Verification:** All 78 Vitest test suites (490 tests) passed; `npm run build` compiled cleanly in 5.75s with zero errors.
+
+## Lyric line vertical spacing & word-highlighting wrapping fix — 26 October 2026
+
+- **Vertical Line Spacing:**
+  - In [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css), increased `.lyric-line` padding from `10px 16px` to `12px 18px` and doubled inter-line margin from `3px 0` to `6px 0` (12px total margin between consecutive lines).
+  - Increased `.lyric-line` internal gap between primary lyrics and secondary translation/romanization from `6px` to `8px`, and raised `.lyric-primary` line-height from `1.3` to `1.35`.
+- **Word Highlighting Layout Shift & Wrapping Fix:**
+  - Resolved sudden line wrapping when a lyric line begins word-by-word highlighting:
+    - In [`src/components/lyrics/WordLyrics.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/lyrics/WordLyrics.tsx), extracted trailing whitespace out of the `.lyric-word` `display: inline-block` span into a standard text space in the DOM flow. Set `white-space: nowrap` on `.lyric-word` in [`src/components/lyrics/word-lyrics.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/lyrics/word-lyrics.css), allowing spaces between words to break naturally and hang on the line margin identically to plain text.
+    - In [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css), kept `.lyric-line.is-active .lyric-primary` at `font-weight: 700` (matching inactive lines) to eliminate font-weight character width expansion when active.
+    - Expanded `.lyric-lines` and `.lyric-line` max-width from `min(700px, 100%)` to `min(860px, 100%)` across [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css), [`src/components/player/expanded.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/expanded.css), and [`src/components/player/immersive.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/immersive.css), aligning with the page heading (`840px`) and giving long lyric sentences ample runway without premature wrapping.
+- **Verification:** All 78 Vitest test suites (490 tests) passed; `npm run build` compiled cleanly in 5.89s with zero errors.
+
+## Compact PiP floating lyrics window & vertical padding polish — 26 October 2026
+
+- **Compact Window Dimensions & Minimum Bounds:**
+  - In [`src-tauri/src/lyric_overlay.rs`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src-tauri/src/lyric_overlay.rs), updated the initial Tauri Webview window size from `460.0 x 260.0` down to a sleek horizontal pill format of `440.0 x 116.0`.
+  - Reduced `min_inner_size` from `300.0 x 180.0` to `280.0 x 72.0`, allowing the floating window to be resized down to a minimal, non-intrusive strip that hugs single-line lyrics.
+  - Updated keyboard resize boundaries in [`src/components/lyrics/FloatingLyrics.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/lyrics/FloatingLyrics.tsx) to match (`280` x `72`).
+- **Vertical Padding and Layout Tightening:**
+  - In [`src/components/lyrics/floating-lyrics.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/lyrics/floating-lyrics.css), reduced `.floating-lyrics` padding from `10px 16px` to `6px 14px`, and border radius from `20px` to `18px`.
+  - Reduced `.floating-lines` padding from `8px 10px` to `2px 8px` and gap from `8px` to `4px`, removing excessive dead space above and below active lyrics.
+  - Set `.floating-lyrics.is-locked .floating-toolbar { display: none; }` so that locked (click-through) mode removes the invisible toolbar heights completely from the document flow, cleanly centering the lyrics.
+  - Compacted toolbar button dimensions from `30px` to `26px` (and icons to 14-16px) with an ultra-compact tier below 90px window height.
+- **Verification:** All 78 Vitest test suites (490 tests) passed; `npm run build` compiled cleanly with zero errors.
+
+## Queue expanding/shrinking resizer & whole-row drag reordering — 26 October 2026
+
+- **Queue Resizing Matching Sidebar Behavior:**
+  - Added `.queue-resizer` to [`src/components/queue/QueuePanel.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/queue/QueuePanel.tsx) and [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css), positioned on the left edge of `.queue-pane`.
+  - Added `--queue-width` (default 315px, clamped 260px–500px) persisted in `localStorage.getItem("lumaire:queue-width")`.
+  - Fluid dragging from the resizer edge resizes the queue panel in real time. Dragging below 180px collapses/closes the queue panel (mirroring sidebar collapse behavior). Double-clicking the resizer edge resets to default 315px.
+- **Whole-Row Drag Reordering & 6-Dots Grip Removal:**
+  - In [`src/components/queue/QueuePanel.tsx`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/queue/QueuePanel.tsx), enabled holding and dragging anywhere on an upcoming queue row (`.queue-entry`) to lift and reorder tracks.
+  - Implemented a 5px drag distance threshold: pressing and moving drags the row with smooth translateY, auto-scroll, and drop indicator (`data-queue-drop`), while tapping/clicking without movement triggers immediate playback. Action buttons (Remove 'X' and artist links) remain clickable independently.
+  - Removed the visual clutter of the 6-dots grip icon (`QueueDragHandle`) from desktop queue rows. Added `cursor: grab` and `cursor: grabbing` on upcoming queue items for clear affordance, plus `Alt+ArrowUp`/`Alt+ArrowDown` keyboard shortcuts for accessibility.
+- **Verification:** All 78 Vitest test suites (490 tests) passed; `npm run build` compiled cleanly in 13.95s with zero errors.
+
+## Immersive mode lyric UI alignment with Minimal mode & volume capsule polish — 26 October 2026
+
+- **Lyric UI Alignment with Minimal Mode & Lyric Room:**
+  - Removed diverging custom lyric overrides in [`src/components/player/immersive.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/immersive.css) (harsh 25%/75% mask, `clamp()` font sizes, unnatural line gaps, squashed `max-height: 62vh`, and custom opacity overrides).
+  - Adopted the exact same clean typography and layout used by Minimal Mode and Lyric Room: all lines bold (`font-weight: 700`), uniform font size (`var(--lyric-size)`), smooth top/bottom mask fade (`transparent 0, #000 36px, #000 calc(100% - 60px), transparent 100%`), and progressive distance opacity fading (`1.0` -> `0.68` -> `0.42` -> `0.26` -> `0.14`).
+  - Completely transparent lyrics container (`background: transparent; border: none; box-shadow: none;`) eliminating any panel/box appearance.
+  - Softened light mode ambient background with increased blur (`filter: blur(56px) saturate(0.82) brightness(0.97)`) and a delicate warm overlay (`rgba(248, 247, 242, 0.82-0.62)`), ensuring high-contrast album art elements diffuse smoothly without competing with lyric legibility.
+- **Volume Button Apple-style Capsule Animation & Zero-Overflow Containment:**
+  - Fixed volume slider overflow on state changes in [`src/components/player/immersive.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/immersive.css), [`src/components/player/expanded.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/player/expanded.css), and [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css) with strict `overflow: hidden !important; contain: paint;` and Apple fluid spring curve `cubic-bezier(0.32, 0.72, 0, 1)`.
+  - Nested range slider fades out (`opacity: 0`) and shifts inwards (`translateX(6px)`) in 0.12s before the capsule fully collapses to 38px, eliminating any track or thumb protruding during closing.
+- **Verification:** All 78 Vitest test suites (490 tests) passed; `npm run build` compiled cleanly in 5.90s with zero errors.
+
+## Lyric room light mode theme compatibility fix — 26 October 2026
+
+- **Light Mode Container Background & Text Fix:**
+  - Removed hardcoded `[data-theme="light"] .lyric-room[data-embedded="false"] { background: #171717; --text: #fff; }` rule in [`src/components/lyrics/word-lyrics.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/components/lyrics/word-lyrics.css) that forced the entire Lyric room tab into a solid pitch-black container.
+  - Replaced with `:root[data-theme="light"] .lyric-room { background: transparent; color: var(--text); }`, cleanly adopting the app's warm cream/sage background.
+  - Added high-contrast typography overrides for light mode: active primary line `#111210 !important;`, inactive lines `#6b7363 !important;`, sub-line translations `#383c33 !important;`, and word-ink wipe mapping from upcoming `#757d6e` to sung `#111210`.
+- **Badges and Controls Polish:**
+  - In [`src/style.css`](file:///d:/CODING/Web%20Development/Projects/Fullstack/music-player/src/style.css), updated `.lyric-provenance-link` and `.lyric-language-badge` backgrounds from hardcoded `rgba(255, 255, 255, 0.05)` to theme-aware `var(--bg-subtle-button)`, providing subtle contrast on light surfaces without washing out.
+  - Added light-mode shadow override for `.lyric-float-btn` (`box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08)`) replacing the harsh dark-mode shadow.
+- **Verification:** All 78 Vitest test suites (490 tests) passed; `npm run build` compiled cleanly with zero errors.
+
+## Discover light mode styling, card hover shadows, and chevron backgrounds — 26 October 2026
+
+- **Featured Album Spotlight in Light Mode:**
+  - Resolved white-on-white text contrast where `.discover-spotlight-title` was hardcoded `#ffffff`, setting it to `var(--text-strong, #1a1d16) !important` in light mode.
+  - Styled `.discover-spotlight-explore-btn` ("View Details") with light-theme glass surface (`background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.12); color: var(--text) !important;`) replacing the washed-out white border and white text.
+  - Set `.discover-spotlight-play-btn` text color to `var(--accent-text, #ffffff) !important` with softened accent glow shadow instead of hardcoded dark text on dark accent.
+  - Updated `[data-theme="light"] .discover-spotlight-overlay` gradient to `#ffffff 0%` through `rgba(255, 255, 255, 0.96) 35%` on the left for crisp text contrast, tapering to `transparent 100%` on the right so the album cover art and script hero branding remain punchy and unclouded.
+  - Replaced the dark heavy shadow on `.discover-spotlight-card` with clean Apple-style elevation (`box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03); border: 1px solid rgba(0, 0, 0, 0.08); background: #ffffff;`).
+- **Card Hover Box Shadow Halo Elimination:**
+  - In light mode, `.discover-spotlight-card:hover` now uses soft `0 8px 24px rgba(0, 0, 0, 0.08)` instead of the harsh pitch-black `0 16px 42px rgba(0, 0, 0, 0.48)`.
+  - Added `:root[data-theme="light"]` overrides for `.album-card-cover-wrap`, `.discover-album-card:hover .album-card-cover-wrap`, `.mix-card-cover`, and `.discover-quick-track:hover` to eliminate heavy dark shadow halos on hover.
+- **Left / Right Chevron Buttons Subtle Grey Background in Light Mode:**
+  - Added subtle grey pill backgrounds to `.topbar-arrow-btn` (topbar navigation back/forward chevrons) in light mode: `background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.08); color: var(--text-secondary);`, with hover `background: rgba(0, 0, 0, 0.09); border-color: rgba(0, 0, 0, 0.14); color: var(--text);`.
+  - Added matching subtle grey circular backgrounds to `.discover-nav-arrow` (shelf carousel navigation chevrons for "New releases", "Countrywise Top 10", "Featured Charts", "Your Rotation", etc.): `background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.08); color: var(--text-secondary);` and hover `background: rgba(0, 0, 0, 0.1); border-color: rgba(0, 0, 0, 0.14); color: var(--text-strong);`.
+- **Verification:** All 78 Vitest test suites (490 tests) passed; `npm run build` compiled cleanly in 14.21s with zero errors. Verified visually via Edge that chevron buttons render with subtle grey circular backgrounds in light mode.
+
+## Imported KR$NA artist credits — 26 October 2026
+
+- Read-only inspection of the desktop library found imported YouTube No Cap, I Guess, Machayenge 4, Saza-E-Maut and Boom Shaka carrying `Krsna` credits and `KRSNA` source attribution; the catalog I Guess row already has `KR$NA`. Sync transports these stored strings without stripping punctuation. Name-based artist navigation therefore searched the wrong spelling.
+- Added source-scoped canonicalization for the rapper's KRSNA channel to the existing online metadata repair: exact standalone Krsna credits become KR$NA, collaborators are retained, and Kr$na casing is normalized. Other channels, catalog-provenance Krsna credits, local tags, M.S Krsna, IDs and attribution remain unchanged. No blanket fuzzy artist alias.
+- Reused startup repair/persistence for existing saved tracks, applied repair at the shared saveOnline boundary for new imports/sync/enrichment, and repaired validated restored queue metadata. Artist links now encode the canonical dollar sign. No sync protocol, playback source, playlist membership or dependency changes; no direct database mutation.
+- Verification: final production build and 46 focused metadata/navigation/native-adapter/sync/library/queue tests pass, including missing-credit fallback, restored queues, save-boundary repair and idempotence. Physical phone not connected; no APK installed or release published. Existing unrelated historical listening records are not rewritten.
+
+## Immersive fullscreen lyrics typography, theme compatibility, and cover visibility — 26 October 2026
+
+- **All Lines Bold & Refined Sizing:** Kept all lyric lines bold (`font-weight: 700 !important;`) rather than isolating bold weight to the active line. Scaled down active line font size from 48px to `clamp(32px, 2.3vw, 36px)` and inactive lines to `clamp(26px, 1.8vw, 30px)`. This eliminates awkward multi-line wrapping on standard verses while keeping the active line cleanly highlighted via full opacity (1.0 vs 0.65/0.28/0.1), size prominence, and contrast.
+- **Dynamic Accent Compatibility:** Removed hardcoded `--accent: #ff7195` override from `dialog.expanded-player.is-immersive`. The player, seekbar runnable track, active transport toggles (shuffle/repeat), layout menu selections, and focus outlines now dynamically inherit the user's selected accent from `:root`.
+- **Light & Dark Theme Compatibility:**
+  - **Cover Artwork Background:** In Light mode, removed the destructive 96% opaque beige wash and 0.35 opacity clamp that previously obscured the album art. Implemented a luminous soft veil (`rgba(247, 246, 238, 0.48-0.72)`) with `filter: blur(24px) saturate(1.4) brightness(0.96)` and `opacity: 1 !important;`, keeping the blurred album cover artwork richly visible across the entire screen in both themes.
+  - **Lyric Text Colors:** Light mode lyrics now render in high-contrast deep charcoal `#111210` with matching word-by-word progress gradients (`#111210` sung, `#757d6e` upcoming) instead of washing out as white-on-light, while dark mode retains crisp `#ffffff` text.
+- **Verification:** All 78 Vitest test suites (490 tests) passed; `npm run build` compiled cleanly in 7.06s. Automated headless Edge checks verified dark and light mode rendering, dynamic accent inheritance, bold typography across all lines, and active line high-contrast coloring.
+
+## Continuous lyric wave from recording and REA inspection — 26 October 2026
+
+- Inspected the user's 9.47-second / 30fps BitChord screen recording, extracted a frame contact sheet, and inspected the public shipped LyricsPanel chunk as inert text with REA. Evidence: parent `ev_82b02a9ce20f5d1b74bb281d188267f43d911af18cc59bea1b827cbc2e0eceb3`, summary `ev_437c1e7826193eb6974d4b0a75a578ba6277021560a33e7cac73f8be8f5d1497`. Local source snapshot `.test-data/lyric-wave/shipped/LyricsPanel.js`. REA parsed that chunk without executing it; semantic graph coverage was bounded/partial and no Brave runtime instrumentation was performed.
+- Relevant static observations: ordinary words use overlapping two-second spring rise frames toward a roughly -3px offset, retaining the risen pose; a separate soft white wipe advances through supplied timed segments. Sustained-word character effects are a separate mode, not required for the ordinary-word effect in the supplied clip. The previous Lumaire 120ms-up/end-of-word-down envelope caused the pop.
+- Replaced the pulse with an independently written monotonic damped rise toward -3px over two seconds after each genuine word start. Neighboring rises overlap and sung words stay raised/white until the line changes; no bounce, scale, glow or accent color. Added a soft neutral white/gray wipe driven by the existing wordProgress and exact supplied ends. Unknown final ends still use discrete highlighting, not guessed timings. Small CSS interpolation smooths clock samples; paused/reversed clocks continue to own the pose. Translations/romanization and whole-line layout remain unchanged. No foreign provider/scraping/translation code was imported.
+- Production build and ten focused parsing/renderer checks passed, including overlapping monotonic rise, no overshoot/reset at word end, rewind reset and plain fallback. Connected browser media checks passed for playback/pause/seek/track replacement, grayscale text, stable line height and reduced motion. Frame-by-frame preview `.test-data/lyric-wave/lumaire-wave.mp4` uses synthetic lyrics and explicit media-clock samples; screenshot frames inspected alongside the supplied recording. No claim of exact source/runtime equivalence or physical Android validation.
+
+## Immersive bottom right button uniform sizing and dropdown roundness polish — 26 October 2026
+
+- **Bottom Right Button Sizing & Padding:** Diagnosed why the volume button appeared noticeably larger with extra padding compared to the refresh and fullscreen buttons. In `src/components/player/immersive.css`, `.expanded-volume-control` had an explicit 44px min-height rule while `.expanded-action-btn` was 38px, and `.expanded-volume-btn` was assigned a duplicate background and border inside `.expanded-volume-control`, creating a doubled outline with internal padding. Fixed by sizing `.expanded-volume-control` and `.expanded-action-btn` to an identical 38px diameter with `border-radius: 50%` when collapsed, stripping the inner `.expanded-volume-btn` background/border (`background: transparent !important; border: 0 !important; padding: 0 !important`), and preserving smooth horizontal expansion to 9999px pill when hovered/focused.
+- **Dropdown Selection Rectangular Shape:** Restored the layout select trigger from fully-rounded pill (`border-radius: 22px`) to a clean rectangular shape with slightly rounded corners (`border-radius: 8px`, `min-height: 36px`, `padding: 6px 12px`), with matching menu radius (`border-radius: 10px`) and option radius (`border-radius: 6px`).
+- **Verification:** Verified via Edge headless that all three bottom-right items measure exactly 38px × 38px with 50% border-radius and 0px padding, and dropdown trigger has 8px border-radius. All 78 Vitest test suites (487 tests) passed; `npm run build` completed cleanly in 6.50s.
+
+## Android minimized next-track completion — 26 October 2026
+
+- Confirmed the Android controller stopped its state polling when `document.hidden`; only those polls detected ExoPlayer completion. The service continued the current song, but playlist advancement and Autoplay waited for foregrounding.
+- LumairePlugin now pushes real MediaController playback-state/error events through Tauri's native plugin channel. AndroidPlaybackController receives matching-track events while hidden, ignores obsolete selections, unregisters unused listeners, and retains visible clock polling without adding background polling. Native state also includes play intent so unavailable queued tracks retain the existing skip safeguards. Controller cleanup releases its listener, not the service player.
+- Queue completion invokes the existing Autoplay path directly when no manual next entry exists; ranking, source validation, repeat/shuffle and manual queue priority remain shared. This is an event-driven bridge to the existing queue logic, not a service-owned/headless queue; Activity/WebView destruction is not addressed by this change.
+- Verification: 22 focused Android-controller/playback-hook/provider tests pass, including hidden consecutive completions, obsolete events during catalog resolution, duplicate completion after foregrounding and Autoplay initiation without a visible render. Production frontend and final ARM64 debug APK builds pass. Full suite: 486 passed, one provider dispatch test timed out under concurrent build load; that unchanged test passed in the focused rerun. APK: `src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk`.
+- ADB reports no connected devices. No phone installation, real-song screen-off/minimized verification or OEM battery-policy test was possible. Version remains 1.0.6; nothing published. Prior user wording about moving advancement into the service was refined to native completion events feeding the existing queue owner.
+
+## Immersive fullscreen bottom transport alignment polish — 26 October 2026
+
+- **Timings Position:** Lifted `.is-immersive .expanded-times` from `bottom: 108px` to `bottom: 118px`, bringing the elapsed and remaining time labels up ~10px to sit cleanly right beneath the seek bar track. This eliminates the awkward empty gap and groups the timestamps tightly with the seek bar.
+- **Bottom Corner Actions Alignment:** Replaced `left: 5vw` and `right: 5vw` on `.expanded-bottom-left` and `.expanded-bottom-right` with `clamp(24px, 2.5vw, 36px)`. The lyric toggle on the left and volume/fullscreen buttons on the right now anchor the outer corners, aligning with the 24px margins of the top close button and mode selector, while giving generous breathing room to the center transport buttons across widescreen viewports.
+- **Verification:** Verified metrics and visual alignment via Edge headless at 1920x1080, 1366x768, and 1024x768. All 78 Vitest test suites (486 tests) passed; `npm run build` completed cleanly in 10.14s.
+
+## Neutral lifted-word lyric highlighting — 26 October 2026
+
+- Replaced accent-gradient Enhanced LRC rendering with genuine timestamp-driven word states: upcoming gray, active pure #FFFFFF, sung light gray. Active words rise up to 4px with smoothstep entry/settling ramps derived from the supplied word interval; short segments use proportional ramps. A 60ms transform interpolation smooths existing playback clock samples, with no looping animation, scale, bounce or glow. Unknown final-word ends remain unknown.
+- Original lyrics, romanization and translations are now strictly white/neutral gray in Lyric Room and both desktop fullscreen modes, independent of app accent. Removed romanization's accent/glow and disabled whole-line scaling/weight changes so only the words move. Existing layout, timing offsets, seeking, typography sizes, language layers and line-only fallbacks remain intact. Light-theme reading surfaces remain dark for white-text contrast; reduced motion disables lifting.
+- Verified actual HTML media playback, pause stability, backward seek, track replacement, 4px active lift, sung-word baseline, unchanged line height, grayscale computed text channels, light-theme white, and reduced-motion behavior at desktop/mobile browser sizes using `scripts/word-lyrics-ui-test.mjs`. Visually inspected Lyric Room and Immersive screenshots against the supplied reference (subtle individual lift and white/gray text, no layout copying). Four desktop-resolution Immersive checks also passed. No physical Android installation or new provider/word-timing coverage claim.
+
+## Desktop PiP floating lyrics corner and background ghosting fix — 26 October 2026
+
+- **Root Cause:** In the desktop floating lyrics overlay (`FloatingLyrics.tsx` / `floating-lyrics.css`), the container had an outset drop shadow `box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 14px 38px rgba(0, 0, 0, 0.42);` and CSS `backdrop-filter: blur(28px) saturate(190%);`. Because the native Tauri overlay window is an exact transparent rectangle (460x260), the outset drop shadow bled past the 20px rounded corners into the transparent corner zones and got abruptly clipped at the window bounding box, creating dark rectangular corner fills and a flat clipped horizontal shadow bar across the bottom edge that made it look like a rectangular div was sitting behind the rounded PiP card.
+- **Fix:**
+  - In `src/components/lyrics/floating-lyrics.css`, removed the outset `0 14px 38px rgba(0, 0, 0, 0.42)` shadow and retained only the sleek glass top highlight `box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);` (plus `box-shadow: inset 0 1px 0 rgb(0 0 0 / 12%);` in black text mode).
+  - Added `overflow: hidden;` to `.floating-lyrics` so all child elements and resize edges stay strictly clipped within the 20px rounded card.
+  - Removed `backdrop-filter: blur(28px) saturate(190%);` and `-webkit-backdrop-filter: blur(28px) saturate(190%);` from `.floating-lyrics` to prevent unclipped compositor quad passes in WebView2.
+- **Verification:** Pixel-level analysis via Edge headless verified 100% true transparency (`[0, 0, 0, 0]`) outside all four rounded corners at `(0,0)`, `(0,259)`, `(459,0)`, and `(459,259)`. All 78 Vitest test suites (493 tests) passed; `npm run build` completed cleanly in 7.06s.
+
+## Desktop Immersive fullscreen and requested refinements — 26 October 2026
+
+- Audited ExpandedPlayer, PlayerBar, shared LyricsView/word timing, artwork cache/resolver, preference restore, settings and playback shortcuts. Added default Immersive mode and persisted Minimal choice in Appearance (desktop only) and the player. Minimal retains the centered artwork/ambient layout. Existing transport callbacks, queue and playback ownership remain unchanged.
+- Immersive places artwork/title/artist left, shared synchronized lyrics centrally, and the existing seek bar across 90% of the bottom width with larger centered transport buttons. Hidden/missing/instrumental lyrics leave no empty lyric panel. Existing translations, romanization, genuine word highlighting and seeking remain connected. Foreground contrast stays readable in dark/light themes; reduced-motion supported.
+- Follow-up supersedes the initial artist-image request: background now uses ONLY the current album cover, darkened/blurred, with bounded two-image transitions and stale-result cancellation. Artist-image lookup and its requests were removed entirely. Missing/broken cover stays neutral dark. Volume again collapses to its compact button and expands on hover or keyboard focus. Native layout select replaced by existing styled Select with selected check, rounded dark menu, outside click and Escape dismissal. Immersive title capped at 40 characters plus ellipsis and two lines; complete title remains in hover tooltip. Minimal title behavior preserved.
+- Fixed existing global shortcut exclusion so the desktop fullscreen player accepts playback shortcuts while other dialogs/menus remain protected. Select Escape now prevents the native dialog from closing along with its menu.
+- Verification: production build passed; full frontend suite 492 tests passed before final refinements, then 22 focused player/hook/preference tests passed including title truncation and fullscreen shortcut routing. Reproducible browser check `node scripts/immersive-player-ui-test.mjs` uses real ExpandedPlayer/PlayerBar/LyricsView and synthetic artwork at 1024x768, 1366x768, 1920x1080, 2560x1440, checking both themes, seeking, controls, volume, toggles, missing lyrics, track changes and modes. Evidence/screenshots in `.test-data/immersive/`. Android layout/source files untouched by this change; no package installed, release or version bump.
+
+## Sync retry notifications and mobile/desktop sheet polish — 26 October 2026
+
+- Diagnosed the screenshot's stacked errors: `useNearby` forwarded every changing retry message into App's permanent global toast stack; connect also overwrote the decorated retry error, creating another distinct toast, and successful sync did not remove previously stored toasts. Removed the global forwarding for background connection failures. Sync now shows one updating connection card with expandable details and clears it on recovery.
+- Added bounded retry backoff (5s, 10s, 20s, 40s, 60s), immediate manual/online retries, real last-success time, cleared obsolete success text, and invalidated in-flight errors on disconnect. Three hook regressions cover recovery, manual retry and late failure after disconnect without playback operations.
+- Used the apple-design skill to rebuild the existing Sync sheet with grouped cards, clearer hierarchy, 18–20px interior spacing, short Devices tab, accessible house switches, 44px phone controls, circular retry/close buttons, compact QR instructions and a single privacy footer. Existing sync, pairing, history opt-in and Listen Together remain available; no new dependency or merge/transport change.
+- Actual connected Motorola diagnosis: three authenticated read-only requests from the phone to the existing desktop host succeeded in 151–199ms. One local request reset before two subsequent successes; historical causes of each network interruption were not established. The phone's saved peer link was absent when inspected. No pairing, history or playback mutation was made by these diagnostic requests.
+- Verification: all 489 frontend tests across 77 files pass, production build and ARM64 Android build pass. Browser checks at 320px, 390px and 1200px verify ready/retry/QR layouts, no horizontal overflow, circular close controls and retry recovery. Evidence: `.test-data/sync-ui/`; native merging tests from the prior sync task remain unchanged.
+- User explicitly approved an in-place phone update. Signed `.test-data/Lumaire-sync-polish-20261026.apk` using the existing local certificate, verified the signature, installed successfully with `adb install -r`, and reopened Lumaire; app data retained and version remains 1.0.6. USB disconnected before the final post-install WebView check, so on-device post-update sync/layout confirmation remains pending. No desktop process restart, network/firewall modification, version bump or publication.
+
+## Genuine word-synchronized lyrics — 26 October 2026
+
+- Audited the shared Android/desktop Lyric Room/expanded renderer, playback clocks, imported LRC/text, persisted lyric documents, LRCLIB and lrc.red. Existing lrc.red code explicitly stripped Enhanced LRC markers; it now preserves them. No new provider, scraping, account, dependency or database migration.
+- Added Enhanced LRC segment timestamps to existing lyric lines, bounded/ordered parsing, plain fallback for invalid word timing, exact Unicode/spacing, document-offset support, cached raw-marker upgrade and persistence validation. Only the active original-text line renders word spans, with Lumaire accent progress driven by actual media position (desktop 50ms, Android foreground 100ms). No independent animation clock; final words without a supplied end highlight discretely. Translations/romanization retain line alignment and seeking.
+- LRCLIB line results now allow one three-second lrc.red enrichment budget using the existing title/artist/version/duration checks. Only word-marker results supersede working primary lyrics; errors/misses retain primary lyrics. Existing cached line-only documents remain cached until explicitly cleared/refetched.
+- Live public API availability sample (metadata/counts only, no lyric text retained): Yedi IND292218474 164 word markers; Tum Hi Ho INS181303031 242; Spring Day KRA381700253 372; Despacito USUM71607007 507. Darshana INT202102847 had 51 line markers and zero word markers. Coverage depends on the exact recording, provider uptime and three-second budget; no universal coverage claim.
+- Format scope: Enhanced LRC from existing provider data or local imports; no TTML source/importer added because existing sources expose LRC. No word timing invented for translation, romanization, plain lyrics or line-only songs. Native home-screen widgets and desktop PiP retain their existing line-level presentation.
+- Verification: all 488 frontend tests passed, then the additional provider-to-document regression passed in the 26-test focused suite; 20 native provider tests passed (four unrelated opt-in live tests skipped). Production frontend and ARM64 Android builds passed; isolated desktop native startup survived without panic. Browser screenshots inspected after adding a theme-token fallback. No physical-phone installation or subjective vocal-alignment check. Reproducible browser check: `node scripts/word-lyrics-ui-test.mjs` exercises real HTML audio playback/pause/backward seeking/track replacement at 1440px and 390px, with synthetic multilingual lyrics. Screenshots in `.test-data/word-lyrics/`. Android package builds are validation only; not installed or released.
+
+## Mobile Countrywise Top 10 Dropdown and Refresh Button Same-Line Alignment — 26 October 2026
+
+- **Root Cause:** In Discover view, `.apple-chart-controls` had `flex-wrap: wrap;` enforced under `@media (max-width: 600px)` in `src/style.css`, causing the circular refresh button to drop below the country selector onto a second line. Additionally, `.apple-chart-refresh-btn` was forced to 44px in `src/mobile.css` (mismatching the 32px trigger), and the redundant static "Country" text label took up ~55px of horizontal space, forcing "Countrywise Top 10" to wrap across two lines.
+- **Fix:**
+  - In `src/components/views/AppleCountryChart.tsx`, added `apple-chart-header` and `apple-chart-title-wrap` to precisely target the section header and heading.
+  - In `src/style.css`, set `.apple-chart-controls { flex-wrap: nowrap; }` to eliminate unwanted media query wrapping.
+  - In `src/mobile.css`, removed `.apple-chart-refresh-btn` from the 44px list and added dedicated rules for `#root .app .apple-chart-header` and `.app.android .apple-chart-header`:
+    - Centered title and controls with `align-items: center; justify-content: space-between; gap: 8px;` and `white-space: nowrap;` on `h2` to prevent title wrapping.
+    - Hid `.apple-chart-country-label` ("Country") on mobile/narrow screens to reclaim 55px.
+    - Sized both `.apple-chart-select .apple-select-trigger` and `.apple-chart-refresh-btn` to a uniform 36px height with vertically aligned center baselines, pill border radius on trigger, 36x36px circle for refresh button with `active` tap depression (`scale(0.92)`).
+- **Verification:** Vitest test suite passed (74 test files, 474 tests); Vite production build passed in 7.15s; ARM64 APK assembled in 15s, signed with `lumaire-release.p12` via `scripts/sign-apk.mjs` (v2/v3 verified), installed via ADB `-r` on connected Motorola Edge 50 Pro (`ZD222LVFWT`), and relaunched into PID 12152. Desktop UI strictly untouched.
+
+## Mobile Expanded Player Up Next Auto-Play Toggle and Now Playing Card Fixes — 26 October 2026
+
+- **Auto-Play Toggle Button Geometry:** Fixed deformed switch pill in `src/components/player/mobile-now-playing.css` and `src/mobile.css`. Excluded `:not(.mobile-np-toggle-switch)` from the generic `.android button` 40px min-height rule in `src/style.css`. Sized pill to standard 48×28px with 22px circular thumb and uniform 3px margins (`translateX(20px)` when active), smooth spring animation, and 44px hit-box via `::after`.
+- **Now Playing Card Horizontal Padding:** Fixed 0px horizontal padding on `.mobile-np-queue-item.current` in `src/mobile.css` by setting `padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line-accent); box-shadow: 0 4px 16px var(--accent-glow); margin-bottom: 12px;`. Artwork and metadata now have 14px breathing room, matching the Auto-play card above.
+- **Verification:** Unit tests in `MobileNowPlaying.test.tsx` passed; production build passed in 13.63s; ARM64 APK assembled, signed with `lumaire-release.p12` via `scripts/sign-apk.mjs` (v2/v3 verified), installed via ADB `-r` on connected Motorola Edge 50 Pro (`ZD222LVFWT`), and launched into PID 31618. Desktop UI strictly untouched.
+
+## Durable two-way playlist and optional listening-history sync — 26 October 2026
+
+- Replaced one-way conflict-copy imports with versioned playlist/entry replicas persisted transactionally alongside the session in SQLite. Concurrent additions survive; entry and playlist tombstones prevent stale data resurrection; renames/order resolve deterministically. Existing linked imports migrate by original identity, settings and local-only files stay local. Library track removal also persists playlist tombstones and retired metadata is not re-imported.
+- Added authenticated `/v2` local exchange with incremental revision cursors, bounded pages, durable acknowledgements, retries and atomic malformed/interrupted-packet handling. Pairing credentials/listener port survive restart; explicit Disconnect revokes the host token. Fixed a real stop/start listener race found by end-to-end testing. No server or paid dependency added.
+- Added history opt-in on both devices. Existing playback UUIDs prevent duplicate counting while retaining repeat plays; monotonic cumulative checkpoints preserve day totals. Replicated clear epochs suppress stale/offline events and pending writes. Incoming history refreshes the existing shared hook for Tracker, Recently Played, Rotation, Forgotten Favorites and recommendations without changing playback.
+- Verification: all 474 frontend tests across 74 files passed; 19 focused native sync/history/transport/library-removal tests passed; production frontend and final ARM64 Android builds passed. Two isolated real native/WebView2 profiles passed automatic bidirectional HTTP sync, conflicting offline edits, repeated events, clears, deletion, endpoint restart and retry checks; final Tracker-view verification is recorded in the evidence report. The broad parallel native suite had nine unrelated lyric mock-server timeouts; all 19 non-live lyric tests passed serially.
+- Details and merge/clear semantics: `docs/DEVICE-SYNC.md`. Reproducible isolated test: `node scripts/two-way-sync-test.mjs`, using `.test-data/lumaire-sync-review.exe` and temporary profiles. Android package: `src-tauri/gen/android/app/build/outputs/apk/arm64/debug/app-arm64-debug.apk`; not installed or published. No phone attached at the physical-device check. Traffic remains unencrypted on trusted private IPv4 Wi-Fi; IP changes require a fresh link. Version remains 1.0.6 and previous WIP is preserved.
+
+## Mobile Recently Played YouTube Music style carousel — 26 October 2026
+
+- Rebuilt mobile `.recent-tracks-grid` layout in `src/mobile.css` to match YouTube Music mobile carousels:
+  - Container extends edge-to-edge (`margin: 0 -18px; padding: 2px 18px 8px;`) while keeping content aligned with the 18px page margin.
+  - Sized column width to `calc(100vw - 60px)`, allowing the current batch of rows to extend across the full width of the phone screen with generous space for song titles/artists and leaving ~26px peek of the next batch's artwork at the right bezel.
+  - Replaced `scroll-snap-type: x proximity;` with `scroll-snap-type: x mandatory;`, `scroll-padding-inline: 18px;`, and `scroll-snap-stop: always;` on items, providing native touch momentum and smooth one-batch snap alignment.
+  - Enhanced item ergonomics: 48x48px artwork with 8px radius, touch active depression animation (`scale(0.98)` with highlight tint), disabled desktop hover play badge on mobile, and smooth typography hierarchy.
+  - Replaced hardcoded `52px` in `DiscoveryHome.tsx` with dynamic CSS variable `var(--recent-row-height, 52px)` (56px on mobile).
+- Verification: all 73 Vitest suites (468 tests) passed; `npm run build` passed cleanly in 8.23s. Built ARM64 debug APK via `npm run android:build`, signed with `lumaire-release.p12` via `scripts/sign-apk.mjs` (v2/v3 verified), and installed to connected Motorola Edge 50 Pro (`ZD222LVFWT`) via `adb install -r`. App launched into PID 22852 without data loss. Desktop UI strictly untouched.
+
+## Recently Played track extraction limit increase — 26 October 2026
+
+- Increased `homeHistory` recent tracks extraction from 12 to 20 in `src/domain/home-listening.ts`.
+- The desktop Recently Played grid renders 3 columns x 4 rows (12 items) per page. Slicing at 12 populated only the first page and kept carousel navigation arrows disabled. With 20 items, a second page of 8 items (2 columns) is available to scroll through.
+- Added unit test in `src/domain/home-listening.test.ts` verifying extraction of up to 20 chronological tracks.
+- Verification: all 73 Vitest suites (467 tests) passed; `npm run build` completed successfully.
+
+## Android Home-Screen Widgets Polish and Adaptive Redesign — 26 October 2026
+
+- **Adaptive Multi-Size Layouts:** Replaced static layouts in `widget_now_playing.xml` and `widget_lyrics.xml` with three responsive layout modes (compact horizontal bar for 1-row/4x1/height <= 85dp, expanded horizontal medium for 4x2/3x2/height 86..145dp, and vertical card for 2x2/3x3/height > 145dp) that adaptively reveal artwork, metadata, progress indicators, and controls.
+- **Dynamic Color Extraction:** Implemented pure bitwise color extraction and Lumaire dark/lavender base blending in `WidgetUpdateHelper.kt`, generating rounded-corner gradient background bitmaps matching exact widget dimensions and adapting text/button tints with guaranteed WCAG contrast.
+- **Playback Controls & Optical Centering:** Upgraded touch targets to 40-48dp, styled the play/pause button with Lumaire's prominent lavender circle, and added optical centering (+1.2dp shift) for the play triangle.
+- **Battery-Efficient Progress Indicator:** Added subtle progress bars and mm:ss timestamp indicators to expanded and card layouts, driven via lightweight `partiallyUpdateAppWidget` calls on `PlaybackService` clock ticks without re-inflating views or recreating bitmaps.
+- **Adaptive Live Lyrics:** Implemented dynamic header indicator, glowing active line, and size-adaptive line counts (single line on 1-row, 2 lines on medium, up to 4 lines with faint previous and upcoming lines on large widgets).
+- **Verification:** Unit tests in `WidgetUpdateHelperTest.kt` passed via `./gradlew.bat :app:testUniversalDebugUnitTest`; all 467 frontend tests in `npm test` passed; Vite production build passed in 5.58s. Desktop UI strictly untouched.
+
+## Autoplay similarity and diversity audit — 26 October 2026
+
+- Checked live JioSaavn radios for 11 seeds across Malayalam, Tamil, Telugu, Hindi (melody and rap), Punjabi, Kannada, Bengali, and English pop/rock/hip-hop: 330 candidates. All had seed-language metadata; none had genre tags. Energy/mood are absent from the provider contract. Full findings and ranking examples: `docs/AUTOPLAY-AUDIT.md`.
+- Fixed additive seed/current artist bias, strengthened reliable specific-genre and original-language scoring, removed arbitrary language-repeat penalties, and penalized seed-album repetition. Preserved history/favorites personalization and all existing provider budgets/caches, playback source validation and manual queue safeguards.
+- Relax repeated-artist exclusion only when no comparable diverse candidate remains. The captured Tamil pool now supplies ten simulated picks instead of stalling after seven; all 11 seed replays reach ten. Real Tamil/English snapshots retained as regression fixtures. No new dependencies or metadata invention.
+- Production frontend build passed. All 83 focused Autoplay/domain/adapter/hook checks passed across six files, including real Tamil/English fixtures and manual-queue/cancellation paths. Updated the older cross-language hook expectation to verify that favorites personalize same-language results without overriding the original seed's language. No release/version change, user queue mutation or audio interruption; live audio/vibe judgment remains unchecked.
+
+## Mobile playback controls song and artist character limit increase — 26 October 2026
+
+- Increased mobile bottom transport bar title character limit from 22 to 48 in `src/components/player/PlayerBar.tsx` so titles are not prematurely truncated with ellipsis in JavaScript.
+- Increased `maxArtists` from 2 to 3 on mobile in `PlayerBar.tsx` so multi-artist credits are not cut off after only two artists.
+- Added `max-width: none !important;` to `.now-playing-meta` under `@media (max-width: 768px)` and `.app.android` in `src/style.css`, as well as in `src/mobile.css`, removing the desktop 140px maximum width restriction on mobile screens and allowing title and artist text to fill the full available width (~260px).
+- Added unit test in `src/components/player/PlayerBar.test.tsx` verifying that longer titles and 3+ artists render without early cut-off on mobile.
+- Verification: all 457 Vitest unit tests passed; `npm run build` completed cleanly in 5.73s.
+
+## Fix stalled desktop development startup — 26 October 2026
+
+- Diagnosed the user's blank dev window: native executable had started and Rust was idle; Vite PID 2316 had consumed 651 CPU seconds and ~1.7 GB RAM. Vite config allowed default HTML dependency discovery and root file watching across native/Android targets, tool caches and generated test builds (165 HTML files in those generated folders).
+- Limited optimizeDeps.entries to index.html and excluded src-tauri, .tools, .test-data, remote attachments, releases/release, scratch and experiments from Vite watching. Tauri continues watching native sources itself. No app/library logic, user data, version or release changed.
+- Production frontend build passed. Isolated real native instance rendered in 1,658ms without captured JavaScript errors. Closed only the identified blank dev window/old Vite process and restarted npm run desktop with the existing profile.
+- Clean restart: Vite ready 400ms; cached Rust dev build 1.34s; Vite ~111 MB RAM / 5.47 CPU seconds at measurement. Real existing-profile WebView confirmed app/workspace and Good night heading, first contentful paint 3,816ms. Evidence: .test-data/desktop-fixed.log, desktop-fixed-result.json and desktop-fixed.png. Development session remains running for the user.
+- First Rust builds after native/dependency changes can still take longer; no cold toolchain compile or packaged-app startup benchmark was run. Prior WIP preserved; no push/publication.
+## Same-hotspot Wi-Fi retest — 26 October 2026
+
+- Rechecked connected Motorola and desktop after the user selected Wi-Fi verification. Phone initially had 172.25.218.131 on another network while PC remained 172.20.10.8/28. Phone then joined the PC's iPhone hotspot, but again obtained only IPv6 plus CLAT 192.0.0.4, no wlan0 IPv4 lease.
+- One phone Wi-Fi reconnect did not obtain IPv4. PC Wi-Fi IPv6 binding is disabled. Existing app-specific Public-profile inbound allow rules are already enabled; firewall rules were not changed. The normal desktop executable is newer than the landing-page fix.
+- Current pairing protocol uses private IPv4 only, so this hotspot configuration remains unsuitable for the phone's direct local link. Further Wi-Fi verification needs both devices on an IPv4-capable local network (regular router or Motorola hotspot). No new code changes, installation or publication in this retest; previous USB verification remains diagnostic only.
+
+## Correct category artwork assignment — 26 October 2026
+
+- Removed the erroneous index-based assignment of release/trending/library covers to mood and genre tiles. Restored each category's explicit photo; unavailable images are hidden so only the category color remains. No unrelated album or generic hero substitute, no new API requests.
+- Removed the feed-artwork callback/state from DiscoverShelves and DiscoveryView. Added a regression asserting that unrelated saved artwork never appears on category cards; offline UI fixture now accepts the intentional color fallback.
+- Focused regression and production frontend/ARM64 Android build passed. Signed `.test-data/Lumaire-category-artwork-fix-20261026.apk` with the existing certificate for in-place phone update. Version remains 1.0.6; no publication. Category-photo availability on the user's network remains dependent on the image host.
+## QR pairing page and connected-phone diagnosis — 26 October 2026
+
+- User connected Motorola Edge 50 Pro (ZD222LVFWT) and explicitly chose USB-only verification for now. PC Wi-Fi is 172.20.10.8 on a Public Windows network profile. Phone Wi-Fi has global/link-local IPv6 but no normal IPv4 lease; its IPv4 route to the PC uses CLAT v4-wlan0 / 192.0.0.4. A fresh native sharing server answered locally; direct phone-to-PC connection timed out. This establishes a current LAN reachability problem, not its sole cause; no firewall or Wi-Fi settings were changed.
+- Corrected the QR browser-flow gap: native nearby server now serves a static, offline pairing page at GET /. The page reads the token from the browser fragment, offers Copy with an insecure-HTTP selection fallback, and directs users to Lumaire / Sync. Invalid/missing fragments disable Copy. Existing authenticated /v1/state, private-peer restriction, origin rejection and session lifetime remain intact. Root HTML contains no server token and sends no-referrer / no-store / CSP / nosniff headers. Updated desktop QR instructions.
+- Built a separate `.test-data/lumaire-nearby-review.exe` via cargo rustc -o to avoid replacing/restarting the user's running app. Isolated data and WebView profiles only. Native startup and commands completed without panics.
+- Actual on-phone USB verification passed using temporary adb reverse: landing page HTTP 200 and expected HTML; authenticated metadata HTTP 200; unauthenticated metadata HTTP 403. Read-only nearby_fetch executed inside the installed phone Lumaire WebView and returned the empty test share (zero playlists / no now-playing). No import, user-library mutation, APK install, pairing-state replacement or production session access. All test tunnels and isolated processes removed afterward. Evidence: `.test-data/nearby-phone-complete/result.json`.
+- Verification: four native nearby tests and four frontend nearby tests passed; mobile-sized browser landing-page checks cover exact fragment link, copy/selection fallback and missing-token rejection. Production frontend build and whitespace checks passed.
+- Limits: hotspot Wi-Fi pairing remains unreachable and was not claimed fixed. Actual Android Chrome/camera UI verification was not completed; successful phone checks used its native HTTP clients. USB test is diagnostic, not a permanent app USB mode. The user's normal executable/installed app is unchanged; the new browser landing page requires a rebuilt/restarted native desktop app. No publication. Existing WIP preserved.
+## Mobile polish and shared drag queue — 26 October 2026
+
+- [x] Tracker: mobile-specific compact heading/range controls, one-row recap metrics, swipeable ranking cards and compact recent-play rows. Removed obsolete background-tracking-development notice. Desktop Tracker layout preserved.
+- [x] Playing song: mobile current rows retain an accent edge with padded artwork/content, avoiding cover overlap.
+- [x] Mobile player: moved identity/transport upward and tightened time labels to the seek bar while preserving touch targets.
+- [x] Sync sheet: close button is fixed at 44 by 44 pixels, cannot flex-shrink into an oval.
+- [x] Queue: shared Pointer Events drag handle replaces up/down buttons on mobile and desktop; arrow keys remain supported. Only upcoming entries can move. Drag follows the pointer, highlights its target, handles cancellation and scrolls at edges without per-move React state. Mobile queue now also includes unsaved session queueTracks.
+- [x] Domain reorder inserts rather than swaps, copies displayed order before edits, rejects invalid/out-of-bounds moves and preserves current playback/shuffle ordering. Regression guards caught and fixed an initial mutation bug.
+- Verification: 46 focused queue/session/player/navigation tests passed; bundled browser checks passed for touch dragging, desktop mouse dragging, keyboard moves, circular Sync close geometry, compact Tracker, existing phone gestures and desktop isolation. Production frontend and ARM64 Android builds passed. Screenshots: `.test-data/mobile-review/tracker.png`, `player.png`, `drag-queue.png`.
+- Signed and verified `.test-data/Lumaire-mobile-polish-20261026.apk` using the existing certificate; Motorola ZD222LVFWT `adb install -r` succeeded and launch returned Status ok. Data retained, version 1.0.6 unchanged, no commit/push/publication. Long-queue touch scrolling and screen-reader behavior still need physical-device review; desktop installed release remains unchanged.
+## QR-first nearby sharing — 26 October 2026
+
+- Devices / listening together now shows a locally generated black-on-white QR code for the exact host pairing link, with a four-module quiet zone. QR follows new host links and disappears on stop. Raw link is under Show pairing link; Copy remains available without expanding it.
+- Copy explicitly explains the supported flow: scan and copy the detected link, then paste into Lumaire / Sync on the other device. No automatic camera pairing/deep-link handler was added; opening the HTTP link in a browser alone is not supported by the existing authenticated nearby API. Host lifetime and protocol remain unchanged.
+- Added the single MIT qrcode-generator 2.0.4 dependency to encode locally rather than expose pairing tokens to a QR service or maintain a custom QR implementation. Updated runtime notices and licence text.
+- Verification: four nearby/component tests passed; production build passed. Browser checks confirmed image decoding/rendering, white quiet zone, 390px fit and exact fallback link; desktop screenshot inspected. Independent QR scanning unavailable in desktop browser and phone camera/pairing not tested. No native changes, release or publication; prior WIP preserved.
+
+## PiP full foreground color mode — 26 October 2026
+
+- Black PiP mode now covers song title/artist, toolbar buttons/icons, lyric layers/messages, background label/slider, shortcut hint, status/error text and unlock control. White mode restores original styles. Background opacity remains independent; existing saved color preference reused.
+- Moved Aa to the header immediately before Lock, and clarified its accessible label. No native changes.
+- Verification: three floating-lyrics tests, production build and browser computed-style checks passed (all foreground elements black, white restored, opacity unchanged). Native PiP visual verification not run; no publication. Prior WIP preserved.
+
+## Gemini key management in Settings — 26 October 2026
+
+- Added a visible Gemini API key card near the top of desktop Settings / Lyrics. Previously management existed only inside Lyric room's advanced lyrics settings. Removed the stale direction to another page.
+- Extracted GeminiKeySettings for both locations: existing native status/save/delete commands, masked input, clear on save/cancel, replacement and removal, generic safe errors and shared key-change events. Both mounted surfaces refresh status together. No duplicate key store, raw-key readback, backend change or real credential access.
+- Verification: two component tests and production frontend build passed. Browser fixture 
+ode scripts/gemini-settings-ui-test.mjs verifies Settings navigation, masked save, synchronized status, failed replacement preserving the previous key, removal and cleared inputs. Only fake keys/native I/O used; no Gemini API request. Native credential-store integration not rerun; no publication. Other WIP preserved.
+
+## Expanded player 40/60 layout, shift left, and lyric line length increase — 26 October 2026
+
+- Reverted the bottom transport bar `translateY(2px)` transform on track metadata per user request.
+- Adjusted `.expanded-layout.has-lyrics` in `expanded.css` to a 40/60 column split (`grid-template-columns: minmax(320px, 4fr) minmax(0, 6fr)`).
+- Removed the 1440px+ `translate: 48px 0` offset and tightened layout padding (`padding: 68px clamp(32px, 4vw, 72px) 44px`) and gap (`gap: clamp(32px, 4.5vw, 72px)`), bringing both the cover art controls and lyrics column to the left.
+- Increased lyric lines max-width to `min(700px, 100%)` in both `expanded.css` and `style.css` so longer lines avoid premature line wrapping while maintaining comfortable right-hand margin.
+- Verification: all 452 Vitest unit tests passed across 71 test files (`npm test`); production build (`npm run build`) passed with 0 errors.
+
+## Visible bottom-right notification toasts — 26 October 2026
+
+- Replaced the top error banner and small top-center success capsule with readable bottom-right toast cards above the player. Long text wraps; simultaneous errors stack in a scrollable region. Both types have cross buttons; mobile fits the viewport and uses larger dismissal targets. Reduced-motion preferences are respected.
+- Success/informational notifications retain the existing shared notify pathway with an exact four-second timer (including repeated messages). Success no longer clears an error. Error cards capture application and playback errors independently and remain until explicitly dismissed, even if the underlying request/playback state clears. Playback dismissal now works; Retry playback is offered only for the matching active playback error.
+- Toasts portal into an open dialog or body after dialog effects commit, keeping them visible through expanded-player/modal open and close. Removed the unused duplicate App message timeout reference. No dependencies or native changes.
+- Verification: six library-manager tests passed, including four-second expiry/error retention; production build and whitespace checks passed. Browser test 
+ode scripts/notifications-ui-test.mjs passed bottom-right geometry, success expiry, persistent/dismissible errors, no playback-error resurrection on unrelated errors, modal transitions and 390px mobile bounds. Desktop/mobile screenshots inspected. Native app UI verification not run; no release/publication. Other WIP preserved.
+
+## Lyric line length reduction — 26 October 2026
+
+- Reduced lyric line max-width in the Expanded Player (`.expanded-lyrics .lyric-lines` and `.expanded-lyrics .lyric-line` in `expanded.css`) from unbounded `100%` (~950px–1100px) down to `min(580px, 100%)`. Prevents overly stretched text and wide hover/active pill backgrounds across the right column on widescreen displays.
+- Reduced general desktop Lyric Room line max-width (`.lyric-lines` and `.lyric-line` in `style.css`) from `min(840px, 100%)` to `min(680px, 100%)` for comfortable reading measure.
+- Verification: all 450 Vitest unit tests passed across 70 test files (`npm test`); production build (`npm run build`) passed with 0 errors.
+
+## Sidebar resize cap — 26 October 2026
+
+- Reduced maximum sidebar width from 440px to 320px for dragging, release and restored widths. Existing larger saved widths clamp to 320px. Minimum/default widths unchanged. Native visual verification not run.
+
+## Hide mobile Done action in desktop menus — 25 October 2026
+
+- Corrected the mobile close-action CSS selector so generic menu button styles cannot expose Done in desktop dropdowns, including the expanded player. Mobile action sheets retain the dismissal button. Existing outside-click and Escape handling is unchanged.
+- Five menu-dismissal tests, 1920px/390px browser style checks and production build passed. Native visual review not run; no publication. Prior WIP preserved.
+
+## Personalized Autoplay connected and verified — 25 October 2026
+
+- Audited queue exhaustion, catalog/radio parsing, Tracker records, liked songs, artist/album favorites, discovery language settings and playback controls. App now passes the actual useListeningHistory records into usePlayback; ranking reads live Session favorites and saved tracks rather than a separate preference store.
+- Added a bounded candidate adapter using up to three seed radios: original deliberate selection (stable anchor), current context, and existing quickPickSeeds from likes/meaningful listening. Shared 30-minute radio/search caches with Home; optional catalog metadata has a bounded 30-minute cache. Up to 90 candidates, five-second pool budget with partial-success fallback; no paid dependency, schema migration or new service.
+- Local deterministic ranking returns score reasons. Uses the latest 2,000 qualifying Tracker records (actual listened time and repeat events, 30-day exponential recency), liked songs, favorite artists/albums, provider language and genre metadata, original/current radio relevance, recent artist/album/language diversity and periodic anchor-related discovery. Native radio now preserves validated multilingual candidates in provider order; frontend compatibility includes selected languages, seed languages and languages evidenced by known listened/liked recordings. No artist-name language guessing or fabricated mood labels.
+- Only explicit Next actions from controls/keyboard/taskbar/native widgets enter a bounded in-memory skip list. Ten-minute song exclusion, then a small decaying penalty for up to a day; seeking, errors, direct song/queue choices and short listens do not create dislikes. No skip persistence or historical skip inference. Up to 80 recent autoplay selections and a separate turn counter retain discovery cadence in long sessions.
+- Queued identities, normalized titles and identifiable alternate versions remain excluded during ranking and after audio resolution. Artist repetition is capped against recent selections. At most eight availability checks, two at a time, within a shared 12-second budget; late results cannot queue. Partial provider failure/cold starts retain safe radio choices; exhausted/unsafe pools show retry rather than relaxing exclusions.
+- Autoplay audio starts only after React commits its selected queue entry. Request/playback identity and queue ownership checks cancel stale results after a direct song choice, Autoplay disable, manual queue edits or playback resume. Natural queue advance and error recovery do not create skip penalties. Manual requests retain priority/order; new deliberate selections update the anchor.
+- Verification: full frontend suite passed (449 tests / 70 files), followed by all 38 focused tests after the final long-session adjustment. Tests cover real hook/adapter/ranking/queue wiring, mixed-language tastes, cold/sparse histories, twelve autoplay advances, skip provenance/decay, editions, artist diversity, unavailable tracks, partial failures, caching, deadlines and cancellation. `node scripts/autoplay-flow-test.mjs` also passed with actual React effects: history/like-based Hindi selection, successive nonduplicate selection, cached anchor and manual queue override during resolution. Browser/provider/audio fixtures are synthetic and isolated from the user library.
+- Production frontend build, native build and 16 native catalog fixture tests passed. Rebuilt desktop process started with an isolated data directory/WebView profile and remained running ten seconds without panics. Local HTTP fixture tests require execution outside the network sandbox. Whitespace checks passed.
+- Limits: anchor, recent selections and skip penalties reset on app restart; mood is unavailable, so continuity relies on song radio and optional supplied genre. Playback checks race pairs for responsiveness, so the fastest playable of the next two ranked choices can win. Live JioSaavn/extractor availability and subjective listening quality were not tested. No installation, release, version bump, commit or publication; existing WIP preserved.
+## Restore standalone mobile Lyric Room — 25 October 2026
+
+- Removed the embedded lyrics tab/controller from MobileNowPlaying. Expanded mobile playback now has only the song view and Up Next; cover swipes/queue gestures preserved. Desktop expanded lyrics unchanged.
+- Mobile Lyrics navigation opens the existing standalone Lyric Room through normal screen routing, retaining the bottom mini-player. Five compact destinations: Home, Discover, Library, Lyrics, Tracker. Removed the mobile route interception and obsolete embedded lyric styles; opening the mobile player no longer requests lyrics as though Lyric Room were open.
+- Verification: seven focused navigation/player/swipe tests passed. Offline touch/layout checks passed at 360/390/433px, plus desktop isolation at 1280px; standalone Lyric Room and visible mini-player asserted. Production frontend and ARM64 APK builds passed.
+- Signed `.test-data/Lumaire-phone-lyric-room-20261025.apk` with the existing release key and verified it. Motorola ZD222LVFWT in-place installation succeeded, and MainActivity cold launch returned Status ok. No app-data clearing, version change, push or publication. Real phone lyric interaction remains for user review.
+## Android YouTube playlist import uses bundled resolver — 25 October 2026
+
+- Root cause: shared `read_playlist_link` unconditionally invoked the desktop yt-dlp executable, producing an impossible Android install-engine prompt while streaming correctly used the bundled resolver.
+- Android now routes validated YouTube playlist URLs through the existing native resolver. Bundled Python performs flat metadata-only extraction, bounded to 501 entries for the shared parser's 500-track limit/partial warning. Existing parser preserves order/YouTube identity and skips private/deleted rows. Desktop executable path and Spotify/Apple parsing unchanged.
+- Validation remains at both boundaries: fixed HTTPS playlist hosts/ID format, bounded metadata, no stream URLs returned and no audio download. Four Python regression checks and four Rust playlist tests passed. ARM64 build passed.
+- Signed `.test-data/Lumaire-phone-sync-fix-20261025.apk` with the existing release certificate, verified signature/alignment and installed on Motorola ZD222LVFWT with `adb install -r`: Success. Launch Status ok. No uninstall, data clear, version change or publication.
+- Live metadata-only check could not reach the phone's WebView debugging socket (five-second timeout). Actual successful import is not yet verified; user should retry their public playlist link. No test playlist was added to the library.
+## About heading uses actual app version — 25 October 2026
+
+- Replaced the stale hardcoded Lumaire 1.0.4 heading with currentVersion from the existing updater store, sharing the native installed-version lookup and bundled-config fallback with the update card. Future version changes require no About text edit.
+- No additional version API call or independent state. Native desktop visual verification not run; no publication. Existing WIP preserved.
+
+## Center expanded cover and lyrics visually — 25 October 2026
+
+- Shifted both expanded cover/controls and lyrics 48px right at widths of 1440px and above. Existing spacing, vertical alignment, cover-only mode and narrower layouts remain unchanged.
+- Browser geometry checks passed at 1280/1440/1920px: both columns move together on wide screens and remain within the viewport. Native desktop visual review not run; no publication. Previous WIP preserved.
+
+## Missing favorite artists persistence audit — 25 October 2026
+
+- Read installed app SQLite through a read-only connection: favoriteArtists is empty on disk (10 playlists and one favorite album remain). No modifications to the installed database. A best-effort raw main/WAL scan found no complete nonempty favoriteArtists array; not a full forensic recovery.
+- Current artist save flow includes favorites in the full session; restoration accepts supported IDs and Artists renders the resulting list. Added regression for multiple artist identities across repeated JSON normalization; real isolated SQLite save/close/reopen check passed.
+- Published v1.0.5 loader lacks favoriteArtists restoration, making newer-to-older build switching a possible destructive compatibility path. User was asked whether builds were switched; actual cause remains unconfirmed. No speculative persistence rewrite or fabricated recovery.
+- Verification: 11 queue/library tests passed; isolated SQLite roundtrip passed. No native interactive favorite/relaunch test. No release or publication; existing WIP preserved.
+
+## Preserve full artist identity in controller links — 25 October 2026
+
+- PlayerBar now passes the complete artist string to ArtistLinks, rather than generating artist references from manually truncated names. Existing CSS ellipsis handles display clipping in compact/expanded views; shared callers already pass full credits.
+- Verification: 12 focused player/artist-link/domain tests and production build passed. Browser click check confirms Darshana Rajendran navigates with the complete artist reference and does not trigger expansion. Native desktop/provider lookup not run; no publication. Other WIP preserved.
+
+## Shorter expanded lyrics viewport — 25 October 2026
+
+- Desktop expanded lyrics now occupy at most 70dvh, vertically centered by the existing grid. Retained lyric sizing, edge fades, scrolling and active-line centering; narrow layouts unchanged.
+- Browser geometry check at 1920x1080 confirms a 756px scrollable lyric area with extra space above/below. Native desktop visual review not run; no publication. Prior WIP preserved.
+
+## Expanded player title space — 25 October 2026
+
+- Removed the inherited compact-player 140px metadata width cap in expanded mode. Song titles now use the available row width beside the menu, retaining single-line ellipsis for overflow.
+- Production build passed. Browser layout check measured 460px metadata width instead of the old 140px cap. Native desktop visual check not run; no publication. Other WIP preserved.
+
+## Prominent Windows update action — 25 October 2026
+
+- Shared Settings/About and update dialog now show a full-width, accent-colored Download update button with the target version above release notes. Progress and Restart & Update occupy the same area before the notes, with the existing playback-interruption warning retained.
+- Reused the existing primary button style. Seven updater-card tests and production frontend build passed; diff whitespace check passed. Native desktop visual verification not run. No release or publication; other WIP preserved.
+
+## Desktop controller and PiP preferences — 25 October 2026
+
+- Clicking noninteractive controller space or metadata opens the expanded player. Buttons, links, seek input and track menus retain their own actions; already-expanded controls do not toggle expansion. Removed duplicate mobile metadata expansion handler.
+- Current-song heart is now available for unsaved streamed queue songs, reusing the existing save-before-favorite handler. Its streamed save/like/unlike regression passes; no extra favorite persistence path added.
+- PiP lock preserves the selected background opacity. Added a Black lyric text toggle (off means white), saved locally and applied to active/inactive lyrics, secondary text and messages; controls retain dark-surface contrast.
+- Verification: 12 focused component/library tests and production frontend build passed. Offline browser interaction fixture confirms metadata expansion and isolated play/favorite/seek actions. Native Windows PiP click-through/opacity visual review was not run. No release, version bump, publication or user-data change; previous WIP preserved.
+
+## Connected phone rebuilt and updated — 25 October 2026
+
+- Rebuilt the current ARM64 Android debug APK, signed a separate `.test-data/Lumaire-phone-20261025-update.apk` with the existing Lumaire release certificate, and verified its signature/alignment.
+- Installed with `adb -s ZD222LVFWT install -r`: Success. No uninstall or data clear. Launched `app.lumaire.player/.MainActivity`: Status ok, cold launch completed. Device reports versionName 1.0.6 / versionCode 1000006.
+- No push or publication. Interactive mobile feature review remains for the user; this turn only rebuilt, installed and verified launch.
+## Show one Windows release-notes section — 25 October 2026
+
+- Windows Settings/About and the shared update dialog hide installed-version notes whenever an update version is displayed. With no available update, installed-version notes remain visible. No release history UI added; Android unchanged.
+- Verification: all four UpdaterCard tests and production frontend build passed. Desktop interactive verification not run; no installer or publication. Prior WIP preserved.
+
+## Windows icon and updater request diagnosis — 25 October 2026
+
+- Confirmed the existing Windows ICO uses the current purple headphones and is configured for both the executable and NSIS installer; in-app installation replaces those packaged assets. Existing pinned shortcuts may retain a Windows-cached icon.
+- Fetched the public latest.json successfully outside the restricted network sandbox: v1.0.6 with signed Windows NSIS payload. The v1.0.5 screenshot shows a transport failure, which alone does not identify DNS, TLS, timeout or proxy/firewall causes.
+- Improved updater transport-error text with GitHub connectivity guidance; preserves retry and signature-failure handling. Prior startup-update and unrelated mobile WIP preserved. No release, version change or installation.
+- Verification: 17 focused updater/card tests and production frontend build passed. Native installed-app update/restart and pinned-icon refresh remain unverified.
+
+## Mobile follow-up without a connected phone — 25 October 2026
+
+- [x] Home: all five shelves remain available on mobile in desktop order. Missing-data shelves explain their real eligibility instead of disappearing or inventing plays. Desktop retains its existing hide-empty behavior. History remains device-local; Continue Listening needs an unfinished multi-track queue, Rotation three qualified plays, Forgotten Favorites older loved listening.
+- [x] Discover artwork: mood/genre tiles reuse artwork from the already fetched release/trending feed, then saved artwork or a bundled image. No extra category API requests or dependency on external stock-photo hosts.
+- [x] Discover songs: force album/time/index out of mobile rows and pin metadata/menu to the same grid row; preserved desktop columns.
+- [x] Cover gestures: left/right skip with direct horizontal artwork tracking, no per-move React state. Existing up/down queue/dismiss gestures remain.
+- [x] Lyrics: pinned artwork/title and previous/play-pause/next controls above the lyrics, including empty/error states.
+- [x] Favorites: root handler now saves streamed queue tracks before favoriting instead of silently rejecting unsaved tracks; no global busy lock or playback changes. Existing library favorites still toggle immediately.
+- [x] Verification: 22 focused tests passed. Production frontend and ARM64 Android debug APK builds passed. Offline browser fixture passed at 360/390/433px plus 1280px desktop isolation: cover skips, heart state, lyrics controls, all Home shelves, actual loaded category image, compact Discover row geometry, library/settings/sheets and queue interactions. Direct localhost checks were blocked in this environment; fixtures now bundle and fulfill local resources directly without external requests.
+- [ ] Real phone playback, gestures and signed in-place installation await reconnection. Local debug review APK: `.test-data/Lumaire-mobile-review-1.0.6.apk`; not release-signed for replacing the installed release. No install, data reset, commit, push, tag or publication. Version stays 1.0.6; prior local Windows updater/setup changes preserved.
+## Local-only startup updates and required playback setup — 25 October 2026
+
+- Kept version 1.0.6 and the published release unchanged. No commit, push, tag, installer publication or Android change for this task.
+- Windows checks for updates once per launch in the background. Existing top-bar update action shows detected updates; downloading and installation remain explicit. Development/Android skip startup checks; offline failures remain manually retryable.
+- Replaced Home/Discover/empty-Library engine setup cards with one required Windows modal after the engine check. Escape/outside clicks cannot dismiss it; download progress, cancellation and retry reuse existing handlers. Cancelling leaves setup required; successful installation closes it. Language onboarding waits until engine setup is ready. Settings keeps its existing maintenance card.
+- Verification: 27 focused updater/setup/top-bar tests passed; production frontend build passed. Native installer and interactive Windows modal verification were not run for this local-only change.
 ## Windows 1.0.6 published — 25 October 2026
 
 - Windows can ship independently of Android. Versions are 1.0.6; the existing Windows-only workflow builds the signed NSIS installer, signature and latest.json, verifies artifacts and then publishes. No APK is included. Native Android, generated Android and Android script WIP stays outside this release commit.

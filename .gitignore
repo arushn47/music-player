@@ -23,17 +23,10 @@ test-results/
 Thumbs.db
 
 docs/*
-!docs/windows-updates.md
-!docs/windows-release-publishing.md
-!docs/CURRENT-STATUS.md
-!docs/development-history.md
-!docs/implementation-plan.md
-!docs/lyrics-alternatives-research.md
-!docs/connected-features.md
+!docs/performance/
 
 # Distribute binaries as GitHub Release assets, not source commits.
 /release/*
-!/release/README.md
 
 # Generated Android tool schemas (the Android project sources remain tracked)
 /src-tauri/gen/schemas/android-schema.json
@@ -47,23 +40,6 @@ releases/
 .kiro/
 
 scratch/
-scripts/*
-!scripts/connected-desktop-test.mjs
-!scripts/overlay-desktop-test.mjs
-!scripts/overlay-lock-test.mjs
-!scripts/album-download-test.mjs
-!scripts/playlist-import-test.mjs
-!scripts/support-desktop-test.mjs
-!scripts/expanded-lyrics-test.mjs
-!scripts/autoplay-test.mjs
-!scripts/ambient-test.mjs
-!scripts/overlay-opacity-test.mjs
-!scripts/updates-ui-test.mjs
+scripts/
 
-!scripts/sidebar-scroll-test.mjs
-
-!docs/PROVIDER-EVALUATION.md
-!scripts/evaluate-music-providers.py
-!scripts/providers-ui-test.mjs
-!scripts/mobile-ui-test.mjs
-!docs/MOBILE-REDESIGN.md
+.codex-remote-attachments/

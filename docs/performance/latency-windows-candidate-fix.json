@@ -1,0 +1,7102 @@
+{
+  "platform": "windows",
+  "label": "candidate-fix",
+  "samples": 20,
+  "startedAt": "2026-10-27T04:48:31.776Z",
+  "trials": [
+    {
+      "kind": "cold",
+      "index": 0,
+      "ok": true,
+      "ms": 10693.79999999702,
+      "clickedAt": 1635.2999999970198,
+      "endedAt": 12340.59999999404,
+      "playingAt": 12329.09999999404,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1640.7999999970198
+        },
+        {
+          "stage": "search",
+          "at": 1641.7999999970198
+        },
+        {
+          "stage": "discovered",
+          "at": 6944.5999999940395
+        },
+        {
+          "stage": "discovered",
+          "at": 7049
+        },
+        {
+          "stage": "rejected",
+          "at": 7049.5,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 7050.899999991059,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 7051.29999999702,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 7051.5,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 7051.5999999940395,
+          "candidateId": "LQ4w9xiHkrY",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 7051.5999999940395,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 7051.79999999702,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 7053.0999999940395,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 7053.29999999702,
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 7053.399999991059,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 7053.5999999940395,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7053.79999999702,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 7054,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 7054.20000000298,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 7054.399999991059,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "matched",
+          "at": 7054.5999999940395,
+          "candidateId": "GSmG20dZNNU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 7054.899999991059,
+          "candidateId": "uqoIw-AKml8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7055.29999999702,
+          "candidateId": "dMbZfdrzILA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7055.5999999940395,
+          "candidateId": "eioYulMp_5k",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7055.5999999940395,
+          "candidateId": "NiAOAhFCEuQ",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 11545,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 11545.59999999404,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 11928.09999999404
+        },
+        {
+          "stage": "playing",
+          "at": 12329.09999999404
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 0,
+      "ok": true,
+      "ms": 210.70000000298023,
+      "clickedAt": 12393.09999999404,
+      "endedAt": 12621.79999999702,
+      "playingAt": 12603.79999999702,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 12401.5,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 12414.29999999702
+        },
+        {
+          "stage": "playing",
+          "at": 12603.79999999702
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 0,
+      "ok": true,
+      "ms": 9239.90000000596,
+      "clickedAt": 12663.59999999404,
+      "endedAt": 21920.20000000298,
+      "playingAt": 21903.5,
+      "events": [
+        {
+          "stage": "search",
+          "at": 12674.79999999702
+        },
+        {
+          "stage": "search",
+          "at": 12675.59999999404
+        },
+        {
+          "stage": "discovered",
+          "at": 16636.20000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 16845
+        },
+        {
+          "stage": "rejected",
+          "at": 16845.5,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 16846.20000000298,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16846.59999999404,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16846.79999999702,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16847.39999999106,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16847.5,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16847.79999999702,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16848,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16848.09999999404,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16848.29999999702,
+          "candidateId": "us5xN06GhKU",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 16848.5,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16848.79999999702,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 16849.09999999404,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 16849.29999999702,
+          "candidateId": "dr_GAJZviR0",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16849.5,
+          "candidateId": "h6vj8Ryu0LI",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 16849.70000000298,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16849.79999999702,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16850.09999999404,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16850.20000000298,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16850.5,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 21682.39999999106,
+          "candidateId": "72UO0v5ESUo"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 21682.59999999404,
+          "candidateId": "72UO0v5ESUo"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 21882.29999999702
+        },
+        {
+          "stage": "playing",
+          "at": 21903.5
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 1,
+      "ok": true,
+      "ms": 9577.70000000298,
+      "clickedAt": 1951.7999999970198,
+      "endedAt": 11551.39999999106,
+      "playingAt": 11529.5,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1956.8999999910593
+        },
+        {
+          "stage": "search",
+          "at": 1957.5999999940395
+        },
+        {
+          "stage": "discovered",
+          "at": 6872.899999991059
+        },
+        {
+          "stage": "discovered",
+          "at": 7074.0999999940395
+        },
+        {
+          "stage": "rejected",
+          "at": 7075.899999991059,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 7078,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7078.399999991059,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7078.5,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7078.79999999702,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 7078.899999991059,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 7079,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 7079.20000000298,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7079.399999991059,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7079.5,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7080,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7080.0999999940395,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7080.20000000298,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7080.399999991059,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 7080.70000000298,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 7080.79999999702,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 7080.899999991059,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 10756.20000000298,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 10756.59999999404,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 11143
+        },
+        {
+          "stage": "playing",
+          "at": 11529.5
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 1,
+      "ok": true,
+      "ms": 205.6000000089407,
+      "clickedAt": 11596.39999999106,
+      "endedAt": 11819.70000000298,
+      "playingAt": 11802,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 11604.20000000298,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 11621.20000000298
+        },
+        {
+          "stage": "playing",
+          "at": 11802
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 1,
+      "ok": true,
+      "ms": 8255.29999999702,
+      "clickedAt": 11867.20000000298,
+      "endedAt": 20165,
+      "playingAt": 20122.5,
+      "events": [
+        {
+          "stage": "search",
+          "at": 11879.79999999702
+        },
+        {
+          "stage": "search",
+          "at": 11880.5
+        },
+        {
+          "stage": "discovered",
+          "at": 15735.70000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 16189.70000000298
+        },
+        {
+          "stage": "rejected",
+          "at": 16190,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16190.39999999106,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16190.70000000298,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16190.89999999106,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16191.20000000298,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 16191.29999999702,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16191.5,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16191.59999999404,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16191.79999999702,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16191.89999999106,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16192,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16192.09999999404,
+          "candidateId": "QGH6nBbZhRs",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16192.20000000298,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16192.39999999106,
+          "candidateId": "t1dvleuNkn0",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16192.39999999106,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16192.59999999404,
+          "candidateId": "rZ-HKpYg9Rg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16192.59999999404,
+          "candidateId": "deQcxldcOog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16192.70000000298,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16192.89999999106,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16193.09999999404,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16193.20000000298,
+          "candidateId": "9OF_cF48mjA",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 19888.20000000298,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 19888.5,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 20097.29999999702
+        },
+        {
+          "stage": "playing",
+          "at": 20122.5
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 2,
+      "ok": true,
+      "ms": 8444.70000000298,
+      "clickedAt": 2024.0999999940395,
+      "endedAt": 10482.89999999106,
+      "playingAt": 10468.79999999702,
+      "events": [
+        {
+          "stage": "search",
+          "at": 2028.3999999910593
+        },
+        {
+          "stage": "search",
+          "at": 2029.2999999970198
+        },
+        {
+          "stage": "discovered",
+          "at": 5821.0999999940395
+        },
+        {
+          "stage": "discovered",
+          "at": 5877.0999999940395
+        },
+        {
+          "stage": "rejected",
+          "at": 5879.199999988079,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5879.5999999940395,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5879.79999999702,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5880.199999988079,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5880.399999991059,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5880.5999999940395,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5880.699999988079,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5881.199999988079,
+          "candidateId": "ll_k-q9LAHQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5881.399999991059,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5881.699999988079,
+          "candidateId": "sqazwaUAJto",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5881.79999999702,
+          "candidateId": "0tehCcx72hg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5881.899999991059,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5882,
+          "candidateId": "3dCuy93IvuQ",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5882.199999988079,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5882.29999999702,
+          "candidateId": "rZ-HKpYg9Rg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5882.399999991059,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5882.5,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5882.699999988079,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5882.79999999702,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5882.899999991059,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5883.29999999702,
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5883.5,
+          "candidateId": "deQcxldcOog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5883.5999999940395,
+          "candidateId": "zluCin4zJHM",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 9653.39999999106,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 9654,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 10065.09999999404
+        },
+        {
+          "stage": "playing",
+          "at": 10468.79999999702
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 2,
+      "ok": true,
+      "ms": 218.5,
+      "clickedAt": 10539.89999999106,
+      "endedAt": 10780.09999999404,
+      "playingAt": 10758.39999999106,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 10547.199999988079,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 10564.79999999702
+        },
+        {
+          "stage": "playing",
+          "at": 10758.39999999106
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 2,
+      "ok": true,
+      "ms": 8340.5,
+      "clickedAt": 10832,
+      "endedAt": 19188.59999999404,
+      "playingAt": 19172.5,
+      "events": [
+        {
+          "stage": "search",
+          "at": 10843.39999999106
+        },
+        {
+          "stage": "search",
+          "at": 10844.39999999106
+        },
+        {
+          "stage": "discovered",
+          "at": 14856.89999999106
+        },
+        {
+          "stage": "discovered",
+          "at": 14858.29999999702
+        },
+        {
+          "stage": "rejected",
+          "at": 14858.39999999106,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 14858.39999999106,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 14858.59999999404,
+          "candidateId": "ctlZNgedZ28",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 14858.699999988079,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 14858.89999999106,
+          "candidateId": "SB4V4LyCBo4",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 14859,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 14859.199999988079,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 14860.39999999106,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 14860.59999999404,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 14860.59999999404,
+          "candidateId": "hvL1339luv0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 14860.699999988079,
+          "candidateId": "8leAAwMIigI",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 14860.79999999702,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 14861,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 14861,
+          "candidateId": "arp8UmQeHNI",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 14861.09999999404,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 14861.29999999702,
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 14861.39999999106,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 14861.5,
+          "candidateId": "RL6Jq1hHsco",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 14861.59999999404,
+          "candidateId": "R8U2ElYYChs",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 14861.79999999702,
+          "candidateId": "5SZYz7lZRRI",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 18863,
+          "candidateId": "RrESvSRNpeo"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 18863.29999999702,
+          "candidateId": "RrESvSRNpeo"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 19155.29999999702
+        },
+        {
+          "stage": "playing",
+          "at": 19172.5
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 3,
+      "ok": true,
+      "ms": 9304.59999999404,
+      "clickedAt": 1999.5,
+      "endedAt": 11331.59999999404,
+      "playingAt": 11304.09999999404,
+      "events": [
+        {
+          "stage": "search",
+          "at": 2003.2999999970198
+        },
+        {
+          "stage": "search",
+          "at": 2004.4000000059605
+        },
+        {
+          "stage": "discovered",
+          "at": 6144.9000000059605
+        },
+        {
+          "stage": "discovered",
+          "at": 6254.29999999702
+        },
+        {
+          "stage": "rejected",
+          "at": 6255,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 6256.5999999940395,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6257.20000000298,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6257.5999999940395,
+          "candidateId": "qWNQUvIk954",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6257.70000000298,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6257.70000000298,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 6257.9000000059605,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6258,
+          "candidateId": "6t669z7lQns",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6259.70000000298,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6260,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 6260.20000000298,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6260.4000000059605,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6260.5999999940395,
+          "candidateId": "1P5yyeeYF9o",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6260.79999999702,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 6261.0999999940395,
+          "candidateId": "uqoIw-AKml8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6261.29999999702,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 6261.4000000059605,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 6261.70000000298,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6261.79999999702,
+          "candidateId": "GSmG20dZNNU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6261.9000000059605,
+          "candidateId": "arp8UmQeHNI",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 6262.20000000298,
+          "candidateId": "5SZYz7lZRRI",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 10386.29999999702,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 10386.90000000596,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 10814.20000000298
+        },
+        {
+          "stage": "playing",
+          "at": 11304.09999999404
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 3,
+      "ok": true,
+      "ms": 213.70000000298023,
+      "clickedAt": 11384.09999999404,
+      "endedAt": 11623.59999999404,
+      "playingAt": 11597.79999999702,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 11392.59999999404,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 11404.29999999702
+        },
+        {
+          "stage": "playing",
+          "at": 11597.79999999702
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 3,
+      "ok": true,
+      "ms": 8200.09999999404,
+      "clickedAt": 11668.40000000596,
+      "endedAt": 19888.29999999702,
+      "playingAt": 19868.5,
+      "events": [
+        {
+          "stage": "search",
+          "at": 11679.79999999702
+        },
+        {
+          "stage": "search",
+          "at": 11680.5
+        },
+        {
+          "stage": "discovered",
+          "at": 15299.59999999404
+        },
+        {
+          "stage": "discovered",
+          "at": 15515.40000000596
+        },
+        {
+          "stage": "rejected",
+          "at": 15515.59999999404,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 15516.09999999404,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15516.20000000298,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15516.29999999702,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15516.5,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 15516.70000000298,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 15516.79999999702,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15516.90000000596,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15517,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15517.09999999404,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15517.40000000596,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15517.5,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15517.59999999404,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 15517.79999999702,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15518,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 15518.09999999404,
+          "candidateId": "2TzIBedPhPg",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15518.29999999702,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 19522.09999999404,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 19522.29999999702,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 19841.90000000596
+        },
+        {
+          "stage": "playing",
+          "at": 19868.5
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 4,
+      "ok": true,
+      "ms": 8854.60000000894,
+      "clickedAt": 1568.0999999940395,
+      "endedAt": 10457.09999999404,
+      "playingAt": 10422.70000000298,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1574.5999999940395
+        },
+        {
+          "stage": "search",
+          "at": 1576
+        },
+        {
+          "stage": "discovered",
+          "at": 5823
+        },
+        {
+          "stage": "discovered",
+          "at": 5839
+        },
+        {
+          "stage": "rejected",
+          "at": 5840.9000000059605,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5843.0999999940395,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5843.5999999940395,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5843.79999999702,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5844,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5844.4000000059605,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5844.5999999940395,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5844.9000000059605,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5845.0999999940395,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5845.29999999702,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5845.5999999940395,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 5845.79999999702,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5846,
+          "candidateId": "h6vj8Ryu0LI",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5846.0999999940395,
+          "candidateId": "4bmUFRxNEIg",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 5846.29999999702,
+          "candidateId": "64dAscB_vKo",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 5846.29999999702,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5846.4000000059605,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5846.5999999940395,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5846.70000000298,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5846.9000000059605,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 9516,
+          "candidateId": "72UO0v5ESUo"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 9516.59999999404,
+          "candidateId": "72UO0v5ESUo"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 10004.79999999702
+        },
+        {
+          "stage": "playing",
+          "at": 10422.70000000298
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 4,
+      "ok": true,
+      "ms": 192.20000000298023,
+      "clickedAt": 10508.5,
+      "endedAt": 10746.40000000596,
+      "playingAt": 10700.70000000298,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 10515,
+          "candidateId": "72UO0v5ESUo"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 10529.09999999404
+        },
+        {
+          "stage": "playing",
+          "at": 10700.70000000298
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 4,
+      "ok": true,
+      "ms": 8588.20000000298,
+      "clickedAt": 10784.79999999702,
+      "endedAt": 19399.79999999702,
+      "playingAt": 19373,
+      "events": [
+        {
+          "stage": "search",
+          "at": 10796.5
+        },
+        {
+          "stage": "search",
+          "at": 10797.29999999702
+        },
+        {
+          "stage": "discovered",
+          "at": 14993.09999999404
+        },
+        {
+          "stage": "discovered",
+          "at": 15107.5
+        },
+        {
+          "stage": "rejected",
+          "at": 15107.70000000298,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 15108.09999999404,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15108.40000000596,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15108.59999999404,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15108.79999999702,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 15109,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15109.20000000298,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 15109.29999999702,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 15109.59999999404,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15109.59999999404,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15109.70000000298,
+          "candidateId": "6dEul2CZYuQ",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 15109.90000000596,
+          "candidateId": "QGH6nBbZhRs",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15110,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15110.09999999404,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15110.20000000298,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15110.40000000596,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15110.40000000596,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15110.59999999404,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15110.70000000298,
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15110.90000000596,
+          "candidateId": "zluCin4zJHM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15110.90000000596,
+          "candidateId": "rZ-HKpYg9Rg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15111,
+          "candidateId": "GbjRRNwmOQs",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 19123.29999999702,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 19123.59999999404,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 19353.29999999702
+        },
+        {
+          "stage": "playing",
+          "at": 19373
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 5,
+      "ok": true,
+      "ms": 8580.5,
+      "clickedAt": 2006.5,
+      "endedAt": 10624.5,
+      "playingAt": 10587,
+      "events": [
+        {
+          "stage": "search",
+          "at": 2011.7000000029802
+        },
+        {
+          "stage": "search",
+          "at": 2012.5999999940395
+        },
+        {
+          "stage": "discovered",
+          "at": 5993.29999999702
+        },
+        {
+          "stage": "discovered",
+          "at": 6094.20000000298
+        },
+        {
+          "stage": "rejected",
+          "at": 6096.29999999702,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6096.79999999702,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6097.20000000298,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6097.5999999940395,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6097.70000000298,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6098,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6098.0999999940395,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 6098.4000000059605,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6098.5999999940395,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6098.79999999702,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6098.9000000059605,
+          "candidateId": "QGH6nBbZhRs",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6099.0999999940395,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6099.29999999702,
+          "candidateId": "6dEul2CZYuQ",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 6099.5,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6099.79999999702,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6100,
+          "candidateId": "Ck5ARbVHa0w",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6100.20000000298,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6100.4000000059605,
+          "candidateId": "V3vpNGJ57p4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 6100.5999999940395,
+          "candidateId": "wiGGeuC7Bfw",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6100.70000000298,
+          "candidateId": "h_jlO6DsTvs",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 6100.79999999702,
+          "candidateId": "GbjRRNwmOQs",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 9938.29999999702,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 9938.79999999702,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 10162.5
+        },
+        {
+          "stage": "playing",
+          "at": 10587
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 5,
+      "ok": true,
+      "ms": 186,
+      "clickedAt": 10674.70000000298,
+      "endedAt": 10893.70000000298,
+      "playingAt": 10860.70000000298,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 10681.79999999702,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 10695.79999999702
+        },
+        {
+          "stage": "playing",
+          "at": 10860.70000000298
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 5,
+      "ok": true,
+      "ms": 8136.70000000298,
+      "clickedAt": 10924.59999999404,
+      "endedAt": 19078.40000000596,
+      "playingAt": 19061.29999999702,
+      "events": [
+        {
+          "stage": "search",
+          "at": 10935.09999999404
+        },
+        {
+          "stage": "search",
+          "at": 10935.70000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 15069.09999999404
+        },
+        {
+          "stage": "discovered",
+          "at": 15170.09999999404
+        },
+        {
+          "stage": "rejected",
+          "at": 15170.29999999702,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 15170.59999999404,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15170.79999999702,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 15171,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15171.09999999404,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15171.20000000298,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 15171.29999999702,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 15172.90000000596,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 15173.20000000298,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 15173.20000000298,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15173.5,
+          "candidateId": "YEzjD-qvIhQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15173.70000000298,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 15173.79999999702,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 15173.90000000596,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 15174.09999999404,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 15174.29999999702,
+          "candidateId": "CVsbTCdTyAM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 15174.40000000596,
+          "candidateId": "QFK09y01me0",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 15174.5,
+          "candidateId": "6PLatPMoxGw",
+          "reason": "matched"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 18486.29999999702,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 18486.5,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 19039.79999999702
+        },
+        {
+          "stage": "playing",
+          "at": 19061.29999999702
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 6,
+      "ok": true,
+      "ms": 9450.59999999404,
+      "clickedAt": 2039.7000000029802,
+      "endedAt": 11513.40000000596,
+      "playingAt": 11490.29999999702,
+      "events": [
+        {
+          "stage": "search",
+          "at": 2043.5
+        },
+        {
+          "stage": "search",
+          "at": 2044.5
+        },
+        {
+          "stage": "discovered",
+          "at": 5853
+        },
+        {
+          "stage": "discovered",
+          "at": 5881.4000000059605
+        },
+        {
+          "stage": "rejected",
+          "at": 5882,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 5883.4000000059605,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5884.0999999940395,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5884.4000000059605,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5884.5,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 5884.70000000298,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 5886,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5886.20000000298,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5886.29999999702,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5886.5,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5886.5999999940395,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5886.9000000059605,
+          "candidateId": "-pC9hWGNdMI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5887.0999999940395,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5887.20000000298,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5887.5,
+          "candidateId": "ZcXEwJcTIeU",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5887.70000000298,
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5887.79999999702,
+          "candidateId": "RL6Jq1hHsco",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5887.79999999702,
+          "candidateId": "R8U2ElYYChs",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 5888,
+          "candidateId": "5SZYz7lZRRI",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 10349.29999999702,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 10349.90000000596,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 11094.70000000298
+        },
+        {
+          "stage": "playing",
+          "at": 11490.29999999702
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 6,
+      "ok": true,
+      "ms": 198.5,
+      "clickedAt": 11563,
+      "endedAt": 11791.90000000596,
+      "playingAt": 11761.5,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 11571.29999999702,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 11587.79999999702
+        },
+        {
+          "stage": "playing",
+          "at": 11761.5
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 6,
+      "ok": true,
+      "ms": 9248.40000000596,
+      "clickedAt": 11826.5,
+      "endedAt": 21108.70000000298,
+      "playingAt": 21074.90000000596,
+      "events": [
+        {
+          "stage": "search",
+          "at": 11839.09999999404
+        },
+        {
+          "stage": "search",
+          "at": 11839.79999999702
+        },
+        {
+          "stage": "discovered",
+          "at": 16548.90000000596
+        },
+        {
+          "stage": "discovered",
+          "at": 16567.59999999404
+        },
+        {
+          "stage": "rejected",
+          "at": 16567.79999999702,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 16568.20000000298,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16568.29999999702,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16568.5,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16568.59999999404,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16568.70000000298,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 16568.79999999702,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16568.90000000596,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16569,
+          "candidateId": "2TzIBedPhPg",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16569.20000000298,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16569.40000000596,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16569.5,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16569.70000000298,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16569.79999999702,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16570,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16570.09999999404,
+          "candidateId": "mG4MT1AYqLY",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 16570.20000000298,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16570.40000000596,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 20795.29999999702,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 20795.79999999702,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 21052.90000000596
+        },
+        {
+          "stage": "playing",
+          "at": 21074.90000000596
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 7,
+      "ok": true,
+      "ms": 9823,
+      "clickedAt": 1990.2000000029802,
+      "endedAt": 11851.79999999702,
+      "playingAt": 11813.20000000298,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1994.7000000029802
+        },
+        {
+          "stage": "search",
+          "at": 1995.7000000029802
+        },
+        {
+          "stage": "discovered",
+          "at": 6204.899999991059
+        },
+        {
+          "stage": "discovered",
+          "at": 6274.399999991059
+        },
+        {
+          "stage": "rejected",
+          "at": 6278.0999999940395,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 6281.29999999702,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6282,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6282.399999991059,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6283.29999999702,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6283.5999999940395,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6283.899999991059,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6284.20000000298,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6284.5999999940395,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 6285,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6285.29999999702,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6285.70000000298,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 6286.399999991059,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6286.5999999940395,
+          "candidateId": "h6vj8Ryu0LI",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 6286.899999991059,
+          "candidateId": "4bmUFRxNEIg",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 6287,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 6287.399999991059,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6287.5999999940395,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 6287.79999999702,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 10959.59999999404,
+          "candidateId": "72UO0v5ESUo"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 10960.09999999404,
+          "candidateId": "72UO0v5ESUo"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 11399.20000000298
+        },
+        {
+          "stage": "playing",
+          "at": 11813.20000000298
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 7,
+      "ok": true,
+      "ms": 195.90000000596046,
+      "clickedAt": 11898.09999999404,
+      "endedAt": 12128.59999999404,
+      "playingAt": 12094,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 11906.39999999106,
+          "candidateId": "72UO0v5ESUo"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 11922.79999999702
+        },
+        {
+          "stage": "playing",
+          "at": 12094
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 7,
+      "ok": true,
+      "ms": 8908.29999999702,
+      "clickedAt": 12176.5,
+      "endedAt": 21130.89999999106,
+      "playingAt": 21084.79999999702,
+      "events": [
+        {
+          "stage": "search",
+          "at": 12189.59999999404
+        },
+        {
+          "stage": "search",
+          "at": 12190.20000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 16515.70000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 16775.59999999404
+        },
+        {
+          "stage": "rejected",
+          "at": 16776,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16776.20000000298,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16776.59999999404,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16776.89999999106,
+          "candidateId": "LKql670RMMY",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 16777.09999999404,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16777.20000000298,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16777.29999999702,
+          "candidateId": "jFnMsap6WQ0",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 16777.29999999702,
+          "candidateId": "APwYiMt_V10",
+          "reason": "non-music"
+        },
+        {
+          "stage": "matched",
+          "at": 16777.59999999404,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 16777.59999999404,
+          "candidateId": "3dCuy93IvuQ",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16777.70000000298,
+          "candidateId": "N3J8NXRuwEU",
+          "reason": "non-music"
+        },
+        {
+          "stage": "matched",
+          "at": 16777.89999999106,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16777.89999999106,
+          "candidateId": "4-p5UaaEBA8",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 16778,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16778.09999999404,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16778.20000000298,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16778.29999999702,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16778.39999999106,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16778.5,
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16778.59999999404,
+          "candidateId": "zluCin4zJHM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16778.70000000298,
+          "candidateId": "rZ-HKpYg9Rg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16778.89999999106,
+          "candidateId": "GbjRRNwmOQs",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 20811.5,
+          "candidateId": "3dCuy93IvuQ"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 20811.70000000298,
+          "candidateId": "3dCuy93IvuQ"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 21060.39999999106
+        },
+        {
+          "stage": "playing",
+          "at": 21084.79999999702
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 8,
+      "ok": true,
+      "ms": 8848,
+      "clickedAt": 1506.6000000089407,
+      "endedAt": 10393.300000011921,
+      "playingAt": 10354.60000000894,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1512.7000000029802
+        },
+        {
+          "stage": "search",
+          "at": 1514.1000000089407
+        },
+        {
+          "stage": "discovered",
+          "at": 5421.100000008941
+        },
+        {
+          "stage": "discovered",
+          "at": 5579.9000000059605
+        },
+        {
+          "stage": "rejected",
+          "at": 5581.9000000059605,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5582.4000000059605,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5582.800000011921,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5583,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5583.70000000298,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5583.800000011921,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5584,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5584.100000008941,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5584.4000000059605,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5584.5,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5584.600000008941,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5584.800000011921,
+          "candidateId": "QGH6nBbZhRs",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5585,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5585.20000000298,
+          "candidateId": "t1dvleuNkn0",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5585.300000011921,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5585.4000000059605,
+          "candidateId": "rZ-HKpYg9Rg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5585.5,
+          "candidateId": "deQcxldcOog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5585.70000000298,
+          "candidateId": "MSaj9Otax6Y",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5585.800000011921,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5585.9000000059605,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5586,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 9542.40000000596,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 9543,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9959.20000000298
+        },
+        {
+          "stage": "playing",
+          "at": 10354.5
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 8,
+      "ok": true,
+      "ms": 194.29999999701977,
+      "clickedAt": 10442.90000000596,
+      "endedAt": 10675.5,
+      "playingAt": 10637.20000000298,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 10451.40000000596,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 10466.70000000298
+        },
+        {
+          "stage": "playing",
+          "at": 10637.20000000298
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 8,
+      "ok": true,
+      "ms": 7995.20000000298,
+      "clickedAt": 10712.10000000894,
+      "endedAt": 18767.70000000298,
+      "playingAt": 18707.30000001192,
+      "events": [
+        {
+          "stage": "search",
+          "at": 10722.90000000596
+        },
+        {
+          "stage": "search",
+          "at": 10723.90000000596
+        },
+        {
+          "stage": "discovered",
+          "at": 14694.800000011921
+        },
+        {
+          "stage": "discovered",
+          "at": 14747.800000011921
+        },
+        {
+          "stage": "rejected",
+          "at": 14747.90000000596,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 14748.10000000894,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 14748.20000000298,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 14748.300000011921,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 14748.5,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 14748.5,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 14748.70000000298,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 14750.40000000596,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 14750.60000000894,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 14750.800000011921,
+          "candidateId": "YEzjD-qvIhQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 14750.90000000596,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 14751.10000000894,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 14751.20000000298,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 14751.300000011921,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 14751.60000000894,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 14751.800000011921,
+          "candidateId": "dMbZfdrzILA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 14751.90000000596,
+          "candidateId": "CVsbTCdTyAM",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 18442.60000000894,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 18442.90000000596,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 18683.60000000894
+        },
+        {
+          "stage": "playing",
+          "at": 18707.30000001192
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 9,
+      "ok": true,
+      "ms": 7362.899999991059,
+      "clickedAt": 2026.9000000059605,
+      "endedAt": 9403.90000000596,
+      "playingAt": 9389.79999999702,
+      "events": [
+        {
+          "stage": "search",
+          "at": 2031.7000000029802
+        },
+        {
+          "stage": "search",
+          "at": 2032.5
+        },
+        {
+          "stage": "discovered",
+          "at": 5182.5
+        },
+        {
+          "stage": "discovered",
+          "at": 5233.70000000298
+        },
+        {
+          "stage": "rejected",
+          "at": 5234.29999999702,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 5235.9000000059605,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 5236.29999999702,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5237,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5237.20000000298,
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5237.4000000059605,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5237.4000000059605,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 5237.70000000298,
+          "candidateId": "2rmYU0B3kCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5239.0999999940395,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5239.20000000298,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 5239.29999999702,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5239.5,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5239.70000000298,
+          "candidateId": "ds8sVhxdvfA",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5239.9000000059605,
+          "candidateId": "GHMjD0Lp5DY",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5239.9000000059605,
+          "candidateId": "SB4V4LyCBo4",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5240.0999999940395,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5240.20000000298,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5240.29999999702,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5240.5,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5240.5,
+          "candidateId": "QHO5_swrD_M",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5240.5999999940395,
+          "candidateId": "NiAOAhFCEuQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5240.70000000298,
+          "candidateId": "arp8UmQeHNI",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 5240.70000000298,
+          "candidateId": "ci6ZtPAN0PM",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 8537.79999999702,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 8538.20000000298,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 8982.20000000298
+        },
+        {
+          "stage": "playing",
+          "at": 9389.79999999702
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 9,
+      "ok": true,
+      "ms": 225,
+      "clickedAt": 9455.70000000298,
+      "endedAt": 9701.79999999702,
+      "playingAt": 9680.70000000298,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 9462.79999999702,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9483.40000000596
+        },
+        {
+          "stage": "playing",
+          "at": 9680.70000000298
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 9,
+      "ok": true,
+      "ms": 6672,
+      "clickedAt": 9747.59999999404,
+      "endedAt": 16468.79999999702,
+      "playingAt": 16419.59999999404,
+      "events": [
+        {
+          "stage": "search",
+          "at": 9758.79999999702
+        },
+        {
+          "stage": "search",
+          "at": 9759.59999999404
+        },
+        {
+          "stage": "discovered",
+          "at": 12607
+        },
+        {
+          "stage": "discovered",
+          "at": 12715.40000000596
+        },
+        {
+          "stage": "rejected",
+          "at": 12715.70000000298,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 12716.09999999404,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12716.29999999702,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12716.40000000596,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12716.70000000298,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12716.79999999702,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12717,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12717.09999999404,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12717.20000000298,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12717.40000000596,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12717.5,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12717.79999999702,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12717.90000000596,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12718.20000000298,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12718.40000000596,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 12718.5,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12718.70000000298,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 16185.79999999702,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 16186.20000000298,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 16393
+        },
+        {
+          "stage": "playing",
+          "at": 16419.59999999404
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 10,
+      "ok": true,
+      "ms": 7109.5999999940395,
+      "clickedAt": 1955.800000011921,
+      "endedAt": 9105.70000000298,
+      "playingAt": 9065.40000000596,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1960.2000000029802
+        },
+        {
+          "stage": "search",
+          "at": 1961
+        },
+        {
+          "stage": "discovered",
+          "at": 4894.600000008941
+        },
+        {
+          "stage": "discovered",
+          "at": 4934.300000011921
+        },
+        {
+          "stage": "rejected",
+          "at": 4936.100000008941,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 4938.4000000059605,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4938.800000011921,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4939,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4939.20000000298,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4939.4000000059605,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 4939.70000000298,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4939.800000011921,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4940.100000008941,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4940.4000000059605,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4941,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4941.20000000298,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4941.300000011921,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4941.600000008941,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4941.800000011921,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4942,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 4942,
+          "candidateId": "9yTP9gOlrf4",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 4942.20000000298,
+          "candidateId": "2TzIBedPhPg",
+          "reason": "matched"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 8227.60000000894,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 8228.20000000298,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 8687.800000011921
+        },
+        {
+          "stage": "playing",
+          "at": 9065.40000000596
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 10,
+      "ok": true,
+      "ms": 192,
+      "clickedAt": 9149.20000000298,
+      "endedAt": 9368.60000000894,
+      "playingAt": 9341.20000000298,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 9155.5,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9169
+        },
+        {
+          "stage": "playing",
+          "at": 9341.20000000298
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 10,
+      "ok": true,
+      "ms": 6527.5,
+      "clickedAt": 9406.800000011921,
+      "endedAt": 15980.300000011921,
+      "playingAt": 15934.300000011921,
+      "events": [
+        {
+          "stage": "search",
+          "at": 9421.40000000596
+        },
+        {
+          "stage": "search",
+          "at": 9422.90000000596
+        },
+        {
+          "stage": "discovered",
+          "at": 12439.40000000596
+        },
+        {
+          "stage": "discovered",
+          "at": 12472.300000011921
+        },
+        {
+          "stage": "rejected",
+          "at": 12472.60000000894,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12473,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12473.20000000298,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12473.5,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12473.60000000894,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12473.90000000596,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12474.10000000894,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 12474.300000011921,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12474.5,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12474.60000000894,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12474.800000011921,
+          "candidateId": "6dEul2CZYuQ",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 12475,
+          "candidateId": "QGH6nBbZhRs",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12475.20000000298,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12475.40000000596,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12475.5,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12475.60000000894,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12475.70000000298,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12475.90000000596,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12475.90000000596,
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12476.10000000894,
+          "candidateId": "zluCin4zJHM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12476.20000000298,
+          "candidateId": "GbjRRNwmOQs",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 15698.60000000894,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 15698.90000000596,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 15907
+        },
+        {
+          "stage": "playing",
+          "at": 15934.300000011921
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 11,
+      "ok": true,
+      "ms": 7310,
+      "clickedAt": 1975.2000000029802,
+      "endedAt": 9297.40000000596,
+      "playingAt": 9285.20000000298,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1980.4000000059605
+        },
+        {
+          "stage": "search",
+          "at": 1981.6000000089407
+        },
+        {
+          "stage": "discovered",
+          "at": 5078.20000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 5120.29999999702
+        },
+        {
+          "stage": "rejected",
+          "at": 5122.100000008941,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5122.5,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5122.79999999702,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5123,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5123.5,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5123.70000000298,
+          "candidateId": "ll_k-q9LAHQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5123.79999999702,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5123.9000000059605,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "matched",
+          "at": 5124.29999999702,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5124.4000000059605,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5124.600000008941,
+          "candidateId": "0tehCcx72hg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5124.79999999702,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5124.79999999702,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5125,
+          "candidateId": "rZ-HKpYg9Rg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5125.100000008941,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5125.20000000298,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5125.29999999702,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5125.4000000059605,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5125.600000008941,
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5125.70000000298,
+          "candidateId": "zluCin4zJHM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5125.9000000059605,
+          "candidateId": "GbjRRNwmOQs",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 8476,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 8476.5,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 8845.60000000894
+        },
+        {
+          "stage": "playing",
+          "at": 9285.20000000298
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 11,
+      "ok": true,
+      "ms": 228.59999999403954,
+      "clickedAt": 9352.20000000298,
+      "endedAt": 9619.90000000596,
+      "playingAt": 9580.79999999702,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 9360.29999999702,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9377.20000000298
+        },
+        {
+          "stage": "playing",
+          "at": 9580.79999999702
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 11,
+      "ok": true,
+      "ms": 7273.0999999940395,
+      "clickedAt": 9658.40000000596,
+      "endedAt": 16954.79999999702,
+      "playingAt": 16931.5,
+      "events": [
+        {
+          "stage": "search",
+          "at": 9670.40000000596
+        },
+        {
+          "stage": "search",
+          "at": 9671.20000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 12936.60000000894
+        },
+        {
+          "stage": "discovered",
+          "at": 13141.10000000894
+        },
+        {
+          "stage": "rejected",
+          "at": 13141.40000000596,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 13141.60000000894,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13141.70000000298,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13141.90000000596,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 13142,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13142.10000000894,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 13142.10000000894,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 13143.40000000596,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 13143.60000000894,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13143.70000000298,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13143.79999999702,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 13143.90000000596,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144,
+          "candidateId": "YEzjD-qvIhQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.20000000298,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.40000000596,
+          "candidateId": "-pC9hWGNdMI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.5,
+          "candidateId": "la-GFyRzIRA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.5,
+          "candidateId": "SB4V4LyCBo4",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.60000000894,
+          "candidateId": "RL6Jq1hHsco",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.79999999702,
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.79999999702,
+          "candidateId": "ym1vpxhtkX4",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.90000000596,
+          "candidateId": "MIjTcOSGEp0",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.90000000596,
+          "candidateId": "7R9jOENtJHw",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 13144.90000000596,
+          "candidateId": "5JEbc51kgLo",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 13145.20000000298,
+          "candidateId": "ctlZNgedZ28",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13145.20000000298,
+          "candidateId": "MjykpgNZaqk",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 13145.29999999702,
+          "candidateId": "LxOZgsv7YJ0",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 13145.40000000596,
+          "candidateId": "hvL1339luv0",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 16647,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 16647.40000000596,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 16906.79999999702
+        },
+        {
+          "stage": "playing",
+          "at": 16931.5
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 12,
+      "ok": true,
+      "ms": 7720.20000000298,
+      "clickedAt": 1981,
+      "endedAt": 9727,
+      "playingAt": 9701.20000000298,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1985.0999999940395
+        },
+        {
+          "stage": "search",
+          "at": 1985.9000000059605
+        },
+        {
+          "stage": "discovered",
+          "at": 5033.4000000059605
+        },
+        {
+          "stage": "discovered",
+          "at": 5069.9000000059605
+        },
+        {
+          "stage": "rejected",
+          "at": 5070.5,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 5071.9000000059605,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5072.5,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5072.70000000298,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5072.9000000059605,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5073,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 5073.20000000298,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 5074.70000000298,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 5074.79999999702,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5074.9000000059605,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5075,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5075.20000000298,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5075.29999999702,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5075.5999999940395,
+          "candidateId": "YEzjD-qvIhQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5075.79999999702,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5075.79999999702,
+          "candidateId": "NiAOAhFCEuQ",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 8867.59999999404,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 8868.09999999404,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9271.5
+        },
+        {
+          "stage": "playing",
+          "at": 9701.20000000298
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 12,
+      "ok": true,
+      "ms": 225.09999999403954,
+      "clickedAt": 9771,
+      "endedAt": 10012.59999999404,
+      "playingAt": 9996.09999999404,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 9778.09999999404,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9797.09999999404
+        },
+        {
+          "stage": "playing",
+          "at": 9996.09999999404
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 12,
+      "ok": true,
+      "ms": 6919,
+      "clickedAt": 10074.70000000298,
+      "endedAt": 17035.79999999702,
+      "playingAt": 16993.70000000298,
+      "events": [
+        {
+          "stage": "search",
+          "at": 10087.79999999702
+        },
+        {
+          "stage": "search",
+          "at": 10088.70000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 13281.40000000596
+        },
+        {
+          "stage": "discovered",
+          "at": 13406.29999999702
+        },
+        {
+          "stage": "rejected",
+          "at": 13406.79999999702,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 13407.29999999702,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13407.59999999404,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13407.59999999404,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 13407.79999999702,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13407.90000000596,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 13408.09999999404,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13408.40000000596,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13408.5,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13408.70000000298,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13408.70000000298,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13409.20000000298,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13409.29999999702,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13409.29999999702,
+          "candidateId": "4bmUFRxNEIg",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 13409.40000000596,
+          "candidateId": "us5xN06GhKU",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 13409.59999999404,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13409.70000000298,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13409.79999999702,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 16731.79999999702,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 16732.09999999404,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 16967.90000000596
+        },
+        {
+          "stage": "playing",
+          "at": 16993.70000000298
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 13,
+      "ok": true,
+      "ms": 7249.600000008941,
+      "clickedAt": 1518,
+      "endedAt": 8781.5,
+      "playingAt": 8767.60000000894,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1524.2999999970198
+        },
+        {
+          "stage": "search",
+          "at": 1525.1000000089407
+        },
+        {
+          "stage": "discovered",
+          "at": 4524.20000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 4562.5
+        },
+        {
+          "stage": "rejected",
+          "at": 4565.4000000059605,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 4567.20000000298,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4567.600000008941,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4567.70000000298,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4567.79999999702,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 4568,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4568.100000008941,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4568.29999999702,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4568.70000000298,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4569,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4569.20000000298,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4569.4000000059605,
+          "candidateId": "mG4MT1AYqLY",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 4569.600000008941,
+          "candidateId": "DdwDAoJ8bFk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4569.79999999702,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4569.9000000059605,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 4570.100000008941,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4570.20000000298,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4570.4000000059605,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 7937.600000008941,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 7938.20000000298,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 8366.29999999702
+        },
+        {
+          "stage": "playing",
+          "at": 8767.60000000894
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 13,
+      "ok": true,
+      "ms": 210.09999999403954,
+      "clickedAt": 8846.40000000596,
+      "endedAt": 9075.60000000894,
+      "playingAt": 9056.5,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 8854.70000000298,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 8870.90000000596
+        },
+        {
+          "stage": "playing",
+          "at": 9056.5
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 13,
+      "ok": true,
+      "ms": 6505.199999988079,
+      "clickedAt": 9117.60000000894,
+      "endedAt": 15669.79999999702,
+      "playingAt": 15622.79999999702,
+      "events": [
+        {
+          "stage": "search",
+          "at": 9129.5
+        },
+        {
+          "stage": "search",
+          "at": 9130.5
+        },
+        {
+          "stage": "discovered",
+          "at": 12085.20000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 12158.70000000298
+        },
+        {
+          "stage": "rejected",
+          "at": 12158.90000000596,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12159.10000000894,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12159.40000000596,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12159.60000000894,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12159.79999999702,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12160,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12160.10000000894,
+          "candidateId": "ll_k-q9LAHQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12160.20000000298,
+          "candidateId": "0tehCcx72hg",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12160.40000000596,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12160.5,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12160.70000000298,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12160.90000000596,
+          "candidateId": "rZ-HKpYg9Rg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12161,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12161.20000000298,
+          "candidateId": "QGH6nBbZhRs",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12161.40000000596,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12161.60000000894,
+          "candidateId": "Wmk5hGWMtR4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12161.79999999702,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12162,
+          "candidateId": "Ck5ARbVHa0w",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12162.20000000298,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12162.40000000596,
+          "candidateId": "V3vpNGJ57p4",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 12162.60000000894,
+          "candidateId": "wiGGeuC7Bfw",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12162.79999999702,
+          "candidateId": "h_jlO6DsTvs",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 12163,
+          "candidateId": "GbjRRNwmOQs",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 15329.90000000596,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 15330,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 15599.70000000298
+        },
+        {
+          "stage": "playing",
+          "at": 15622.79999999702
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 14,
+      "ok": true,
+      "ms": 7403.29999999702,
+      "clickedAt": 1958.4000000059605,
+      "endedAt": 9400.09999999404,
+      "playingAt": 9361.70000000298,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1963
+        },
+        {
+          "stage": "search",
+          "at": 1963.9000000059605
+        },
+        {
+          "stage": "discovered",
+          "at": 4972.79999999702
+        },
+        {
+          "stage": "discovered",
+          "at": 5005.5
+        },
+        {
+          "stage": "rejected",
+          "at": 5007.4000000059605,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5007.79999999702,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5008.20000000298,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5008.5,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5008.70000000298,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5009,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5009.0999999940395,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5009.29999999702,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5009.5999999940395,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5009.70000000298,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5009.9000000059605,
+          "candidateId": "QGH6nBbZhRs",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5010.0999999940395,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5010.29999999702,
+          "candidateId": "6dEul2CZYuQ",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5010.5,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5010.79999999702,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5011,
+          "candidateId": "V3vpNGJ57p4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5011,
+          "candidateId": "jDRAw0GsObo",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 5011.0999999940395,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5011.29999999702,
+          "candidateId": "necTlcWjbrE",
+          "reason": "non-music"
+        },
+        {
+          "stage": "matched",
+          "at": 5011.5,
+          "candidateId": "wiGGeuC7Bfw",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5011.5,
+          "candidateId": "4-p5UaaEBA8",
+          "reason": "non-music"
+        },
+        {
+          "stage": "rejected",
+          "at": 5011.5,
+          "candidateId": "jFnMsap6WQ0",
+          "reason": "non-music"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 8458.29999999702,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 8458.90000000596,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 8932
+        },
+        {
+          "stage": "playing",
+          "at": 9361.70000000298
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 14,
+      "ok": true,
+      "ms": 203.20000000298023,
+      "clickedAt": 9455,
+      "endedAt": 9689.70000000298,
+      "playingAt": 9658.20000000298,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 9461.90000000596,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9480.40000000596
+        },
+        {
+          "stage": "playing",
+          "at": 9658.20000000298
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 14,
+      "ok": true,
+      "ms": 7784.9000000059605,
+      "clickedAt": 9749,
+      "endedAt": 17550.5,
+      "playingAt": 17533.90000000596,
+      "events": [
+        {
+          "stage": "search",
+          "at": 9763.5
+        },
+        {
+          "stage": "search",
+          "at": 9764.5
+        },
+        {
+          "stage": "discovered",
+          "at": 13224.59999999404
+        },
+        {
+          "stage": "discovered",
+          "at": 13224.90000000596
+        },
+        {
+          "stage": "rejected",
+          "at": 13225,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 13225.20000000298,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13225.5,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13225.70000000298,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 13225.90000000596,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13226,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 13226,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 13228.20000000298,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 13228.40000000596,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13228.79999999702,
+          "candidateId": "YEzjD-qvIhQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13229,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13229.20000000298,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 13229.40000000596,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 13229.59999999404,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 13229.70000000298,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 13230,
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13230.20000000298,
+          "candidateId": "RL6Jq1hHsco",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13230.29999999702,
+          "candidateId": "R8U2ElYYChs",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 17241.70000000298,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 17242.09999999404,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 17507.40000000596
+        },
+        {
+          "stage": "playing",
+          "at": 17533.90000000596
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 15,
+      "ok": true,
+      "ms": 8240.70000000298,
+      "clickedAt": 1662.4000000059605,
+      "endedAt": 9921.90000000596,
+      "playingAt": 9903.10000000894,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1667.1000000089407
+        },
+        {
+          "stage": "search",
+          "at": 1668.4000000059605
+        },
+        {
+          "stage": "discovered",
+          "at": 4707.20000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 4923.100000008941
+        },
+        {
+          "stage": "rejected",
+          "at": 4923.70000000298,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 4925.4000000059605,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4925.600000008941,
+          "candidateId": "doEqUhFiQS4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4926.29999999702,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4926.70000000298,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4926.70000000298,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 4926.9000000059605,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4927.100000008941,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 4928.600000008941,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 4928.79999999702,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4928.9000000059605,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4929.100000008941,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 4929.29999999702,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 4929.29999999702,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 4929.5,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 4929.70000000298,
+          "candidateId": "RL6Jq1hHsco",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4929.70000000298,
+          "candidateId": "R8U2ElYYChs",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 8394.40000000596,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 8395.20000000298,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9493
+        },
+        {
+          "stage": "playing",
+          "at": 9903.10000000894
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 15,
+      "ok": true,
+      "ms": 218.40000000596046,
+      "clickedAt": 9979.20000000298,
+      "endedAt": 10216.60000000894,
+      "playingAt": 10197.60000000894,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 9987.40000000596,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 10000.29999999702
+        },
+        {
+          "stage": "playing",
+          "at": 10197.60000000894
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 15,
+      "ok": true,
+      "ms": 7532.9000000059605,
+      "clickedAt": 10274,
+      "endedAt": 17824.90000000596,
+      "playingAt": 17806.90000000596,
+      "events": [
+        {
+          "stage": "search",
+          "at": 10285.90000000596
+        },
+        {
+          "stage": "search",
+          "at": 10286.70000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 13852.20000000298
+        },
+        {
+          "stage": "discovered",
+          "at": 13902.79999999702
+        },
+        {
+          "stage": "rejected",
+          "at": 13903,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 13903.70000000298,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13903.79999999702,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 13904,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13904.10000000894,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 13904.29999999702,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13904.40000000596,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13904.70000000298,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13904.79999999702,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13905.29999999702,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13905.60000000894,
+          "candidateId": "mG4MT1AYqLY",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 13905.79999999702,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 13906,
+          "candidateId": "DdwDAoJ8bFk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13906.40000000596,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 13906.60000000894,
+          "candidateId": "1Tx_pPB2mU8",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 13906.90000000596,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13907,
+          "candidateId": "5SPIftJfvnE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13907.29999999702,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13907.60000000894,
+          "candidateId": "EUJ0HA31EBk",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 17316.70000000298,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 17317,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 17785.70000000298
+        },
+        {
+          "stage": "playing",
+          "at": 17806.90000000596
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 16,
+      "ok": true,
+      "ms": 11290.5,
+      "clickedAt": 2007.199999988079,
+      "endedAt": 13319.79999999702,
+      "playingAt": 13297.699999988079,
+      "events": [
+        {
+          "stage": "search",
+          "at": 2011.0999999940395
+        },
+        {
+          "stage": "search",
+          "at": 2012.199999988079
+        },
+        {
+          "stage": "discovered",
+          "at": 4849.5
+        },
+        {
+          "stage": "discovered",
+          "at": 4894.199999988079
+        },
+        {
+          "stage": "rejected",
+          "at": 4896.399999991059,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 4898,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4898.399999991059,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4898.5999999940395,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4898.699999988079,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4898.79999999702,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4899.0999999940395,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4899.399999991059,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4899.5,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4899.699999988079,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4900,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4900.5,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4900.79999999702,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4901.0999999940395,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4901.29999999702,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 4901.5,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4901.5999999940395,
+          "candidateId": "djMWv_o3iHk",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 4901.79999999702,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 12480.79999999702,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 12481.199999988079,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 12897
+        },
+        {
+          "stage": "playing",
+          "at": 13297.699999988079
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 16,
+      "ok": true,
+      "ms": 210.90000000596046,
+      "clickedAt": 13363.199999988079,
+      "endedAt": 13591.79999999702,
+      "playingAt": 13574.09999999404,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 13370.59999999404,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 13384.39999999106
+        },
+        {
+          "stage": "playing",
+          "at": 13574.09999999404
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 16,
+      "ok": true,
+      "ms": 6504.4000000059605,
+      "clickedAt": 13633.59999999404,
+      "endedAt": 20153.39999999106,
+      "playingAt": 20138,
+      "events": [
+        {
+          "stage": "search",
+          "at": 13645.5
+        },
+        {
+          "stage": "search",
+          "at": 13646.29999999702
+        },
+        {
+          "stage": "discovered",
+          "at": 16505.19999998808
+        },
+        {
+          "stage": "discovered",
+          "at": 16619.89999999106
+        },
+        {
+          "stage": "rejected",
+          "at": 16620.29999999702,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16620.5,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16620.69999998808,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16621,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16621.29999999702,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16621.5,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16621.79999999702,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 16621.89999999106,
+          "candidateId": "ll_k-q9LAHQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 16622.09999999404,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 16622.29999999702,
+          "candidateId": "0tehCcx72hg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16622.39999999106,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16622.59999999404,
+          "candidateId": "rZ-HKpYg9Rg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16622.79999999702,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16623,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16623.09999999404,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16623.29999999702,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16623.39999999106,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16623.59999999404,
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16623.69999998808,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16623.79999999702,
+          "candidateId": "zluCin4zJHM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16624,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 16624.09999999404,
+          "candidateId": "GbjRRNwmOQs",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 19932.59999999404,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 19932.79999999702,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 20118.39999999106
+        },
+        {
+          "stage": "playing",
+          "at": 20138
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 17,
+      "ok": true,
+      "ms": 7607,
+      "clickedAt": 1959.8999999910593,
+      "endedAt": 9577,
+      "playingAt": 9566.89999999106,
+      "events": [
+        {
+          "stage": "search",
+          "at": 1965.3999999910593
+        },
+        {
+          "stage": "search",
+          "at": 1966.2999999970198
+        },
+        {
+          "stage": "discovered",
+          "at": 4956.399999991059
+        },
+        {
+          "stage": "discovered",
+          "at": 4993.29999999702
+        },
+        {
+          "stage": "rejected",
+          "at": 4995,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4995.5,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4995.79999999702,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 4996.0999999940395,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4996.699999988079,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4996.79999999702,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4997,
+          "candidateId": "ll_k-q9LAHQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4997.0999999940395,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "matched",
+          "at": 4997.399999991059,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 4997.5999999940395,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4997.699999988079,
+          "candidateId": "0tehCcx72hg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4997.899999991059,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4998.0999999940395,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4998.199999988079,
+          "candidateId": "rZ-HKpYg9Rg",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4998.5,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4998.699999988079,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4998.79999999702,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4998.899999991059,
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4999.0999999940395,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4999.199999988079,
+          "candidateId": "zluCin4zJHM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4999.399999991059,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 4999.699999988079,
+          "candidateId": "GbjRRNwmOQs",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 8479.59999999404,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 8480.09999999404,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9153
+        },
+        {
+          "stage": "playing",
+          "at": 9566.89999999106
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 17,
+      "ok": true,
+      "ms": 230.20000000298023,
+      "clickedAt": 9641.89999999106,
+      "endedAt": 9915.09999999404,
+      "playingAt": 9872.09999999404,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 9651.89999999106,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9671.79999999702
+        },
+        {
+          "stage": "playing",
+          "at": 9872.09999999404
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 17,
+      "ok": true,
+      "ms": 6789.4000000059605,
+      "clickedAt": 9960.39999999106,
+      "endedAt": 16770,
+      "playingAt": 16749.79999999702,
+      "events": [
+        {
+          "stage": "search",
+          "at": 9972.199999988079
+        },
+        {
+          "stage": "search",
+          "at": 9972.89999999106
+        },
+        {
+          "stage": "discovered",
+          "at": 13130.09999999404
+        },
+        {
+          "stage": "discovered",
+          "at": 13139.09999999404
+        },
+        {
+          "stage": "rejected",
+          "at": 13139.29999999702,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 13139.5,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 13139.5,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13139.59999999404,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 13139.59999999404,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 13139.79999999702,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 13139.89999999106,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13139.89999999106,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "matched",
+          "at": 13140.09999999404,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13140.199999988079,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13140.199999988079,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 13140.39999999106,
+          "candidateId": "arp8UmQeHNI",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "rejected",
+          "at": 13141.199999988079,
+          "candidateId": "YEzjD-qvIhQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13141.5,
+          "candidateId": "5SZYz7lZRRI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13141.59999999404,
+          "candidateId": "SB4V4LyCBo4",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 13141.79999999702,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 13142.59999999404,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 13142.699999988079,
+          "candidateId": "BjDebmqFRuc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 13142.79999999702,
+          "candidateId": "R8U2ElYYChs",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 16515.5,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 16515.69999998808,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 16730.09999999404
+        },
+        {
+          "stage": "playing",
+          "at": 16749.79999999702
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 18,
+      "ok": true,
+      "ms": 7137.0999999940395,
+      "clickedAt": 2065.1000000089407,
+      "endedAt": 9234.20000000298,
+      "playingAt": 9202.20000000298,
+      "events": [
+        {
+          "stage": "search",
+          "at": 2069.2000000029802
+        },
+        {
+          "stage": "search",
+          "at": 2070.1000000089407
+        },
+        {
+          "stage": "discovered",
+          "at": 4960.29999999702
+        },
+        {
+          "stage": "discovered",
+          "at": 5073
+        },
+        {
+          "stage": "rejected",
+          "at": 5073.5,
+          "candidateId": "dQw4w9WgXcQ",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 5075,
+          "candidateId": "7FwDP17XPlk",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5075.5,
+          "candidateId": "LLFhKaqnWwk",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5075.79999999702,
+          "candidateId": "XGxIE1hr0w4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5075.9000000059605,
+          "candidateId": "3BFTio5296w",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 5076.100000008941,
+          "candidateId": "-aIiQj79b6Q",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 5077.70000000298,
+          "candidateId": "RrESvSRNpeo",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 5077.9000000059605,
+          "candidateId": "MOcQaR7_Wro",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5078.29999999702,
+          "candidateId": "YEzjD-qvIhQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5078.4000000059605,
+          "candidateId": "GtL1huin9EE",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5078.600000008941,
+          "candidateId": "nsCIeklgp1M",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5078.79999999702,
+          "candidateId": "mtlvMzWnov0",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5078.9000000059605,
+          "candidateId": "BjDebmqFRuc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5079.20000000298,
+          "candidateId": "mW5d-4PmK1U",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5079.29999999702,
+          "candidateId": "DsC8jQXRbQE",
+          "reason": "artist"
+        },
+        {
+          "stage": "rejected",
+          "at": 5079.4000000059605,
+          "candidateId": "W4Bv3SJffXo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5079.600000008941,
+          "candidateId": "-pC9hWGNdMI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5079.70000000298,
+          "candidateId": "RL6Jq1hHsco",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 8351.79999999702,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 8352.29999999702,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 8804.90000000596
+        },
+        {
+          "stage": "playing",
+          "at": 9202.20000000298
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 18,
+      "ok": true,
+      "ms": 206.09999999403954,
+      "clickedAt": 9275.70000000298,
+      "endedAt": 9504.20000000298,
+      "playingAt": 9481.79999999702,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 9283,
+          "candidateId": "7FwDP17XPlk"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9296.5
+        },
+        {
+          "stage": "playing",
+          "at": 9481.79999999702
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 18,
+      "ok": true,
+      "ms": 6719.5,
+      "clickedAt": 9546.90000000596,
+      "endedAt": 16286.70000000298,
+      "playingAt": 16266.40000000596,
+      "events": [
+        {
+          "stage": "search",
+          "at": 9560.10000000894
+        },
+        {
+          "stage": "search",
+          "at": 9561
+        },
+        {
+          "stage": "discovered",
+          "at": 12656.90000000596
+        },
+        {
+          "stage": "discovered",
+          "at": 12733.90000000596
+        },
+        {
+          "stage": "rejected",
+          "at": 12734.10000000894,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 12734.5,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12734.60000000894,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12734.70000000298,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12734.90000000596,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12735.20000000298,
+          "candidateId": "mG4MT1AYqLY",
+          "reason": "duration"
+        },
+        {
+          "stage": "matched",
+          "at": 12735.20000000298,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "matched",
+          "at": 12735.5,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12735.60000000894,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12735.70000000298,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12735.90000000596,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12736.10000000894,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12736.40000000596,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12736.5,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 12736.60000000894,
+          "candidateId": "4bmUFRxNEIg",
+          "reason": "recording-version"
+        },
+        {
+          "stage": "matched",
+          "at": 12736.79999999702,
+          "candidateId": "2TzIBedPhPg",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12736.90000000596,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12737.10000000894,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 16070,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 16070.20000000298,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 16245
+        },
+        {
+          "stage": "playing",
+          "at": 16266.40000000596
+        }
+      ]
+    },
+    {
+      "kind": "cold",
+      "index": 19,
+      "ok": true,
+      "ms": 7545.20000000298,
+      "clickedAt": 2034.699999988079,
+      "endedAt": 9618.09999999404,
+      "playingAt": 9579.89999999106,
+      "events": [
+        {
+          "stage": "search",
+          "at": 2038.8999999910593
+        },
+        {
+          "stage": "search",
+          "at": 2040
+        },
+        {
+          "stage": "discovered",
+          "at": 5138
+        },
+        {
+          "stage": "discovered",
+          "at": 5326.699999988079
+        },
+        {
+          "stage": "rejected",
+          "at": 5328.5,
+          "candidateId": "kJQP7kiw5Fk",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5330.0999999940395,
+          "candidateId": "gm3-m2CFVWM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5330.399999991059,
+          "candidateId": "TfkP5ubz1z4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5330.5,
+          "candidateId": "2bHBUs-k3ac",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5330.699999988079,
+          "candidateId": "t3IyUATcAbE",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5330.899999991059,
+          "candidateId": "8qSlRSd1w2E",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5331.199999988079,
+          "candidateId": "72UO0v5ESUo",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5331.199999988079,
+          "candidateId": "zrJtFy51fRo",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5331.5,
+          "candidateId": "2TzIBedPhPg",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5331.79999999702,
+          "candidateId": "mG4MT1AYqLY",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5332.0999999940395,
+          "candidateId": "UCQg99qha8g",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5332.899999991059,
+          "candidateId": "TCUiG464gXM",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5333.0999999940395,
+          "candidateId": "ti9DJP-n4-M",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 5333.5,
+          "candidateId": "49Q6SYvAhsA",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 5333.5999999940395,
+          "candidateId": "LzNPwMnMe98",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 5333.79999999702,
+          "candidateId": "I1rRIzF3fMc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5334,
+          "candidateId": "XN-7NHVkrCQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5334.0999999940395,
+          "candidateId": "TyHvyGVs42U",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 5334.29999999702,
+          "candidateId": "tQDV9WzHcds",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 8690.29999999702,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 8690.79999999702,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9176.5
+        },
+        {
+          "stage": "playing",
+          "at": 9579.89999999106
+        }
+      ]
+    },
+    {
+      "kind": "repeat",
+      "index": 19,
+      "ok": true,
+      "ms": 193.5,
+      "clickedAt": 9662.59999999404,
+      "endedAt": 9898.59999999404,
+      "playingAt": 9856.09999999404,
+      "events": [
+        {
+          "stage": "stream-ready",
+          "at": 9670.5,
+          "candidateId": "t3IyUATcAbE"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 9683.699999988079
+        },
+        {
+          "stage": "playing",
+          "at": 9856.09999999404
+        }
+      ]
+    },
+    {
+      "kind": "queue",
+      "index": 19,
+      "ok": true,
+      "ms": 6569.100000008941,
+      "clickedAt": 9939.39999999106,
+      "endedAt": 16549,
+      "playingAt": 16508.5,
+      "events": [
+        {
+          "stage": "search",
+          "at": 9948.39999999106
+        },
+        {
+          "stage": "search",
+          "at": 9949.199999988079
+        },
+        {
+          "stage": "discovered",
+          "at": 12900.89999999106
+        },
+        {
+          "stage": "discovered",
+          "at": 12977.29999999702
+        },
+        {
+          "stage": "rejected",
+          "at": 12977.5,
+          "candidateId": "3wDiqlTNlfQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12977.79999999702,
+          "candidateId": "VLC0N6nNim8",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12977.89999999106,
+          "candidateId": "ECPoANapbnQ",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12978,
+          "candidateId": "GlxmgygPKH4",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12978.199999988079,
+          "candidateId": "uH_BwcWR-F0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12978.29999999702,
+          "candidateId": "ea1WEm3EZ94",
+          "reason": "artist"
+        },
+        {
+          "stage": "matched",
+          "at": 12978.5,
+          "candidateId": "szvt1vD0Uug",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12978.79999999702,
+          "candidateId": "5Qk6Xc2ZVkI",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12979,
+          "candidateId": "iq5MaiXAUog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12979,
+          "candidateId": "r_P-_e6uMyo",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12979.29999999702,
+          "candidateId": "sD9Uu740Ov0",
+          "reason": "duration"
+        },
+        {
+          "stage": "rejected",
+          "at": 12979.29999999702,
+          "candidateId": "Ck5ARbVHa0w",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12979.39999999106,
+          "candidateId": "ynFZ9lLMpX0",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12979.5,
+          "candidateId": "OwigUwengG0",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12979.699999988079,
+          "candidateId": "qz_aO_Hfxv4",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12979.89999999106,
+          "candidateId": "q6e_b0NERCA",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12979.89999999106,
+          "candidateId": "ZdMZ40GSVmc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12980.09999999404,
+          "candidateId": "Wmk5hGWMtR4",
+          "reason": "title"
+        },
+        {
+          "stage": "matched",
+          "at": 12980.199999988079,
+          "candidateId": "-2o2OHC87UU",
+          "reason": "matched"
+        },
+        {
+          "stage": "rejected",
+          "at": 12980.29999999702,
+          "candidateId": "IqwIOlhfCak",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12980.39999999106,
+          "candidateId": "fRD_3vJagxk",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12980.5,
+          "candidateId": "QhWyXj2bQFc",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12980.59999999404,
+          "candidateId": "deQcxldcOog",
+          "reason": "title"
+        },
+        {
+          "stage": "rejected",
+          "at": 12980.699999988079,
+          "candidateId": "zluCin4zJHM",
+          "reason": "title"
+        },
+        {
+          "stage": "source-resolved",
+          "at": 16286,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "stream-ready",
+          "at": 16286.29999999702,
+          "candidateId": "qz_aO_Hfxv4"
+        },
+        {
+          "stage": "audio-loaded",
+          "at": 16486.09999999404
+        },
+        {
+          "stage": "playing",
+          "at": 16508.5
+        }
+      ]
+    }
+  ],
+  "definitions": {
+    "cold": "Process restart, unresolved catalogue selection. OS/DNS/CDN caches are not cleared.",
+    "repeat": "Select a second queue entry for the same catalogue song without restarting; this loads again, rather than resuming.",
+    "queue": "Select the next different catalogue entry immediately; no near-end warmup or artificial seek.",
+    "audio": "Windows playing event / Android native playing plus media time > 50 ms. No acoustic speaker measurement.",
+    "p95": "Nearest-rank empirical p95 of successes; failures reported separately."
+  },
+  "executableSha256": "cae665548e065b88dfdd0f1c510d5665b474fdccdaf9f0c30a421d42c9646251",
+  "url": "http://tauri.localhost/",
+  "corpus": [
+    {
+      "id": "itunes:1773293184",
+      "title": "Never Gonna Give You Up",
+      "artist": "Rick Astley",
+      "duration": 213.96
+    },
+    {
+      "id": "itunes:1447401620",
+      "title": "Despacito",
+      "artist": "Luis Fonsi & Daddy Yankee",
+      "duration": 229.387
+    },
+    {
+      "id": "itunes:1693819972",
+      "title": "Naa Ready (From \"Leo\")",
+      "artist": "Anirudh Ravichander, Vijay & Asal Kolaar",
+      "duration": 248.182
+    }
+  ],
+  "summary": {
+    "cold": {
+      "attempted": 20,
+      "succeeded": 20,
+      "medianMs": 8342.70000000298,
+      "p95Ms": 10693.79999999702
+    },
+    "repeat": {
+      "attempted": 20,
+      "succeeded": 20,
+      "medianMs": 208.09999999403954,
+      "p95Ms": 228.59999999403954
+    },
+    "queue": {
+      "attempted": 20,
+      "succeeded": 20,
+      "medianMs": 7658.9000000059605,
+      "p95Ms": 9239.90000000596
+    }
+  },
+  "finishedAt": "2026-10-27T04:54:54.750Z"
+}

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { restoreSession } from './session';
+import { defaults } from './types';
 import {
   cleanVideoTitle,
   needsMetadata,
@@ -34,6 +36,23 @@ describe("online source metadata", () => {
   });
   it("does not automatically enrich catalogue tracks with missing artwork", () => {
     expect(needsMetadata({ ...youtubeTrack(result), metadataSourceId: "itunes:123", artworkUrl: null })).toBe(false);
+  });
+  it("repairs imported rapper credits from the KRSNA channel without changing other Krsna artists or source identity", () => {
+    const raw = { ...youtubeTrack(result), artist: 'Krsna & Dhanda Nyoliwala', fileName: '',
+      source: { ...youtubeTrack(result).source!, attribution: 'KRSNA' } };
+    const repaired = repairYoutubeTrack(raw);
+    expect(repaired).toEqual({ ...raw, artist: 'KR$NA, Dhanda Nyoliwala' });
+    expect(repairYoutubeTrack(repaired)).toBe(repaired);
+    expect(youtubeTrack({ ...result, channel: 'KRSNA', artist: 'Krsna', track: 'No Cap' }).artist).toBe('KR$NA');
+    expect(youtubeTrack({ ...result, title: 'No Cap', channel: 'KRSNA' }).artist).toBe('KR$NA');
+    expect(repairYoutubeTrack({ ...raw, metadataSourceId: 'itunes:123' }).artist).toBe(raw.artist);
+    const local = { ...raw, source: undefined };
+    expect(repairYoutubeTrack(local)).toBe(local);
+    expect(repairYoutubeTrack({ ...raw, source: { ...raw.source, attribution: 'Another channel' } }).artist).toBe(raw.artist);
+    expect(repairYoutubeTrack({ ...raw, artist: 'M.S Krsna' }).artist).toBe('M.S Krsna');
+    const restored = restoreSession({ ...defaults(), queue: [{ id: 'entry', trackId: raw.id }], currentId: 'entry', queueTracks: { [raw.id]: raw } }, []);
+    expect(restored.queueTracks[raw.id].artist).toBe(repaired.artist);
+    expect(restored.queue[0].trackId).toBe(raw.id);
   });
   it("removes Topic suffixes when title has no artist prefix", () => {
     expect(

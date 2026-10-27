@@ -19,6 +19,15 @@ const base: Track = {
 } as Track;
 
 describe("lookupLyrics artist placeholder", () => {
+  it("connects provider word markers to the rendered document without retiming variants", async () => {
+    invoke.mockResolvedValueOnce({kind: "synced", lrc: "[00:01]<00:01>Hello <00:02>உலகம்<00:03>", matched: {provider: "lrc.red", id: "IND292218474", title: "Song", artist: "Artist", duration: 200}});
+    const result = await lookupLyrics({...base, id: "word-fixture"});
+    expect(result.status).toBe("found");
+    if (result.status === "found") {
+      expect(result.doc.lines[0].words).toEqual([{time: 1000, end: 2000, text: "Hello "}, {time: 2000, end: 3000, text: "உலகம்"}]);
+      expect(result.doc.lines[0].text).toBe("Hello உலகம்");
+    }
+  });
   it("preserves fallback attribution, timing and cache identity", async () => {
     invoke.mockResolvedValueOnce({ kind: "synced", lrc: "[00:01]வணக்கம்", matched: {
       provider: "lrc.red", id: "IND292218474", title: "Song", artist: "Artist", album: "Album", duration: 200,

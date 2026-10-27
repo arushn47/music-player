@@ -1,19 +1,23 @@
 import React from "react";
 import {
   Activity,
+  Check,
   Download,
   Ellipsis,
   FolderInput,
   FolderOpen,
   Heart,
   Link2,
+  Loader2,
   Music2,
+  Pause,
   Play,
   Plus,
   Search,
   Shuffle,
   X,
 } from "lucide-react";
+import type { AlbumDownloadProgress } from "../../hooks/useAlbumDownloads";
 import type { Collection } from "../../domain/collections";
 import type { Playlist, Session, Track } from "../../domain/types";
 import type { Playback } from "../../player/controller";
@@ -51,6 +55,10 @@ export interface LibraryViewProps {
   onImportMusic: (folder: boolean) => void;
   onRenamePlaylist?: (playlist: Playlist) => void;
   onDeletePlaylist?: (playlist: Playlist) => void;
+  onDownloadPlaylist?: () => void;
+  downloadProgress?: AlbumDownloadProgress;
+  onPauseDownload?: () => void;
+  onCancelDownload?: () => void;
   onFavorite: (trackId: string) => void;
   onRemoveTrack: (track: Track) => void;
   onDownloadTrack: (track: Track) => void;
@@ -92,6 +100,10 @@ export function LibraryView({
   onImportMusic,
   onRenamePlaylist,
   onDeletePlaylist,
+  onDownloadPlaylist,
+  downloadProgress,
+  onPauseDownload,
+  onCancelDownload,
   onFavorite,
   onRemoveTrack,
   onDownloadTrack,
@@ -234,6 +246,12 @@ export function LibraryView({
                         Rename playlist
                       </button>
                     )}
+                    {playlist && onDownloadPlaylist && rows.length > 0 && (
+                      <button type="button" disabled={downloadProgress?.active} onClick={onDownloadPlaylist}>
+                        <Download size={14} />
+                        {downloadProgress?.active ? "Downloading…" : downloadProgress && !downloadProgress.active ? "Retry download" : "Download playlist"}
+                      </button>
+                    )}
                     {playlist && onDeletePlaylist && (
                       <button type="button" onClick={() => onDeletePlaylist(playlist)}>
                         Delete playlist
@@ -243,6 +261,21 @@ export function LibraryView({
                 </details>
               )}
             </div>
+            {downloadProgress && playlist && (
+              <div className="album-download-progress" aria-busy={downloadProgress.active}>
+                <p className="subtitle" role="status">{downloadProgress.active
+                  ? downloadProgress.cancelled ? "Cancelling download…" : downloadProgress.paused && downloadProgress.stage === "Waiting" ? `Paused · ${downloadProgress.done} of ${downloadProgress.total} tracks processed` : `Track ${Math.min(downloadProgress.done + 1, downloadProgress.total)} of ${downloadProgress.total} · ${downloadProgress.stage}${downloadProgress.title ? `: ${downloadProgress.title}` : ""}${downloadProgress.paused ? " · Pausing after this track" : ""}`
+                  : `${downloadProgress.done - downloadProgress.failed.length} of ${downloadProgress.total} tracks available offline${downloadProgress.cancelled ? " · Cancelled" : downloadProgress.failed.length ? ` · ${downloadProgress.failed.length} failed` : " · Download complete"}`}
+                </p>
+                {downloadProgress.active && <div className="album-download-controls">
+                  <IconButton label={downloadProgress.paused ? "Resume download" : "Pause after current track"} active={downloadProgress.paused} disabled={downloadProgress.cancelled} onClick={onPauseDownload || (() => {})}>{downloadProgress.paused ? <Play size={16} /> : <Pause size={16} />}</IconButton>
+                  <IconButton label="Cancel download" disabled={downloadProgress.cancelled} onClick={onCancelDownload || (() => {})}><X size={16} /></IconButton>
+                </div>}
+                <progress aria-label="Playlist download progress" value={Math.min(downloadProgress.total, downloadProgress.done + (downloadProgress.active ? (downloadProgress.percent || 0) / 100 : 0))} max={downloadProgress.total} />
+                {downloadProgress.active && <small>{downloadProgress.done} of {downloadProgress.total} tracks processed · You can keep listening while this downloads.</small>}
+                {downloadProgress.failed.length > 0 && <details><summary>{downloadProgress.failed.length} failed · Retry download to try again</summary><ul>{downloadProgress.failed.map((title, index) => <li key={index}>{title}</li>)}</ul></details>}
+              </div>
+            )}
           </div>
         </div>
       ) : (

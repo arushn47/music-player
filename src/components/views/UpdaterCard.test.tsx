@@ -5,10 +5,26 @@ const state=vi.hoisted(()=>({ stage:"available",currentVersion:"1.0.4",version:"
 const platform=vi.hoisted(()=>({android:false}));
 vi.mock("../../adapters/updater",()=>({getUpdateState:()=>state,subscribeToUpdates:()=>()=>{},supportsWindowsUpdates:()=>!platform.android,supportsAndroidUpdates:()=>platform.android,checkForUpdates:vi.fn(),downloadUpdate:vi.fn(),restartAndUpdate:vi.fn()}));
 afterAll(()=>vi.unstubAllGlobals());
-it("shows release notes before download and keeps installed notes available, rendering provider text safely",()=>{
+it("puts a prominent versioned download button above the release notes, rendering provider text safely",()=>{
  const html=renderToStaticMarkup(<UpdaterCard />);
- expect(html.indexOf("Better lyrics")).toBeLessThan(html.indexOf("Download update"));
- expect(html).toContain("Previous changes");expect(html).toContain("&lt;script&gt;");expect(html).not.toContain("<script>");
+ expect(html).toContain('class="primary updater-action"');
+ expect(html).toContain('Download update v1.0.5');
+ expect(html.indexOf("Download update")).toBeLessThan(html.indexOf("Better lyrics"));
+ expect(html).not.toContain("Previous changes");expect(html).toContain("&lt;script&gt;");expect(html).not.toContain("<script>");
+});
+it.each(["downloading", "ready", "restarting"])("keeps %s actions above release notes", stage=>{
+ const original=state.stage;state.stage=stage;
+ const html=renderToStaticMarkup(<UpdaterCard />);state.stage=original;
+ const action=stage==="downloading" ? 'Update download progress' : stage==="ready" ? 'Restart &amp; Update' : 'Restarting…';
+ expect(html.indexOf(action)).toBeGreaterThan(-1);
+ expect(html.indexOf(action)).toBeLessThan(html.indexOf('Better lyrics'));
+ expect(html).not.toContain('Download update v');
+});
+it("shows installed release notes when no update is available",()=>{
+ const original=state.version;state.version="";
+ const html=renderToStaticMarkup(<UpdaterCard />);state.version=original;
+ expect(html).toContain("What&#x27;s new in v1.0.4");
+ expect(html).toContain("Previous changes");expect(html).not.toContain("Better lyrics");
 });
 it("describes Android in-place APK updates without claiming a Windows-style installer",()=>{
  platform.android=true;const html=renderToStaticMarkup(<UpdaterCard />);platform.android=false;

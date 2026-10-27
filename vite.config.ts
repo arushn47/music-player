@@ -22,11 +22,14 @@ export default defineConfig({
     },
   }],
   worker: { format: "es" },
+  optimizeDeps: { entries: ["index.html"] },
   clearScreen: false,
   server: {
     port: 1420,
     strictPort: true,
     host: devHost ? "0.0.0.0" : "127.0.0.1",
+    // Native/tool caches are large; Tauri watches native sources separately.
+    watch: { ignored: ["**/src-tauri/**", "**/.tools/**", "**/.test-data/**", "**/.codex-remote-attachments/**", "**/releases/**", "**/release/**", "**/scratch/**", "**/experiments/**"] },
     hmr: devHost
       ? {
           protocol: "ws",

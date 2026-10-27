@@ -7,6 +7,9 @@ import { type PlayerBarProps } from "./PlayerBar";
 import type { LyricDocument, Preferences, Session } from "../../domain/types";
 import type { LyricProcessingState } from "../../adapters/lyric-processing";
 import "./expanded.css";
+import "./immersive.css";
+import { ImmersiveBackground } from "./ImmersiveBackground";
+import { Select } from "../common/Select";
 
 export function ExpandedPlayer({
   controls,
@@ -43,11 +46,30 @@ export function ExpandedPlayer({
   const [showLyrics, setShowLyrics] = useState(true);
   const session = propSession ?? controls.props.session;
   const onSetting = propOnSetting ?? controls.props.onSetting;
+  const immersive = session.settings.fullscreenLayout !== "minimal";
+  const visibleLyrics = showLyrics && (!immersive || Boolean(doc?.lines.some(line => line.text.trim()) && !doc.instrumental));
   const isFullscreen = propIsFullscreen ?? controls.props.isFullscreen;
   const onToggleFullscreen = propOnToggleFullscreen ?? controls.props.onToggleFullscreen;
   const sessionVolume = session?.settings?.volume ?? 0.72;
   const [hoverVolume, setHoverVolume] = useState(false);
   const lastVol = useRef(sessionVolume > 0 ? sessionVolume : 0.72);
+  const isVolumeDragging = useRef(false);
+  const volumeContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handlePointerUp = () => {
+      if (isVolumeDragging.current) {
+        isVolumeDragging.current = false;
+        if (!volumeContainerRef.current?.matches(":hover")) {
+          if (volumeContainerRef.current?.contains(document.activeElement)) {
+            (document.activeElement as HTMLElement)?.blur();
+          }
+        }
+      }
+    };
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => window.removeEventListener("pointerup", handlePointerUp);
+  }, []);
 
   useEffect(() => {
     const element = dialog.current!;
@@ -65,14 +87,14 @@ export function ExpandedPlayer({
   return (
     <dialog
       ref={dialog}
-      className="expanded-player"
+      className={`expanded-player ${immersive ? "is-immersive" : "is-minimal"}`}
       aria-label="Now playing"
       onCancel={(event) => {
         event.preventDefault();
         onClose();
       }}
     >
-      <AmbientBackground artwork={track?.artworkUrl} />
+      {immersive ? <ImmersiveBackground track={track} /> : <AmbientBackground artwork={track?.artworkUrl} />}
 
       <header className="expanded-top-bar">
         <button
@@ -84,16 +106,23 @@ export function ExpandedPlayer({
           <X size={20} />
         </button>
 
-        <div id="expanded-lyrics-settings-slot" />
+        <div className="expanded-top-actions">
+          <Select ariaLabel="Fullscreen layout" className="fullscreen-layout-select" placement="down"
+            value={immersive ? "immersive" : "minimal"}
+            onChange={value => onSetting("fullscreenLayout", value)}
+            options={[{value: "immersive", label: "Immersive"}, {value: "minimal", label: "Minimal"}]} />
+          <div id="expanded-lyrics-settings-slot" />
+        </div>
       </header>
 
-      <div className={`expanded-layout ${showLyrics ? "has-lyrics" : "no-lyrics"}`}>
+      <div className={`expanded-layout ${visibleLyrics ? "has-lyrics" : "no-lyrics"}`}>
         <section className="expanded-record" aria-label="Current song">
           <div className={`expanded-cover-wrapper ${isPlaying ? "is-playing" : "is-paused"}`}>
             <Artwork url={track?.artworkUrl} className="expanded-cover" />
           </div>
           {cloneElement(controls, {
             expanded: true,
+            titleCharacterLimit: immersive ? 40 : undefined,
             onExpand: undefined,
             onNavigateArtist: (id) => {
               onClose();
@@ -102,7 +131,7 @@ export function ExpandedPlayer({
           })}
         </section>
 
-        {showLyrics && (
+        {visibleLyrics && (
           <section className="expanded-lyrics" aria-label="Song lyrics" onWheel={() => setFollow(false)} onTouchMove={() => setFollow(false)}>
             {lyrics}
           </section>
@@ -121,7 +150,7 @@ export function ExpandedPlayer({
       </div>
 
       <div className="expanded-bottom-right">
-        {showLyrics && canFollow && !follow && <button
+        {visibleLyrics && canFollow && !follow && <button
           type="button"
           className="expanded-action-btn"
           title="Back to sync"
@@ -130,9 +159,17 @@ export function ExpandedPlayer({
         ><RefreshCw size={15} /></button>}
 
         <div
+          ref={volumeContainerRef}
           className={`expanded-volume-control ${hoverVolume ? "is-hovered" : ""}`}
           onMouseEnter={() => setHoverVolume(true)}
-          onMouseLeave={() => setHoverVolume(false)}
+          onMouseLeave={() => {
+            setHoverVolume(false);
+            if (!isVolumeDragging.current) {
+              if (volumeContainerRef.current?.contains(document.activeElement)) {
+                (document.activeElement as HTMLElement)?.blur();
+              }
+            }
+          }}
         >
           <button
             type="button"
@@ -159,6 +196,15 @@ export function ExpandedPlayer({
             style={{
               "--volume-percent": `${Math.min(100, Math.max(0, sessionVolume * 100))}%`,
             } as React.CSSProperties}
+            onPointerDown={() => {
+              isVolumeDragging.current = true;
+            }}
+            onPointerUp={(e) => {
+              isVolumeDragging.current = false;
+              if (!volumeContainerRef.current?.matches(":hover")) {
+                e.currentTarget.blur();
+              }
+            }}
             onChange={(e) => {
               const val = Number(e.target.value);
               if (val > 0) lastVol.current = val;

@@ -1,3 +1,29 @@
+## Mobile polish and shared drag queue — 26 October 2026
+
+- [x] Tracker: mobile-specific compact heading/range controls, one-row recap metrics, swipeable ranking cards and compact recent-play rows. Removed obsolete background-tracking-development notice. Desktop Tracker layout preserved.
+- [x] Playing song: mobile current rows retain an accent edge with padded artwork/content, avoiding cover overlap.
+- [x] Mobile player: moved identity/transport upward and tightened time labels to the seek bar while preserving touch targets.
+- [x] Sync sheet: close button is fixed at 44 by 44 pixels, cannot flex-shrink into an oval.
+- [x] Queue: shared Pointer Events drag handle replaces up/down buttons on mobile and desktop; arrow keys remain supported. Only upcoming entries can move. Drag follows the pointer, highlights its target, handles cancellation and scrolls at edges without per-move React state. Mobile queue now also includes unsaved session queueTracks.
+- [x] Domain reorder inserts rather than swaps, copies displayed order before edits, rejects invalid/out-of-bounds moves and preserves current playback/shuffle ordering. Regression guards caught and fixed an initial mutation bug.
+- Verification: 46 focused queue/session/player/navigation tests passed; bundled browser checks passed for touch dragging, desktop mouse dragging, keyboard moves, circular Sync close geometry, compact Tracker, existing phone gestures and desktop isolation. Production frontend and ARM64 Android builds passed. Screenshots: `.test-data/mobile-review/tracker.png`, `player.png`, `drag-queue.png`.
+- Signed and verified `.test-data/Lumaire-mobile-polish-20261026.apk` using the existing certificate; Motorola ZD222LVFWT `adb install -r` succeeded and launch returned Status ok. Data retained, version 1.0.6 unchanged, no commit/push/publication. Long-queue touch scrolling and screen-reader behavior still need physical-device review; desktop installed release remains unchanged.
+## Restore standalone mobile Lyric Room — 25 October 2026
+
+- Removed the embedded lyrics tab/controller from MobileNowPlaying. Expanded mobile playback now has only the song view and Up Next; cover swipes/queue gestures preserved. Desktop expanded lyrics unchanged.
+- Mobile Lyrics navigation opens the existing standalone Lyric Room through normal screen routing, retaining the bottom mini-player. Five compact destinations: Home, Discover, Library, Lyrics, Tracker. Removed the mobile route interception and obsolete embedded lyric styles; opening the mobile player no longer requests lyrics as though Lyric Room were open.
+- Verification: seven focused navigation/player/swipe tests passed. Offline touch/layout checks passed at 360/390/433px, plus desktop isolation at 1280px; standalone Lyric Room and visible mini-player asserted. Production frontend and ARM64 APK builds passed.
+- Signed `.test-data/Lumaire-phone-lyric-room-20261025.apk` with the existing release key and verified it. Motorola ZD222LVFWT in-place installation succeeded, and MainActivity cold launch returned Status ok. No app-data clearing, version change, push or publication. Real phone lyric interaction remains for user review.
+## Mobile follow-up without a connected phone — 25 October 2026
+
+- [x] Home: all five shelves remain available on mobile in desktop order. Missing-data shelves explain their real eligibility instead of disappearing or inventing plays. Desktop retains its existing hide-empty behavior. History remains device-local; Continue Listening needs an unfinished multi-track queue, Rotation three qualified plays, Forgotten Favorites older loved listening.
+- [x] Discover artwork: mood/genre tiles reuse artwork from the already fetched release/trending feed, then saved artwork or a bundled image. No extra category API requests or dependency on external stock-photo hosts.
+- [x] Discover songs: force album/time/index out of mobile rows and pin metadata/menu to the same grid row; preserved desktop columns.
+- [x] Cover gestures: left/right skip with direct horizontal artwork tracking, no per-move React state. Existing up/down queue/dismiss gestures remain.
+- [x] Lyrics: pinned artwork/title and previous/play-pause/next controls above the lyrics, including empty/error states.
+- [x] Favorites: root handler now saves streamed queue tracks before favoriting instead of silently rejecting unsaved tracks; no global busy lock or playback changes. Existing library favorites still toggle immediately.
+- [x] Verification: 22 focused tests passed. Production frontend and ARM64 Android debug APK builds passed. Offline browser fixture passed at 360/390/433px plus 1280px desktop isolation: cover skips, heart state, lyrics controls, all Home shelves, actual loaded category image, compact Discover row geometry, library/settings/sheets and queue interactions. Direct localhost checks were blocked in this environment; fixtures now bundle and fulfill local resources directly without external requests.
+- [ ] Real phone playback, gestures and signed in-place installation await reconnection. Local debug review APK: `.test-data/Lumaire-mobile-review-1.0.6.apk`; not release-signed for replacing the installed release. No install, data reset, commit, push, tag or publication. Version stays 1.0.6; prior local Windows updater/setup changes preserved.
 # Mobile redesign checklist — 25 October 2026
 
 ## Player/history follow-up

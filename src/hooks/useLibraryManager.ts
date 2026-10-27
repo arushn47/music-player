@@ -21,6 +21,7 @@ import { enqueue, setShuffle, isQueuedCatalog, resolveUpcomingCatalog } from "..
 import { restoreSession } from "../domain/session";
 import { checkpointListening } from '../domain/home-listening';
 import { stampPlaylistUpdates } from "../domain/playlists";
+import { capturePlaylistEdits } from '../domain/device-sync';
 import { defaults, item, type EngineInstallProgress, type EngineInstallState, type Session, type Track } from "../domain/types";
 import {
   player,
@@ -30,6 +31,10 @@ import {
   musicResolved,
   prepareCatalogCandidate,
 } from "../player/service";
+
+import type { ToastAction } from "../components/common/Banners";
+
+const LAST_PLAYLIST_KEY = "lumaire:last-playlist-id";
 
 const formatError = (e: unknown) =>
   e instanceof Error ? e.message : String(e);
@@ -42,6 +47,7 @@ export function useLibraryManager() {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageAction, setMessageAction] = useState<ToastAction | null>(null);
   const [error, setError] = useState("");
   const [downloads, setDownloads] = useState<Record<string, string>>({});
   const [ytdlpAvailable, setYtdlpAvailable] = useState(false);
@@ -75,12 +81,13 @@ export function useLibraryManager() {
 
   const update = (fn: (s: Session) => Session) => {
     const now = Date.now();
-    setSession(s => {
-      const next = fn(s);
-      return next.playlists === s.playlists ? next : {
+    const s = sessionRef.current;
+    const next = fn(s);
+    const updated = capturePlaylistEdits(s, next.playlists === s.playlists ? next : {
         ...next, playlists: stampPlaylistUpdates(s.playlists, next.playlists, now),
-      };
-    });
+      }, tracksRef.current);
+    sessionRef.current = updated;
+    setSession(updated);
   };
 
   const setting = <K extends keyof Session["settings"]>(
@@ -93,16 +100,18 @@ export function useLibraryManager() {
         : { ...s, settings: { ...s.settings, [key]: value } },
     );
 
-  const notify = (text: string) => {
+  const notify = (text: string, action?: ToastAction | null) => {
     setMessage(text);
-    setError("");
+    setMessageAction(action ?? null);
     if (messageTimeoutRef.current) {
       window.clearTimeout(messageTimeoutRef.current);
     }
+    const duration = action ? 6000 : 4000;
     messageTimeoutRef.current = window.setTimeout(() => {
       setMessage("");
+      setMessageAction(null);
       messageTimeoutRef.current = null;
-    }, 3800);
+    }, duration);
   };
 
   const persist = () => {
@@ -381,16 +390,20 @@ export function useLibraryManager() {
     });
   }
 
-  const favorite = (id: string) =>
-    void action(async () => {
-      if (!tracksRef.current.some((t) => t.id === id)) return;
+  const favorite = (id: string) => {
+    const track = tracksRef.current.find(t => t.id === id) || sessionRef.current.queueTracks[id];
+    if (!track) return;
+    const toggle = (savedId: string) => {
       update((s) => ({
         ...s,
-        favorites: s.favorites.includes(id)
-          ? s.favorites.filter((f) => f !== id)
-          : [...s.favorites, id],
+        favorites: s.favorites.includes(savedId)
+          ? s.favorites.filter((f) => f !== savedId)
+          : [...s.favorites, savedId],
       }));
-    });
+    };
+    if (tracksRef.current.some(t => t.id === id)) toggle(id);
+    else void saveOnline(track).then(saved => toggle(saved.id)).catch(e => setError(`Could not save favorite. ${formatError(e)}`));
+  };
 
   async function saveOnline(t: Track): Promise<Track> {
     if (isQueuedCatalog(t)) return saveOnline(await resolveDiscovery(await library.lookupCatalog(t.id)));
@@ -515,13 +528,13 @@ export function useLibraryManager() {
         const previous = sessionRef.current.currentId;
         const snapshot = await library.remove(
           t.id,
-          withoutTrack(
+          capturePlaylistEdits(sessionRef.current, withoutTrack(
             {
               ...sessionRef.current,
               position: player.state.time,
             },
             t.id,
-          ),
+          ), tracksRef.current),
         );
         const restored = restoreSession(snapshot.session, snapshot.tracks);
         sessionRef.current = restored;
@@ -549,6 +562,11 @@ export function useLibraryManager() {
     t: Track,
     playlistId: string,
     newName?: string,
+    options?: {
+      action?: ToastAction | null;
+      customMessage?: string;
+      silent?: boolean;
+    },
   ) {
     await action(async () => {
       if (playlistId === "favorites") {
@@ -583,11 +601,26 @@ export function useLibraryManager() {
             ]
           : s.playlists.map((playlist) =>
               playlist.id === playlistId
-                ? { ...playlist, items: [...playlist.items, item(saved.id)] }
+                ? {
+                    ...playlist,
+                    items: playlist.items.some((i) => i.trackId === saved.id)
+                      ? playlist.items
+                      : [...playlist.items, item(saved.id)],
+                  }
                 : playlist,
             ),
       }));
-      notify(`Added ${saved.title} to playlist`);
+      try {
+        localStorage.setItem(LAST_PLAYLIST_KEY, playlistId);
+      } catch {
+        // Local storage unavailable
+      }
+      if (!options?.silent) {
+        const targetPlaylist = sessionRef.current.playlists.find((p) => p.id === playlistId);
+        const playlistName = newName || targetPlaylist?.name || "playlist";
+        const messageText = options?.customMessage ?? `Added to ${playlistName}`;
+        notify(messageText, options?.action);
+      }
     });
   }
 
@@ -744,6 +777,8 @@ export function useLibraryManager() {
     busy,
     message,
     setMessage,
+    messageAction,
+    setMessageAction,
     error,
     setError,
     downloads,

@@ -34,6 +34,18 @@ export async function clearListening() {
   if (pendingFailure) throw pendingFailure;
 }
 
+export async function reloadSyncedListening() {
+  queued(async () => {
+    const snapshot = await listeningStore.load();
+    if (generation !== snapshot.generation) {
+      tracker?.reset(); unsaved.clear(); generation = snapshot.generation;
+      resample();
+    }
+    historyChanged.dispatchEvent(new Event('change'));
+  });
+  await chain;
+}
+
 function retryWrites() {
   // Work is serialized with clear and captures the generation at enqueue time.
   for (const [id, snapshot] of unsaved) queued(async () => {

@@ -1,0 +1,11 @@
+{
+  "identifier": "android-navigation",
+  "description": "Android task minimization, search keyboard and native playback events.",
+  "platforms": ["android"],
+  "windows": ["main"],
+  "permissions": [
+    "lumaire-android:allow-navigation",
+    "lumaire-android:allow-register-listener",
+    "lumaire-android:allow-remove-listener"
+  ]
+}

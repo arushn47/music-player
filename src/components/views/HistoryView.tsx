@@ -96,7 +96,6 @@ export function HistoryView({ initialTab = "stats", records, loading, error, mob
         />
       </div>
     </div>
-    {mobile && <p className="listening-notice">Listening while the app is open is recorded. Background playback tracking is in development.</p>}
     {!enabled && <p className="listening-notice">Listening activity is paused. Your existing plays are kept. Enable recording in Settings &amp; sources.</p>}
     {error && <div className="listening-notice" role="alert">{error} <button type="button" onClick={onRefresh}>Try again</button></div>}
     <div id="listening-panel" role="tabpanel" aria-labelledby={tab === "stats" ? "listening-stats-tab" : "listening-history-tab"} aria-busy={loading}>
@@ -130,15 +129,27 @@ export function HistoryView({ initialTab = "stats", records, loading, error, mob
             <div><dt>Active days</dt><dd>{stats.insights.activeDays.toLocaleString()}</dd></div>
             <div><dt>Longest listening streak</dt><dd>{stats.insights.longestStreak} {stats.insights.longestStreak === 1 ? "day" : "days"}</dd></div>
             <div><dt>Busiest day</dt><dd>{stats.insights.busiestDay ? new Date(`${stats.insights.busiestDay}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "—"}</dd></div>
-          </dl><p>Based on the listening recorded on this device.</p></section>
+          </dl><p>Based on recorded listening, including paired history when sync is enabled.</p></section>
         </div>
         </> : <>
           <div className="listening-summary"><span><strong>{formatListening(stats.totalMs)}</strong> listened</span><span>{visible.length} qualified {visible.length === 1 ? "play" : "plays"}</span></div>
           <div className="listening-days">{[...groups].map(([day, entries]) => <section key={day} aria-label={dayTitle(day, now)}><h2>{dayTitle(day, now)}</h2><ul>{entries.map(record => <li className="listening-history-row" key={record.id}>
-            <Artwork url={record.artworkUrl} className="listening-artwork" /><div className="listening-history-identity"><button type="button" onClick={() => onReplay(record)} title={`Play ${record.title}`}>{record.title}</button><span title={record.artist}><ArtistLinks artistString={record.artist || "Unknown artist"} onNavigateArtist={onNavigateArtist} /></span></div>
-            <span className="listening-history-duration">{formatListening(record.listenedMs)} listened</span><time dateTime={new Date(record.startedAt).toISOString()}>{new Date(record.startedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</time>
-            <IconButton label={`Add ${record.title} to queue`} className="listening-queue-action" onClick={() => onQueue(record)}><ListPlus size={18} /></IconButton>
-            <IconButton label={`${favorites.includes(record.trackId) ? "Unfavorite" : "Favorite"} ${record.title}`} active={favorites.includes(record.trackId)} onClick={() => onFavorite(record)}><Heart size={18} fill={favorites.includes(record.trackId) ? "currentColor" : "none"} /></IconButton>
+            <div className="listening-artwork-wrap" onClick={() => onReplay(record)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onReplay(record); }} aria-label={`Play ${record.title}`}>
+              <Artwork url={record.artworkUrl} className="listening-artwork" />
+            </div>
+            <div className="listening-history-identity">
+              <button type="button" className="track-title-button" onClick={() => onReplay(record)} title={`Play ${record.title}`}>{record.title}</button>
+              <span title={record.artist}><ArtistLinks artistString={record.artist || "Unknown artist"} onNavigateArtist={onNavigateArtist} /></span>
+            </div>
+            <div className="listening-history-meta">
+              <span className="listening-history-duration">{formatListening(record.listenedMs)} listened</span>
+              <span className="listening-history-dot" aria-hidden="true">·</span>
+              <time dateTime={new Date(record.startedAt).toISOString()}>{new Date(record.startedAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</time>
+            </div>
+            <div className="listening-history-actions">
+              <IconButton label={`Add ${record.title} to queue`} className="listening-queue-action" onClick={() => onQueue(record)}><ListPlus size={18} /></IconButton>
+              <IconButton label={`${favorites.includes(record.trackId) ? "Unfavorite" : "Favorite"} ${record.title}`} active={favorites.includes(record.trackId)} onClick={() => onFavorite(record)}><Heart size={18} fill={favorites.includes(record.trackId) ? "currentColor" : "none"} /></IconButton>
+            </div>
           </li>)}</ul></section>)}</div>
           <footer className="listening-pagination">
             <div className="pagination-page-size">

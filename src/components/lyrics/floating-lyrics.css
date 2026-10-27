@@ -22,14 +22,12 @@ html, body, #root {
   height: 100%;
   display: flex;
   flex-direction: column;
-  border-radius: 20px;
-  padding: 10px 16px;
+  border-radius: 18px;
+  padding: 6px 14px;
   position: relative;
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16),
-              0 14px 38px rgba(0, 0, 0, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
   transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   user-select: none;
 }
@@ -47,16 +45,14 @@ html, body, #root {
   opacity: 1;
 }
 .floating-lyrics.is-locked .floating-toolbar {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
+  display: none;
 }
 .floating-unlock {
   position: absolute;
-  top: 10px;
-  right: 14px;
-  width: 32px;
-  height: 32px;
+  top: 7px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 50%;
   background: rgba(23, 27, 22, 0.85);
@@ -95,8 +91,8 @@ html, body, #root {
   color: #fff;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease, transform 100ms ease-out;
@@ -146,8 +142,8 @@ input:focus-visible {
   display: flex;
   flex-direction: column;
   justify-content: safe center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 4px;
+  padding: 2px 8px;
   text-align: center;
 }
 .floating-lines::-webkit-scrollbar {
@@ -155,8 +151,8 @@ input:focus-visible {
 }
 .floating-line {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
-  font-size: clamp(14px, 3.8vw, 19px);
-  line-height: 1.35;
+  font-size: clamp(13px, 3.5vw, 17px);
+  line-height: 1.3;
   letter-spacing: -0.018em;
   color: rgba(255, 255, 255, 0.44);
   overflow-wrap: anywhere;
@@ -171,8 +167,8 @@ input:focus-visible {
   user-select: text;
 }
 .floating-line.active {
-  font-size: clamp(18px, 5.2vw, 28px);
-  line-height: 1.3;
+  font-size: clamp(17px, 4.8vw, 24px);
+  line-height: 1.25;
   font-weight: 750;
   letter-spacing: -0.024em;
   color: #ffffff;
@@ -187,9 +183,9 @@ input:focus-visible {
   white-space: pre-line;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   font-size: 0.56em;
-  line-height: 1.4;
+  line-height: 1.35;
   letter-spacing: -0.01em;
-  margin-top: 6px;
+  margin-top: 3px;
   color: rgba(255, 255, 255, 0.76);
   font-weight: 500;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
@@ -202,6 +198,10 @@ input:focus-visible {
   font-weight: 500;
   letter-spacing: -0.015em;
   margin: 0;
+}
+.floating-toolbar button[aria-pressed="true"] {
+  background: #fff;
+  color: #000;
 }
 .floating-opacity {
   margin-left: auto;
@@ -316,9 +316,19 @@ input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; transform: none !important; filter: none !important; }
 }
-@media (max-height: 240px) {
+@media (max-height: 180px) {
   .floating-line:not(.active) { display: none; }
-  .floating-line.active { font-size: 20px; }
+  .floating-line.active { font-size: 19px; }
+  .floating-lock-hint { display: none; }
+}
+
+@media (max-height: 90px) {
+  .floating-lyrics { padding: 4px 10px; border-radius: 14px; }
+  .floating-toolbar { gap: 4px; }
+  .floating-toolbar button { width: 22px; height: 22px; }
+  .floating-line.active { font-size: 15px; }
+  .floating-line small,
+  .floating-secondary { font-size: 10px; margin-top: 1px; }
 }
 
 @media (max-width: 360px) {
@@ -326,3 +336,24 @@ input:focus-visible {
   .floating-opacity { gap: 4px; font-size: 10px; }
   .floating-opacity input[type="range"] { width: 48px; }
 }
+.floating-lyrics[data-text-color="black"] {
+  --accent: #000;
+  border-color: rgb(0 0 0 / 20%);
+  box-shadow: inset 0 1px 0 rgb(0 0 0 / 12%);
+}
+.floating-lyrics[data-text-color="black"],
+.floating-lyrics[data-text-color="black"] * {
+  color: #000;
+  text-shadow: none;
+}
+.floating-lyrics[data-text-color="black"] .floating-toolbar button {
+  border-color: rgb(0 0 0 / 18%);
+}
+.floating-lyrics[data-text-color="black"] .floating-unlock {
+  background: rgb(255 255 255 / 85%);
+  border-color: rgb(0 0 0 / 20%);
+}
+.floating-lyrics[data-text-color="black"] .floating-opacity input::-webkit-slider-thumb { background: #000; }
+.floating-lyrics[data-text-color="black"] .floating-opacity input::-webkit-slider-runnable-track { background: rgb(0 0 0 / 25%); }
+.floating-lyrics[data-text-color="black"] .floating-opacity input::-moz-range-thumb { background: #000; }
+.floating-lyrics[data-text-color="black"] .floating-opacity input::-moz-range-track { background: rgb(0 0 0 / 25%); }

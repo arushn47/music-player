@@ -27,12 +27,14 @@ import type {
 } from "../../domain/types";
 import { LyricsSettings } from "./LyricsSettings";
 import { centerLyricLine } from "./scroll-lyric";
+import { WordLyrics } from "./WordLyrics";
 import { ArtistLinks } from "../common/ArtistLinks";
 import {
   type LyricProcessingState,
 } from "../../adapters/lyric-processing";
 
 export interface LyricsViewProps {
+  mediaTime?: number;
   embedded?: boolean;
   onNavigateArtist?: (id: string) => void;
   track?: Track | null;
@@ -64,6 +66,7 @@ const clock = (s: number) =>
   `${Math.floor((Number.isFinite(s) ? s : 0) / 60)}:${String(Math.floor((Number.isFinite(s) ? s : 0) % 60)).padStart(2, "0")}`;
 
 export function LyricsView({
+  mediaTime = 0,
   embedded = false,
   onNavigateArtist,
   track,
@@ -280,7 +283,7 @@ export function LyricsView({
   );
 
   return (
-    <section className="lyric-room">
+    <section className="lyric-room" data-embedded={embedded}>
       {embedded && targetSlot ? createPortal(settingsContent, targetSlot) : null}
       {!embedded && (
         <div className="lyric-settings-fixed-anchor">
@@ -313,7 +316,7 @@ export function LyricsView({
               <div className="lyric-meta-pills">
                 <span className="lyric-timing-badge" role="status">
                   {lyricSynced
-                    ? "Synced lyrics"
+                    ? doc.lines.some(line => line.words?.length) ? "Word-synced lyrics" : "Synced lyrics"
                     : session.settings.estimatedScroll
                       ? "Estimated autoscroll"
                       : "Manual scrolling"}
@@ -470,12 +473,15 @@ export function LyricsView({
                 onTouchMove={() => setFollow(false)}
               >
                 {doc.lines.map((line, index) => {
-                  const distance = isFollowing ? Math.abs(index - activeIndex) : null;
+                  const lyricClock = mediaTime * 1000 - doc.fileOffset - doc.userOffset;
+                  const wordEnd = line.words?.at(-1)?.end;
+                  const lineActive = active === line.id || (lyricSynced && line.time !== null && line.time <= lyricClock && wordEnd !== undefined && lyricClock < wordEnd);
+                  const distance = isFollowing ? lineActive ? 0 : Math.abs(index - activeIndex) : null;
                   return (
                     <button
                       key={line.id}
                       ref={line.id === followTarget ? activeRef : undefined}
-                      className={`lyric-line ${active === line.id ? "is-active" : ""}`}
+                      className={`lyric-line ${lineActive ? "is-active" : ""}`}
                       data-distance={distance !== null ? Math.min(distance, 4) : undefined}
                       disabled={!lyricSynced || line.time === null}
                       onClick={() => {
@@ -511,7 +517,7 @@ export function LyricsView({
                             }
                             dir="auto"
                           >
-                            {layer.text}
+                            {layer.kind === "original" && lyricSynced && lineActive && line.words?.length ? <WordLyrics line={line} clock={lyricClock} /> : layer.text}
                           </span>
                         ),
                       )}

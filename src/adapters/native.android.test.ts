@@ -3,6 +3,14 @@ const bridge = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => true, convertFileSrc: (s: string) => s, invoke: bridge.invoke, Channel: class { onmessage = () => {}; } }));
 afterEach(() => { vi.resetModules(); vi.unstubAllGlobals(); bridge.invoke.mockReset(); });
 describe("platform-specific online resolution", () => {
+  it('canonicalizes imported and synced source credits at the shared save boundary', async () => {
+    vi.stubGlobal('navigator', { userAgent: 'Android' });
+    const { library } = await import('./native');
+    const { youtubeTrack } = await import('../domain/online-track');
+    const track = { ...youtubeTrack({ id: 'abcdefghijk', title: 'No Cap', channel: 'KRSNA', duration: 180, thumbnail: null }), artist: 'Krsna' };
+    await library.saveOnline(track);
+    expect(bridge.invoke).toHaveBeenCalledWith('save_online_track', { track: { ...track, artist: 'KR$NA' }, updateOnly: false });
+  });
   it("forwards native download byte progress without changing the source identity", async () => {
     vi.stubGlobal("navigator", { userAgent: "Windows" });
     const { library } = await import("./native");
