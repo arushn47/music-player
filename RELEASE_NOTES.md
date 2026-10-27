@@ -1,6 +1,6 @@
 # Lumaire v1.0.7
 
-Less waiting when you replay a song, more consistent listening history, and a more comfortable Lumaire on your phone. This update is available for Windows and Android.
+Less waiting when you replay a song, more consistent listening history, and a more comfortable Lumaire on your phone. The Windows update is available now. The Android APK will follow after its final on-device upgrade check.
 
 ## Playback that gets along better
 
@@ -25,6 +25,6 @@ Less waiting when you replay a song, more consistent listening history, and a mo
 
 **Windows:** use Settings → About → Check for updates, or run the Windows installer below. Keep your existing installation to retain your library and settings.
 
-**Android:** download the ARM64 APK below and install it over Lumaire. Android will ask you to confirm the update. Do not uninstall first; that would remove the app's local data. Android updates are installed manually.
+**Android:** the APK is not published yet. The Android changes above are included in the release source, but the final release-mode device check is still pending. Keep your existing app installed; the APK will be added after validation.
 
 Playback was checked on Windows and a Motorola Edge 50 Pro. Online audio still depends on its provider: a new song may take time to start, and temporary availability errors can still happen. Background Autoplay across the end of a song remains a known Android limitation. Optional AI lyric features require your own configured key.

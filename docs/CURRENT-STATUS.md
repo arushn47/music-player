@@ -1,8 +1,12 @@
-## Release 1.0.7 preparation — 27 October 2026
+## Windows 1.0.7 published; Android held — 27 October 2026
 
-- User authorized publication for Windows and Android. Versions aligned to 1.0.7; reviewed plain-language release notes include measured replay improvement and remaining provider/background-Autoplay limits.
-- Existing signed Windows workflow now leaves a draft for final package upgrade smoke checks and Android asset upload before publication. Previous 540 frontend / 11 JVM / 9 physical Android checks are reused; CI runs the existing required suite once. No repeated latency benchmark.
-- Release-package verification and publication results will be recorded after completion.
+- User explicitly approved the full tested snapshot (262 files), then requested PC completion while the phone is disconnected. Source commit/tag: `bc5a5c350ffe9680090d920e09f7f137b084443f` / `v1.0.7`, pushed to GitHub.
+- Windows release published: https://github.com/arushn47/music-player/releases/tag/v1.0.7 . Signed CI run 40475692183 passed its required regression suite, build, uploaded-byte/signature/manifest checks. The workflow now retains drafts until final package smoke checks finish.
+- Exact downloaded CI installer passed independent cryptographic signature and tamper-rejection checks, installed successfully, and launched as 1.0.7. Existing library/playlists remained visible; pre-upgrade track IDs were retained and SQLite integrity passed. Private local backups are in `.test-data/release-1.0.7/`. Public latest updater endpoint verified version, notes, signature and the 22,185,294-byte installer URL. SHA256SUMS accompanies the release.
+- Human-readable release and updater notes explicitly mark Android pending. The installer embeds the earlier combined-platform notes; the public updater supplies corrected Windows-only availability notes. No Android APK was uploaded.
+- Android optimized release APK built, R8/lint passed, v2/v3 signature and ZIP alignment verified. Its certificate matches the previously published Android preview. The phone has a differently signed development build; do not uninstall or overwrite it with the public APK. Existing phone app/data remains intact with a private pre-upgrade backup saved.
+- Resume Android when the user reconnects USB: isolated before/final APKs signed with the release key are in `.test-data/release-1.0.7/`; public final APK is `releases/Lumaire-v1.0.7/Lumaire-1.0.7-Android-arm64.apk`. Use separate `app.lumaire.player.latency` for the optimized release startup/upgrade check. Its native library hash matches the public APK. Only then add the public Android asset and refresh notes/checksums.
+- Evidence: `docs/performance/release-1.0.7.json`. No repeated latency benchmark or additional broad local suite; previous 540 frontend / 11 JVM / 9 live Android checks were reused, plus two release-validator tests and the existing CI suite once. Known provider delays and Android background Autoplay handoff remain documented.
 
 ## Playback latency optimization — 27 October 2026 (device validation complete)
 

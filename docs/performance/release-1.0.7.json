@@ -1,0 +1,31 @@
+{
+  "version": "1.0.7",
+  "source": "bc5a5c350ffe9680090d920e09f7f137b084443f",
+  "workflow": "https://github.com/arushn47/music-player/actions/runs/40475692183",
+  "windowsManifest": true,
+  "windowsSignatureCryptographicallyVerified": true,
+  "tamperRejected": true,
+  "androidCertificateMatchesPublicPreview": true,
+  "hashes": {
+    "Lumaire_1.0.7_x64-setup.exe": "4c03d2f350888e537e5dcabc0c86cdc3914c87865cd35c8ad11e608299b9c2f3",
+    "Lumaire_1.0.7_x64-setup.exe.sig": "59c95abf8704e12e54061c8c110454c3b5eff567b9837af84727dd2446f41674",
+    "latest.json": "9b7c92ae4616dbacc57bf0787bfefca787ea323d78bf89126ae5484a526f7233"
+  },
+  "published": "https://github.com/arushn47/music-player/releases/tag/v1.0.7",
+  "platforms": {
+    "windows": "published",
+    "android": "withheld: user will reconnect phone for final release-mode upgrade check"
+  },
+  "windowsFinalCiInstallerExit": 0,
+  "windowsFinalCiAppStartup": true,
+  "windowsExistingRecordsRetained": true,
+  "windowsReleaseNotesRendered": true,
+  "publicUpdaterVerified": true,
+  "publicInstallerBytes": 22185294,
+  "androidReleaseApkBuilt": true,
+  "androidReleaseSignatureAndAlignmentVerified": true,
+  "androidNormalPhoneUnchanged": true,
+  "androidInstalledDevelopmentCertificateDiffers": true,
+  "bundledNotes": "Installer embeds the original combined-platform notes; published release and updater notes explicitly mark Android pending.",
+  "remaining": "Android release-mode physical-device startup/upgrade check; no APK asset published."
+}
