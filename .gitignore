@@ -22,8 +22,7 @@ test-results/
 .DS_Store
 Thumbs.db
 
-docs/*
-!docs/performance/
+/docs/
 
 # Distribute binaries as GitHub Release assets, not source commits.
 /release/*
@@ -43,3 +42,16 @@ scratch/
 scripts/
 
 .codex-remote-attachments/
+
+# Private runtime state, credentials and generated Python bytecode.
+.env*
+!.env.example
+**/__pycache__/
+*.py[cod]
+*.sqlite3*
+*.db
+*.p12
+*.jks
+*.keystore
+*.apk
+*.idsig

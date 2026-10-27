@@ -10,7 +10,7 @@
     android:maxResizeHeight="550dp"
     android:updatePeriodMillis="0"
     android:previewLayout="@layout/widget_lyrics_preview"
-    android:initialLayout="@layout/widget_lyrics"
+    android:initialLayout="@layout/widget_lyrics_lines"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/widget_lyrics_desc">

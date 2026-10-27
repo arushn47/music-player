@@ -81,7 +81,7 @@ npm test                # Frontend/domain regression tests
 npm run desktop:installer  # Local Windows NSIS installer
 ```
 
-The Tauri wrapper uses the installed CLI and a project-local Cargo cache. Windows release signing is enabled only with the explicit release overlay. See [Windows release publishing](docs/windows-release-publishing.md) for signed CI releases and the distinction between installer and updater artifacts.
+The Tauri wrapper uses the installed CLI and a project-local Cargo cache. Windows release signing is enabled only with the explicit release overlay. The [Windows release workflow](.github/workflows/windows-release.yml) builds and verifies updater artifacts; ordinary local builds do not require signing secrets.
 
 For Android, install Android Studio, its Java runtime, Android SDK and NDK, then run `npm run android:doctor`. `npm run android:build` builds a development ARM64 APK; it is not the public release APK. Keep Android signing material private and reuse the existing release key for updates.
 
@@ -91,7 +91,6 @@ Use [GitHub Issues](https://github.com/arushn47/music-player/issues) for bugs an
 
 - [Release history and downloads](https://github.com/arushn47/music-player/releases)
 - [Windows build workflow](.github/workflows/windows-release.yml)
-- [Current implementation and verification status](docs/CURRENT-STATUS.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md) and [license texts](THIRD_PARTY_LICENSES.txt)
 
 Dependency licenses apply to their respective components. This repository does not yet declare a distribution license for Lumaire's original code; no license badge or blanket open-source claim is made here.

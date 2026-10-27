@@ -3,7 +3,7 @@
     android:id="@+id/widget_now_playing_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_background">
+    android:background="@android:color/transparent">
 
     <!-- Dynamic tinted background (rendered 1:1 with rounded corners) -->
     <ImageView
@@ -14,18 +14,26 @@
         android:contentDescription="" />
 
     <!-- 1. COMPACT HORIZONTAL BAR (for 1-row / 2x1, 3x1, 4x1, height <= 85dp) -->
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/widget_compact_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:visibility="visible">
+        android:layout_height="72dp"
+        android:layout_gravity="center_vertical">
 
+        <ImageView
+            android:id="@+id/widget_compact_bg_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitXY"
+            android:importantForAccessibility="no" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="12dp">
         <ImageView
             android:id="@+id/widget_art"
             android:layout_width="48dp"
@@ -62,7 +70,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="12sp"
-                android:textColor="#C4B5FD"
+                android:textColor="#D7DBDF"
                 android:singleLine="true"
                 android:ellipsize="end"
                 android:layout_marginTop="2dp"
@@ -78,34 +86,35 @@
 
             <ImageButton
                 android:id="@+id/widget_btn_prev"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/widget_button_bg"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_widget_prev"
                 android:scaleType="centerInside"
                 android:contentDescription="Previous track" />
 
             <ImageButton
                 android:id="@+id/widget_btn_play_pause"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="6dp"
-                android:layout_marginEnd="6dp"
-                android:background="@drawable/widget_play_btn_bg"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_widget_play"
                 android:scaleType="centerInside"
                 android:contentDescription="Play or pause" />
 
             <ImageButton
                 android:id="@+id/widget_btn_next"
-                android:layout_width="38dp"
-                android:layout_height="38dp"
-                android:background="@drawable/widget_button_bg"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_widget_next"
                 android:scaleType="centerInside"
                 android:contentDescription="Next track" />
         </LinearLayout>
     </LinearLayout>
+    </FrameLayout>
 
     <!-- 2. EXPANDED MEDIUM WIDE (for 4x2, 3x2, height 86..145dp, width >= 220dp) -->
     <LinearLayout
@@ -162,7 +171,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
-                    android:textColor="#C4B5FD"
+                    android:textColor="#D7DBDF"
                     android:singleLine="true"
                     android:ellipsize="end"
                     android:layout_marginTop="2dp"
@@ -177,29 +186,29 @@
 
                 <ImageButton
                     android:id="@+id/widget_btn_prev_expanded"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/widget_button_bg"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
                     android:src="@drawable/ic_widget_prev"
                     android:scaleType="centerInside"
                     android:contentDescription="Previous track" />
 
                 <ImageButton
                     android:id="@+id/widget_btn_play_pause_expanded"
-                    android:layout_width="46dp"
-                    android:layout_height="46dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="6dp"
-                    android:background="@drawable/widget_play_btn_bg"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:background="@android:color/transparent"
                     android:src="@drawable/ic_widget_play"
                     android:scaleType="centerInside"
                     android:contentDescription="Play or pause" />
 
                 <ImageButton
                     android:id="@+id/widget_btn_next_expanded"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/widget_button_bg"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
                     android:src="@drawable/ic_widget_next"
                     android:scaleType="centerInside"
                     android:contentDescription="Next track" />
@@ -298,7 +307,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
-                    android:textColor="#C4B5FD"
+                    android:textColor="#D7DBDF"
                     android:singleLine="true"
                     android:ellipsize="end"
                     android:layout_marginTop="3dp"
@@ -356,9 +365,9 @@
 
             <ImageButton
                 android:id="@+id/widget_btn_prev_card"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="@drawable/widget_button_bg"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_widget_prev"
                 android:scaleType="centerInside"
                 android:contentDescription="Previous track" />
@@ -369,16 +378,16 @@
                 android:layout_height="50dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
-                android:background="@drawable/widget_play_btn_bg"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_widget_play"
                 android:scaleType="centerInside"
                 android:contentDescription="Play or pause" />
 
             <ImageButton
                 android:id="@+id/widget_btn_next_card"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="@drawable/widget_button_bg"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
                 android:src="@drawable/ic_widget_next"
                 android:scaleType="centerInside"
                 android:contentDescription="Next track" />

@@ -1,6 +1,6 @@
 # Lumaire v1.0.7
 
-Less waiting when you replay a song, more consistent listening history, and a more comfortable Lumaire on your phone. The Windows update is available now. The Android APK will follow after its final on-device upgrade check.
+Less waiting when you replay a song, more consistent listening history, and a more comfortable Lumaire on your phone. This update is available for Windows and Android.
 
 ## Playback that gets along better
 
@@ -17,7 +17,7 @@ Less waiting when you replay a song, more consistent listening history, and a mo
 
 ## A little easier every day
 
-- Refined Android navigation, player controls and layouts, with home-screen playback and lyrics widgets.
+- Refined Android navigation, player controls and layouts. Home-screen widgets now use colors from the cover art, cleaner controls and balanced spacing. The lyrics widget keeps the song title at the top and fills the available space with upcoming lines.
 - Android Back closes the current panel or returns through your screens. Double-tap Discover to jump into search.
 - Clearer lyric settings and word-timed lyrics when available, plus smaller fixes to playlist saving, notifications and library controls.
 
@@ -25,6 +25,6 @@ Less waiting when you replay a song, more consistent listening history, and a mo
 
 **Windows:** use Settings → About → Check for updates, or run the Windows installer below. Keep your existing installation to retain your library and settings.
 
-**Android:** the APK is not published yet. The Android changes above are included in the release source, but the final release-mode device check is still pending. Keep your existing app installed; the APK will be added after validation.
+**Android:** download the ARM64 APK from the Android release and install it over an existing public Lumaire build. Do not uninstall first; your library and settings stay in place. Development-signed builds use a different certificate and cannot be upgraded with the public APK. Android updates are installed manually.
 
 Playback was checked on Windows and a Motorola Edge 50 Pro. Online audio still depends on its provider: a new song may take time to start, and temporary availability errors can still happen. Background Autoplay across the end of a song remains a known Android limitation. Optional AI lyric features require your own configured key.

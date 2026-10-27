@@ -9,7 +9,7 @@ const [input, output] = process.argv.slice(2).map(value => path.resolve(value));
 assert(input && output && input !== output, 'Supply unsigned APK and a different signed output path.');
 assert(existsSync(input), 'Unsigned APK does not exist.');
 assert(!existsSync(output), 'Refusing to overwrite an existing signed release.');
-const sdk = process.env.ANDROID_HOME || 'C:/Users/ARUSH/AppData/Local/Android/Sdk';
+const sdk = process.env.ANDROID_HOME || path.join(process.env.USERPROFILE || '', 'AppData/Local/Android/Sdk');
 const javaHome = process.env.JAVA_HOME || 'C:/Program Files/Android/Android Studio/jbr';
 const tools = path.join(sdk, 'build-tools/36.0.0');
 const privateDir = path.resolve('.tools/release-signing');

@@ -12,6 +12,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
 import android.net.Uri
@@ -245,6 +246,9 @@ object WidgetUpdateHelper {
         evaluateLyrics(context)
     }
 
+    fun upcomingLyrics(lines: List<NativeLyricLine>, from: Int): String =
+        lines.asSequence().drop(from.coerceAtLeast(0)).take(24).joinToString("\n") { it.text }
+
     private fun evaluateLyrics(context: Context) {
         val player = playerRef?.get()
         val pos = player?.currentPosition ?: currentPositionMs
@@ -269,7 +273,7 @@ object WidgetUpdateHelper {
             prevLyricText = ""
             currentLyricText = "•••"
             nextLyricText = lyricLines[0].text
-            next2LyricText = if (lyricLines.size > 1) lyricLines[1].text else ""
+            next2LyricText = upcomingLyrics(lyricLines, 1)
             nextTargetMs = lyricLines[0].timeMs
         } else {
             var activeIdx = 0
@@ -289,7 +293,7 @@ object WidgetUpdateHelper {
                 nextLyricText = ""
                 nextTargetMs = null
             }
-            next2LyricText = if (activeIdx + 2 < lyricLines.size) lyricLines[activeIdx + 2].text else ""
+            next2LyricText = upcomingLyrics(lyricLines, activeIdx + 2)
         }
 
         updateLyricsWidgets(context)
@@ -412,130 +416,46 @@ object WidgetUpdateHelper {
         return colorRgb(r, g, b)
     }
 
-    fun getAccessibleAccentColor(accentHex: String, isLight: Boolean): Int {
-        val defaultAccent = if (isLight) colorRgb(124, 58, 237) else colorRgb(167, 139, 250)
-        val accentInt = parseHexColor(accentHex, defaultAccent)
-
-        val r = colorRed(accentInt)
-        val g = colorGreen(accentInt)
-        val b = colorBlue(accentInt)
-        val lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
-
-        return if (isLight) {
-            if (lum > 0.38) {
-                val factor = (0.38 / lum).toFloat().coerceIn(0.25f, 0.90f)
-                colorRgb(
-                    (r * factor).toInt().coerceIn(0, 255),
-                    (g * factor).toInt().coerceIn(0, 255),
-                    (b * factor).toInt().coerceIn(0, 255)
-                )
-            } else {
-                accentInt
-            }
-        } else {
-            if (lum < 0.22) {
-                val factor = 0.5f
-                colorRgb(
-                    (r + (255 - r) * factor).toInt().coerceIn(0, 255),
-                    (g + (255 - g) * factor).toInt().coerceIn(0, 255),
-                    (b + (255 - b) * factor).toInt().coerceIn(0, 255)
-                )
-            } else {
-                accentInt
-            }
-        }
+    fun artworkColors(sample: Int?, isLight: Boolean): ExtractedColors {
+        val ink = colorRgb(22, 25, 29)
+        val paper = colorRgb(248, 247, 244)
+        val hue = sample ?: colorRgb(105, 113, 122)
+        return if (isLight) ExtractedColors(
+            blendColors(hue, paper, 0.83f), blendColors(hue, paper, 0.94f),
+            blendColors(hue, paper, 0.65f), ink, colorRgb(64, 69, 75),
+            blendColors(hue, ink, 0.70f)
+        ) else ExtractedColors(
+            blendColors(hue, ink, 0.78f), blendColors(hue, ink, 0.88f),
+            blendColors(hue, paper, 0.44f), paper, colorRgb(231, 233, 235),
+            blendColors(hue, paper, 0.86f)
+        )
     }
 
-    /**
-     * Extracts muted tones from album artwork and blends them with Lumaire's dark/lavender
-     * foundation to produce a cohesive, high-contrast palette.
-     */
-    fun extractColors(bitmap: Bitmap?, isLight: Boolean, customAccentHex: String?): ExtractedColors {
-        if (bitmap == null) {
-            return if (isLight) {
-                ExtractedColors(
-                    bgGradientStart = parseHexColor("#FAF8FF", colorRgb(250, 248, 255)),
-                    bgGradientEnd = parseHexColor("#F1EDFD", colorRgb(241, 237, 253)),
-                    strokeColor = parseHexColor("#E2DCF8", colorRgb(226, 220, 248)),
-                    primaryTextColor = parseHexColor("#18181B", colorRgb(24, 24, 27)),
-                    secondaryTextColor = parseHexColor("#6D28D9", colorRgb(109, 40, 217)),
-                    accentColor = parseHexColor("#7C3AED", colorRgb(124, 58, 237))
-                )
-            } else {
-                ExtractedColors(
-                    bgGradientStart = parseHexColor("#181622", colorRgb(24, 22, 34)),
-                    bgGradientEnd = parseHexColor("#100F17", colorRgb(16, 15, 23)),
-                    strokeColor = parseHexColor("#2C263D", colorRgb(44, 38, 61)),
-                    primaryTextColor = colorRgb(255, 255, 255),
-                    secondaryTextColor = parseHexColor("#C4B5FD", colorRgb(196, 181, 253)),
-                    accentColor = parseHexColor("#A78BFA", colorRgb(167, 139, 250))
-                )
-            }
-        }
-
+    fun extractColors(bitmap: Bitmap?, isLight: Boolean): ExtractedColors {
+        if (bitmap == null) return artworkColors(null, isLight)
         var sumR = 0L
         var sumG = 0L
         var sumB = 0L
-        var sampleCount = 0L
-
-        val stepX = (bitmap.width / 16).coerceAtLeast(1)
-        val stepY = (bitmap.height / 16).coerceAtLeast(1)
-
-        for (x in 0 until bitmap.width step stepX) {
-            for (y in 0 until bitmap.height step stepY) {
+        var weights = 0L
+        for (x in 0 until bitmap.width step (bitmap.width / 16).coerceAtLeast(1)) {
+            for (y in 0 until bitmap.height step (bitmap.height / 16).coerceAtLeast(1)) {
                 val pixel = bitmap.getPixel(x, y)
+                if (pixel ushr 24 < 128) continue
                 val r = colorRed(pixel)
                 val g = colorGreen(pixel)
                 val b = colorBlue(pixel)
-                val lum = 0.299 * r + 0.587 * g + 0.114 * b
-                if (lum in 22.0..235.0) {
-                    sumR += r
-                    sumG += g
-                    sumB += b
-                    sampleCount++
-                }
+                // Give cover colors more influence than white lettering and black margins.
+                val weight = (maxOf(r, g, b) - minOf(r, g, b) + 16).toLong()
+                sumR += r * weight
+                sumG += g * weight
+                sumB += b * weight
+                weights += weight
             }
         }
-
-        val avgR = if (sampleCount > 0) (sumR / sampleCount).toInt() else 167
-        val avgG = if (sampleCount > 0) (sumG / sampleCount).toInt() else 139
-        val avgB = if (sampleCount > 0) (sumB / sampleCount).toInt() else 250
-        val sampledRgb = colorRgb(avgR, avgG, avgB)
-
-        return if (isLight) {
-            val bgStart = blendColors(sampledRgb, parseHexColor("#FAF8FF", colorRgb(250, 248, 255)), 0.84f)
-            val bgEnd = blendColors(sampledRgb, parseHexColor("#EDE9FE", colorRgb(237, 233, 254)), 0.78f)
-            val stroke = blendColors(sampledRgb, parseHexColor("#DDD6FE", colorRgb(221, 214, 254)), 0.60f)
-            val accent = getAccessibleAccentColor(
-                String.format("#%02X%02X%02X", avgR, avgG, avgB),
-                isLight = true
-            )
-            ExtractedColors(
-                bgGradientStart = bgStart,
-                bgGradientEnd = bgEnd,
-                strokeColor = stroke,
-                primaryTextColor = parseHexColor("#18181B", colorRgb(24, 24, 27)),
-                secondaryTextColor = accent,
-                accentColor = accent
-            )
-        } else {
-            // Dark base: Lumaire #14131D
-            val bgStart = blendColors(sampledRgb, parseHexColor("#181625", colorRgb(24, 22, 37)), 0.80f)
-            val bgEnd = blendColors(sampledRgb, parseHexColor("#0E0D16", colorRgb(14, 13, 22)), 0.84f)
-            val stroke = blendColors(sampledRgb, parseHexColor("#2E2744", colorRgb(46, 39, 68)), 0.65f)
-            val accent = getAccessibleAccentColor(
-                String.format("#%02X%02X%02X", avgR, avgG, avgB),
-                isLight = false
-            )
-            ExtractedColors(
-                bgGradientStart = bgStart,
-                bgGradientEnd = bgEnd,
-                strokeColor = stroke,
-                primaryTextColor = colorRgb(255, 255, 255),
-                secondaryTextColor = accent,
-                accentColor = accent
-            )
-        }
+        val sample = if (weights == 0L) null else colorRgb(
+            (sumR / weights).toInt(), (sumG / weights).toInt(), (sumB / weights).toInt()
+        )
+        return artworkColors(sample, isLight)
     }
 
     private fun getOrComputeColors(isLight: Boolean): ExtractedColors {
@@ -543,7 +463,7 @@ object WidgetUpdateHelper {
         if (cachedExtractedColors != null && cachedArtSource === art) {
             return cachedExtractedColors!!
         }
-        val computed = extractColors(art, isLight, accentColor)
+        val computed = extractColors(art, isLight)
         cachedExtractedColors = computed
         cachedArtSource = art
         return computed
@@ -555,43 +475,38 @@ object WidgetUpdateHelper {
         density: Float,
         colors: ExtractedColors
     ): Bitmap {
-        val renderWidth = ((widthDp.coerceAtLeast(100)) * density).toInt().coerceIn(160, 480)
-        val renderHeight = ((heightDp.coerceAtLeast(50)) * density).toInt().coerceIn(60, 360)
+        val width = widthDp.coerceAtLeast(100)
+        val height = heightDp.coerceAtLeast(50)
+        val scale = minOf(density, 480f / width, 360f / height)
+        val renderWidth = (width * scale).toInt().coerceAtLeast(1)
+        val renderHeight = (height * scale).toInt().coerceAtLeast(1)
         val bitmap = Bitmap.createBitmap(renderWidth, renderHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-
-        val cornerRadiusPx = 24f * density
-        val gradient = LinearGradient(
-            0f, 0f, renderWidth.toFloat(), renderHeight.toFloat(),
-            colors.bgGradientStart, colors.bgGradientEnd,
-            Shader.TileMode.CLAMP
-        )
-        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = gradient
-            style = Paint.Style.FILL
-        }
         val rect = RectF(0f, 0f, renderWidth.toFloat(), renderHeight.toFloat())
-        canvas.drawRoundRect(rect, cornerRadiusPx, cornerRadiusPx, bgPaint)
-
-        val strokeWidthPx = 1.2f * density
-        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = colors.strokeColor
-            style = Paint.Style.STROKE
-            strokeWidth = strokeWidthPx
-        }
-        val insetRect = RectF(
-            strokeWidthPx / 2f,
-            strokeWidthPx / 2f,
-            renderWidth - strokeWidthPx / 2f,
-            renderHeight - strokeWidthPx / 2f
-        )
-        canvas.drawRoundRect(insetRect, cornerRadiusPx, cornerRadiusPx, strokePaint)
+        val radius = 16f * scale
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+        paint.shader = LinearGradient(0f, 0f, rect.right, rect.bottom,
+            colors.bgGradientStart, colors.bgGradientEnd, Shader.TileMode.CLAMP)
+        canvas.drawRoundRect(rect, radius, radius, paint)
+        canvas.save()
+        canvas.clipPath(Path().apply { addRoundRect(rect, radius, radius, Path.Direction.CW) })
+        paint.alpha = 255
+        paint.shader = LinearGradient(0f, 0f, 0f, rect.bottom,
+            0x14FFFFFF, Color.TRANSPARENT, Shader.TileMode.CLAMP)
+        canvas.drawRect(rect, paint)
+        canvas.restore()
+        paint.shader = null
+        paint.color = 0x32FFFFFF
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = scale
+        val inset = RectF(rect).apply { inset(scale / 2, scale / 2) }
+        canvas.drawRoundRect(inset, radius, radius, paint)
 
         return bitmap
     }
 
     /**
-     * Renders prominent circular play/pause button with optical center adjustment.
+     * Renders prominent rounded-square play/pause button with optical center adjustment.
      */
     fun getPlayPauseBitmap(context: Context, isPlaying: Boolean, accentColorInt: Int): Bitmap {
         val density = context.resources.displayMetrics.density
@@ -604,7 +519,7 @@ object WidgetUpdateHelper {
             style = Paint.Style.FILL
         }
         val radius = sizePx / 2f
-        canvas.drawCircle(radius, radius, radius, bgPaint)
+        canvas.drawRoundRect(RectF(0f, 0f, sizePx.toFloat(), sizePx.toFloat()), 16f * density, 16f * density, bgPaint)
 
         val r = Color.red(accentColorInt)
         val g = Color.green(accentColorInt)
@@ -699,8 +614,8 @@ object WidgetUpdateHelper {
 
         val isLight = themeMode.equals("light", ignoreCase = true)
         val colors = getOrComputeColors(isLight)
-        val buttonBgRes = if (isLight) R.drawable.widget_button_bg_light else R.drawable.widget_button_bg
-        val buttonIconTint = if (isLight) Color.parseColor("#3F3F46") else Color.parseColor("#E4E4E7")
+        val buttonBgRes = android.R.color.transparent
+        val buttonIconTint = colors.primaryTextColor
         val playPauseBitmap = getPlayPauseBitmap(context, isPlaying, colors.accentColor)
 
         val progressInt = if (durationMs > 0) {
@@ -719,11 +634,13 @@ object WidgetUpdateHelper {
             // Dynamic rounded-rect gradient background:
             val bgBitmap = createWidgetBackgroundBitmap(
                 if (minWidth > 0) minWidth else 260,
-                if (minHeight > 0) minHeight else 90,
+                if (minHeight in 1..85) 72 else if (minHeight > 0) minHeight else 90,
                 density,
                 colors
             )
-            views.setImageViewBitmap(R.id.widget_bg_image, bgBitmap)
+            val compact = minHeight in 1..85
+            views.setViewVisibility(R.id.widget_bg_image, if (compact) View.GONE else View.VISIBLE)
+            views.setImageViewBitmap(if (compact) R.id.widget_compact_bg_image else R.id.widget_bg_image, bgBitmap)
 
             // Determine layout mode:
             // 1. Compact: height <= 85dp (1-row horizontal bar)
@@ -787,6 +704,8 @@ object WidgetUpdateHelper {
                 views.setProgressBar(R.id.widget_progress_expanded, 1000, progressInt, false)
                 views.setTextViewText(R.id.widget_time_elapsed_expanded, elapsedStr)
                 views.setTextViewText(R.id.widget_time_total_expanded, totalStr)
+                views.setTextColor(R.id.widget_time_elapsed_expanded, colors.secondaryTextColor)
+                views.setTextColor(R.id.widget_time_total_expanded, colors.secondaryTextColor)
 
                 if (minWidth in 220..270) {
                     views.setViewVisibility(R.id.widget_btn_prev_expanded, View.GONE)
@@ -821,6 +740,8 @@ object WidgetUpdateHelper {
                 views.setProgressBar(R.id.widget_progress_card, 1000, progressInt, false)
                 views.setTextViewText(R.id.widget_time_elapsed_card, elapsedStr)
                 views.setTextViewText(R.id.widget_time_total_card, totalStr)
+                views.setTextColor(R.id.widget_time_elapsed_card, colors.secondaryTextColor)
+                views.setTextColor(R.id.widget_time_total_card, colors.secondaryTextColor)
 
                 if (minWidth in 1..180) {
                     views.setViewVisibility(R.id.widget_btn_prev_card, View.GONE)
@@ -901,7 +822,8 @@ object WidgetUpdateHelper {
         }
 
         for (appWidgetId in ids) {
-            val views = RemoteViews(context.packageName, R.layout.widget_lyrics)
+            // A distinct layout ID reinflates existing launcher widgets with the flexible lyric body.
+            val views = RemoteViews(context.packageName, R.layout.widget_lyrics_lines)
             val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
             val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
             val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
@@ -918,9 +840,10 @@ object WidgetUpdateHelper {
             // Header (shown when widget height >= 110dp):
             if (minHeight >= 110) {
                 views.setViewVisibility(R.id.widget_lyrics_header, View.VISIBLE)
-                val trackHeader = if (title != "Not Playing") "$title • $artist" else "LUMAIRE LIVE LYRICS"
+                val trackHeader = if (title != "Not Playing") title else "LUMAIRE · LYRICS"
                 views.setTextViewText(R.id.widget_lyrics_track_info, trackHeader)
                 views.setTextColor(R.id.widget_lyrics_track_info, colors.accentColor)
+                views.setInt(R.id.widget_lyrics_indicator, "setColorFilter", colors.accentColor)
             } else {
                 views.setViewVisibility(R.id.widget_lyrics_header, View.GONE)
             }
@@ -935,59 +858,21 @@ object WidgetUpdateHelper {
             views.setTextViewText(R.id.widget_lyrics_next, nextLyricText)
             views.setTextColor(R.id.widget_lyrics_next, colors.secondaryTextColor)
 
+            views.setBoolean(R.id.widget_lyrics_next2, "setSingleLine", false)
+            views.setInt(R.id.widget_lyrics_next2, "setMaxLines", 48)
             views.setTextViewText(R.id.widget_lyrics_next2, next2LyricText)
-            views.setTextColor(R.id.widget_lyrics_next2, dimmedColor)
+            views.setTextColor(R.id.widget_lyrics_next2, colors.secondaryTextColor)
 
-            // Adaptive line count and typography across widget dimensions:
-            if (minHeight in 1..85) {
-                // 1-row ticker: single line only
-                views.setTextViewTextSize(R.id.widget_lyrics_current, TypedValue.COMPLEX_UNIT_SP, 14f)
-                views.setViewVisibility(R.id.widget_lyrics_prev, View.GONE)
-                views.setViewVisibility(R.id.widget_lyrics_next, View.GONE)
-                views.setViewVisibility(R.id.widget_lyrics_next2, View.GONE)
-            } else if (minHeight in 86..150) {
-                // Medium compact (e.g. 2x2, 3x2)
-                views.setTextViewTextSize(R.id.widget_lyrics_current, TypedValue.COMPLEX_UNIT_SP, 15f)
-                views.setTextViewTextSize(R.id.widget_lyrics_next, TypedValue.COMPLEX_UNIT_SP, 12f)
-                views.setViewVisibility(R.id.widget_lyrics_prev, View.GONE)
-                views.setViewVisibility(
-                    R.id.widget_lyrics_next,
-                    if (nextLyricText.isBlank()) View.GONE else View.VISIBLE
-                )
-                views.setViewVisibility(R.id.widget_lyrics_next2, View.GONE)
-            } else if (minHeight in 151..210) {
-                // Medium tall (e.g. 4x2 tall, 3x3): prev line + current + next
-                views.setTextViewTextSize(R.id.widget_lyrics_prev, TypedValue.COMPLEX_UNIT_SP, 12f)
-                views.setTextViewTextSize(R.id.widget_lyrics_current, TypedValue.COMPLEX_UNIT_SP, 17f)
-                views.setTextViewTextSize(R.id.widget_lyrics_next, TypedValue.COMPLEX_UNIT_SP, 13f)
-                views.setViewVisibility(
-                    R.id.widget_lyrics_prev,
-                    if (prevLyricText.isBlank()) View.GONE else View.VISIBLE
-                )
-                views.setViewVisibility(
-                    R.id.widget_lyrics_next,
-                    if (nextLyricText.isBlank()) View.GONE else View.VISIBLE
-                )
-                views.setViewVisibility(R.id.widget_lyrics_next2, View.GONE)
-            } else {
-                // Large (minHeight > 210 or 0 default): prev + current + next + next2
-                views.setTextViewTextSize(R.id.widget_lyrics_prev, TypedValue.COMPLEX_UNIT_SP, 13f)
-                views.setTextViewTextSize(R.id.widget_lyrics_current, TypedValue.COMPLEX_UNIT_SP, 20f)
-                views.setTextViewTextSize(R.id.widget_lyrics_next, TypedValue.COMPLEX_UNIT_SP, 14f)
-                views.setTextViewTextSize(R.id.widget_lyrics_next2, TypedValue.COMPLEX_UNIT_SP, 13f)
-                views.setViewVisibility(
-                    R.id.widget_lyrics_prev,
-                    if (prevLyricText.isBlank()) View.GONE else View.VISIBLE
-                )
-                views.setViewVisibility(
-                    R.id.widget_lyrics_next,
-                    if (nextLyricText.isBlank()) View.GONE else View.VISIBLE
-                )
-                views.setViewVisibility(
-                    R.id.widget_lyrics_next2,
-                    if (next2LyricText.isBlank()) View.GONE else View.VISIBLE
-                )
-            }
+            val ticker = minHeight in 1..85
+            views.setTextViewTextSize(R.id.widget_lyrics_current, TypedValue.COMPLEX_UNIT_SP, if (ticker) 14f else 17f)
+            views.setTextViewTextSize(R.id.widget_lyrics_next, TypedValue.COMPLEX_UNIT_SP, 14f)
+            views.setTextViewTextSize(R.id.widget_lyrics_next2, TypedValue.COMPLEX_UNIT_SP, 14f)
+            views.setViewVisibility(R.id.widget_lyrics_prev,
+                if (minHeight >= 210 && prevLyricText.isNotBlank()) View.VISIBLE else View.GONE)
+            views.setViewVisibility(R.id.widget_lyrics_next,
+                if (!ticker && nextLyricText.isNotBlank()) View.VISIBLE else View.GONE)
+            views.setViewVisibility(R.id.widget_lyrics_next2,
+                if (!ticker && next2LyricText.isNotBlank()) View.VISIBLE else View.GONE)
 
             val openAppIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
