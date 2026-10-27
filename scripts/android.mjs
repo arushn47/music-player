@@ -66,7 +66,7 @@ if (command === "doctor") {
 const missing = required.filter((key) => !env[key]);
 if (missing.length) {
   console.error(
-    `Missing Android build tools: ${missing.join(", ")}. See docs/phase-4/android-prototype.md.`,
+    `Missing Android build tools: ${missing.join(", ")}. See README.md for Android setup.`,
   );
   process.exit(1);
 }
